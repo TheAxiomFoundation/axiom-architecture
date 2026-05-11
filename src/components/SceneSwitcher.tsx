@@ -16,13 +16,17 @@ export function SceneSwitcher({
   detailMode: DetailMode;
   onDetailModeChange: (mode: DetailMode) => void;
 }) {
+  // repos prop is kept for future re-introduction of a per-repo view; we no
+  // longer surface the full list in the sidebar because each card already
+  // carries its repo on the eyebrow.
+  void repos;
+
   return (
     <nav className="scene-switcher">
       <div className="scene-switcher__wordmark">
         <span className="glyph-axiom">∀</span>
-        <span className="scene-switcher__wordmark-text">axiom-corpus</span>
+        <span className="scene-switcher__wordmark-text">Architecture</span>
       </div>
-      <div className="scene-switcher__subtitle">Architecture</div>
 
       <ul className="scene-switcher__scenes">
         {layouts.map((layout) => {
@@ -43,61 +47,50 @@ export function SceneSwitcher({
         })}
       </ul>
 
-      <div className="scene-switcher__mode">
-        <div className="scene-switcher__legend-title">Detail level</div>
-        <div
-          className="scene-switcher__mode-toggle"
-          role="group"
-          aria-label="Detail level"
-        >
-          <button
-            type="button"
-            className={`scene-switcher__mode-btn ${
-              detailMode === "external" ? "scene-switcher__mode-btn--active" : ""
-            }`}
-            onClick={() => onDetailModeChange("external")}
+      <div className="scene-switcher__footer">
+        <div className="scene-switcher__row">
+          <span className="scene-switcher__row-label">Detail</span>
+          <div
+            className="scene-switcher__pill"
+            role="group"
+            aria-label="Detail level"
           >
-            External
-          </button>
-          <button
-            type="button"
-            className={`scene-switcher__mode-btn ${
-              detailMode === "internal" ? "scene-switcher__mode-btn--active" : ""
-            }`}
-            onClick={() => onDetailModeChange("internal")}
-          >
-            Internal
-          </button>
+            <button
+              type="button"
+              className={`scene-switcher__pill-btn ${
+                detailMode === "external" ? "scene-switcher__pill-btn--active" : ""
+              }`}
+              onClick={() => onDetailModeChange("external")}
+              title="Public-facing summary — concepts and relationships"
+            >
+              External
+            </button>
+            <button
+              type="button"
+              className={`scene-switcher__pill-btn ${
+                detailMode === "internal" ? "scene-switcher__pill-btn--active" : ""
+              }`}
+              onClick={() => onDetailModeChange("internal")}
+              title="Operator depth — mechanics, gotchas, file paths, commands"
+            >
+              Internal
+            </button>
+          </div>
         </div>
-        <div className="scene-switcher__mode-hint">
-          {detailMode === "external"
-            ? "Public-facing summary — concepts and relationships."
-            : "Operator depth — mechanics, gotchas, file paths, commands."}
-        </div>
-      </div>
 
-      <div className="scene-switcher__legend">
-        <div className="scene-switcher__legend-title">Edges</div>
-        <ul>
+        <ul className="scene-switcher__edges">
           <li>
-            <span className="edge-swatch edge-swatch--solid" /> source-of-truth data flow
+            <span className="edge-swatch edge-swatch--solid" />
+            <span>data flow</span>
           </li>
           <li>
-            <span className="edge-swatch edge-swatch--derived" /> derived / rebuildable
+            <span className="edge-swatch edge-swatch--derived" />
+            <span>derived</span>
           </li>
           <li>
-            <span className="edge-swatch edge-swatch--read" /> read-only consumer
+            <span className="edge-swatch edge-swatch--read" />
+            <span>read</span>
           </li>
-        </ul>
-
-        <div className="scene-switcher__legend-title">Repositories</div>
-        <ul className="scene-switcher__repos">
-          {repos.map((r) => (
-            <li key={r.id}>
-              <span className="scene-switcher__repo-name">{r.label}</span>
-              <span className="scene-switcher__repo-desc">{r.description}</span>
-            </li>
-          ))}
         </ul>
       </div>
     </nav>

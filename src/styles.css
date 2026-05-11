@@ -222,100 +222,90 @@ body::before {
   letter-spacing: -0.01em;
 }
 
-/* Detail-mode toggle (External vs Internal) */
-.scene-switcher__mode {
-  margin-top: 28px;
-  padding-top: 20px;
+/* Footer block (below scenes): mode toggle + edge legend */
+.scene-switcher__footer {
+  margin-top: 24px;
+  padding-top: 16px;
   border-top: 1px solid var(--color-rule);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
 }
 
-.scene-switcher__mode-toggle {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  margin: 8px 0;
-  border: 1px solid var(--color-rule);
-  border-radius: 4px;
-  overflow: hidden;
+.scene-switcher__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
 }
 
-.scene-switcher__mode-btn {
-  background: transparent;
-  border: none;
-  padding: 8px 10px;
-  font-family: var(--f-mono);
-  font-size: 10.5px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--color-ink-secondary);
-  cursor: pointer;
-  transition: background 200ms var(--ease-out), color 200ms var(--ease-out);
-}
-
-.scene-switcher__mode-btn + .scene-switcher__mode-btn {
-  border-left: 1px solid var(--color-rule);
-}
-
-.scene-switcher__mode-btn:hover {
-  background: var(--color-paper);
-  color: var(--color-ink);
-}
-
-.scene-switcher__mode-btn--active {
-  background: var(--color-accent);
-  color: var(--color-paper-elevated);
-}
-
-.scene-switcher__mode-btn--active:hover {
-  background: var(--color-accent-hover);
-  color: var(--color-paper-elevated);
-}
-
-.scene-switcher__mode-hint {
-  font-size: 11px;
-  line-height: 1.5;
-  color: var(--color-ink-muted);
-  margin-top: 4px;
-}
-
-.scene-switcher__legend {
-  margin-top: 28px;
-  padding-top: 20px;
-  border-top: 1px solid var(--color-rule);
-}
-
-.scene-switcher__legend-title {
+.scene-switcher__row-label {
   font-family: var(--f-mono);
   font-size: 10px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--color-accent);
+  color: var(--color-ink-muted);
   font-weight: 500;
-  margin-bottom: 10px;
-  margin-top: 18px;
 }
 
-.scene-switcher__legend-title:first-child {
-  margin-top: 0;
+/* Pill-shaped External/Internal toggle */
+.scene-switcher__pill {
+  display: inline-flex;
+  border: 1px solid var(--color-rule);
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--color-paper);
 }
 
-.scene-switcher__legend ul {
+.scene-switcher__pill-btn {
+  background: transparent;
+  border: none;
+  padding: 4px 12px;
+  font-family: var(--f-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted);
+  cursor: pointer;
+  transition: background 180ms var(--ease-out), color 180ms var(--ease-out);
+  line-height: 1.6;
+}
+
+.scene-switcher__pill-btn:hover {
+  color: var(--color-ink);
+}
+
+.scene-switcher__pill-btn--active {
+  background: var(--color-accent);
+  color: var(--color-paper-elevated);
+}
+
+.scene-switcher__pill-btn--active:hover {
+  background: var(--color-accent-hover);
+  color: var(--color-paper-elevated);
+}
+
+/* Compact edge legend (no title; three lines is self-explanatory) */
+.scene-switcher__edges {
   list-style: none;
   margin: 0;
   padding: 0;
-  font-size: 11.5px;
-  color: var(--color-ink-secondary);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--color-ink-muted);
 }
 
-.scene-switcher__legend li {
+.scene-switcher__edges li {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 4px 0;
+  gap: 10px;
 }
 
 .edge-swatch {
   display: inline-block;
-  width: 28px;
+  width: 24px;
   height: 0;
   flex-shrink: 0;
 }
@@ -323,35 +313,6 @@ body::before {
 .edge-swatch--solid { border-top: 2px solid var(--color-ink); }
 .edge-swatch--derived { border-top: 2px dashed var(--color-accent); }
 .edge-swatch--read { border-top: 1.5px dashed var(--color-ink-muted); }
-
-.scene-switcher__repos {
-  margin-top: 0 !important;
-}
-
-.scene-switcher__repos li {
-  flex-direction: column;
-  align-items: flex-start !important;
-  padding: 6px 0 !important;
-  gap: 2px !important;
-  border-bottom: 1px solid var(--color-rule-subtle);
-}
-
-.scene-switcher__repos li:last-child {
-  border-bottom: none;
-}
-
-.scene-switcher__repo-name {
-  font-family: var(--f-mono);
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--color-ink);
-}
-
-.scene-switcher__repo-desc {
-  font-size: 10.5px;
-  color: var(--color-ink-muted);
-  line-height: 1.4;
-}
 
 /* ────────────────────────────────────────────────────────────
    Canvas

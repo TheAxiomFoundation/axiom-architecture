@@ -12,6 +12,7 @@ import { LayerNode } from "./components/LayerNode";
 import type { LayerNodeData } from "./components/LayerNode";
 import { LabeledEdge } from "./components/LabeledEdge";
 import { DetailPanel } from "./components/DetailPanel";
+import { NotesPanel } from "./components/NotesPanel";
 import { SceneSwitcher } from "./components/SceneSwitcher";
 import {
   LAYOUTS,
@@ -96,10 +97,16 @@ function toRfEdges(
 
 export type DetailMode = "external" | "internal";
 
+// Hidden tab id — not a real React Flow layout. Surfaces architectural
+// critique as a documentation panel instead of the canvas.
+export const NOTES_TAB_ID = "notes";
+
 export function App() {
   const [activeLayoutId, setActiveLayoutId] = useState(LAYOUTS[0].id);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [detailMode, setDetailMode] = useState<DetailMode>("external");
+
+  const showNotes = activeLayoutId === NOTES_TAB_ID;
 
   const catalog = useMemo(() => new Map(NODES.map((node) => [node.id, node])), []);
 
@@ -135,7 +142,7 @@ export function App() {
   }, []);
 
   const selectedNode = selectedId ? catalog.get(selectedId) ?? null : null;
-  const detailOpen = selectedNode !== null;
+  const detailOpen = selectedNode !== null && !showNotes;
 
   return (
     <div className={`layout ${detailOpen ? "layout--detail-open" : ""}`}>
@@ -149,37 +156,44 @@ export function App() {
         repos={REPOS}
         detailMode={detailMode}
         onDetailModeChange={setDetailMode}
+        notesTabId={NOTES_TAB_ID}
       />
-      <main className="canvas">
-        <header className="canvas__header">
-          <div className="eyebrow">{layout.eyebrow}</div>
-          <h1 className="heading-section">{layout.title}</h1>
-          <p>{layout.description}</p>
-        </header>
-        <div className="canvas__flow">
-          <ReactFlow
-            // Remount when the active layout changes so fitView re-fires and
-            // the canvas re-centers on the new node set. Without the key,
-            // ReactFlow keeps the previous viewport.
-            key={layout.id}
-            nodes={rfNodes}
-            edges={rfEdges}
-            nodeTypes={NODE_TYPES}
-            edgeTypes={EDGE_TYPES}
-            onNodeClick={handleNodeClick}
-            onPaneClick={() => setSelectedId(null)}
-            fitView
-            fitViewOptions={{ padding: 0.18 }}
-            minZoom={0.18}
-            maxZoom={1.6}
-            proOptions={{ hideAttribution: true }}
-          >
-            <Background gap={24} size={1} color="#e7e5e4" />
-            <Controls showInteractive={false} />
-          </ReactFlow>
-        </div>
-      </main>
-      {selectedNode && (
+      {showNotes ? (
+        <main className="canvas canvas--notes">
+          <NotesPanel />
+        </main>
+      ) : (
+        <main className="canvas">
+          <header className="canvas__header">
+            <div className="eyebrow">{layout.eyebrow}</div>
+            <h1 className="heading-section">{layout.title}</h1>
+            <p>{layout.description}</p>
+          </header>
+          <div className="canvas__flow">
+            <ReactFlow
+              // Remount when the active layout changes so fitView re-fires and
+              // the canvas re-centers on the new node set. Without the key,
+              // ReactFlow keeps the previous viewport.
+              key={layout.id}
+              nodes={rfNodes}
+              edges={rfEdges}
+              nodeTypes={NODE_TYPES}
+              edgeTypes={EDGE_TYPES}
+              onNodeClick={handleNodeClick}
+              onPaneClick={() => setSelectedId(null)}
+              fitView
+              fitViewOptions={{ padding: 0.18 }}
+              minZoom={0.18}
+              maxZoom={1.6}
+              proOptions={{ hideAttribution: true }}
+            >
+              <Background gap={24} size={1} color="#e7e5e4" />
+              <Controls showInteractive={false} />
+            </ReactFlow>
+          </div>
+        </main>
+      )}
+      {detailOpen && selectedNode && (
         <DetailPanel
           node={selectedNode}
           incoming={neighbors?.incoming ?? []}

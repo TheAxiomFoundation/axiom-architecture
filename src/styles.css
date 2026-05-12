@@ -348,6 +348,12 @@ body::before {
   color: var(--color-accent);
 }
 
+.scene-switcher__hidden-links {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
 /* ────────────────────────────────────────────────────────────
    Canvas
    ──────────────────────────────────────────────────────────── */
@@ -905,4 +911,47 @@ body::before {
 
 .notes__ul li::marker {
   color: var(--color-accent);
+}
+
+.notes__code {
+  margin: 6px 0;
+  padding: 14px 16px;
+  background: var(--color-paper-elevated);
+  border: 1px solid var(--color-rule);
+  border-radius: 4px;
+  font-family: var(--f-mono);
+  font-size: 11.5px;
+  line-height: 1.55;
+  color: var(--color-ink);
+  overflow-x: auto;
+  white-space: pre;
+}
+
+.notes__code code {
+  font: inherit;
+  color: inherit;
+  background: transparent;
+}
+
+.notes__callout {
+  margin: 6px 0;
+  padding: 12px 14px;
+  border-left: 3px solid var(--color-rule);
+  background: var(--color-paper-elevated);
+  border-radius: 0 4px 4px 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--color-ink-secondary);
+}
+
+.notes__callout--blocker {
+  border-left-color: var(--color-accent);
+  background: var(--color-accent-light);
+  color: var(--color-ink);
+}
+
+.notes__callout--note {
+  border-left-color: var(--color-ink-muted);
+  color: var(--color-ink-secondary);
+  font-style: italic;
 }

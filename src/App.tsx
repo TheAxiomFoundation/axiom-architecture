@@ -12,6 +12,7 @@ import { LayerNode } from "./components/LayerNode";
 import type { LayerNodeData } from "./components/LayerNode";
 import { LabeledEdge } from "./components/LabeledEdge";
 import { DetailPanel } from "./components/DetailPanel";
+import { EncodingPlaybook } from "./components/EncodingPlaybook";
 import { NotesPanel } from "./components/NotesPanel";
 import { SceneSwitcher } from "./components/SceneSwitcher";
 import {
@@ -97,9 +98,10 @@ function toRfEdges(
 
 export type DetailMode = "external" | "internal";
 
-// Hidden tab id — not a real React Flow layout. Surfaces architectural
-// critique as a documentation panel instead of the canvas.
+// Hidden tab ids — not real React Flow layouts. Each surfaces a
+// documentation panel instead of the canvas.
 export const NOTES_TAB_ID = "notes";
+export const PLAYBOOK_TAB_ID = "encoding-playbook";
 
 export function App() {
   const [activeLayoutId, setActiveLayoutId] = useState(LAYOUTS[0].id);
@@ -107,6 +109,8 @@ export function App() {
   const [detailMode, setDetailMode] = useState<DetailMode>("external");
 
   const showNotes = activeLayoutId === NOTES_TAB_ID;
+  const showPlaybook = activeLayoutId === PLAYBOOK_TAB_ID;
+  const showDoc = showNotes || showPlaybook;
 
   const catalog = useMemo(() => new Map(NODES.map((node) => [node.id, node])), []);
 
@@ -142,7 +146,7 @@ export function App() {
   }, []);
 
   const selectedNode = selectedId ? catalog.get(selectedId) ?? null : null;
-  const detailOpen = selectedNode !== null && !showNotes;
+  const detailOpen = selectedNode !== null && !showDoc;
 
   return (
     <div className={`layout ${detailOpen ? "layout--detail-open" : ""}`}>
@@ -157,10 +161,15 @@ export function App() {
         detailMode={detailMode}
         onDetailModeChange={setDetailMode}
         notesTabId={NOTES_TAB_ID}
+        playbookTabId={PLAYBOOK_TAB_ID}
       />
       {showNotes ? (
         <main className="canvas canvas--notes">
           <NotesPanel />
+        </main>
+      ) : showPlaybook ? (
+        <main className="canvas canvas--notes">
+          <EncodingPlaybook />
         </main>
       ) : (
         <main className="canvas">

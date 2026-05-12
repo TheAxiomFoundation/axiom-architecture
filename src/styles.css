@@ -314,6 +314,40 @@ body::before {
 .edge-swatch--derived { border-top: 2px dashed var(--color-accent); }
 .edge-swatch--read { border-top: 1.5px dashed var(--color-ink-muted); }
 
+/* Hidden tab — surfaces internal architectural critique. Visually
+   de-emphasized so it sits below the main scene rotation. */
+.scene-switcher__notes-link {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 4px 0;
+  background: transparent;
+  border: none;
+  font-family: var(--f-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  color: var(--color-ink-muted);
+  cursor: pointer;
+  text-align: left;
+  transition: color 200ms var(--ease-out);
+}
+
+.scene-switcher__notes-link:hover {
+  color: var(--color-accent);
+}
+
+.scene-switcher__notes-link--active {
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
+.scene-switcher__notes-glyph {
+  font-family: var(--f-serif);
+  font-style: italic;
+  font-size: 13px;
+  color: var(--color-accent);
+}
+
 /* ────────────────────────────────────────────────────────────
    Canvas
    ──────────────────────────────────────────────────────────── */
@@ -771,4 +805,104 @@ body::before {
 ::selection {
   background: rgba(146, 64, 14, 0.15);
   color: var(--color-ink);
+}
+
+/* ────────────────────────────────────────────────────────────
+   Notes panel (hidden "Open questions" tab)
+   ──────────────────────────────────────────────────────────── */
+
+.canvas--notes {
+  overflow-y: auto;
+}
+
+.notes {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 48px 56px 96px 56px;
+}
+
+.notes__header {
+  padding-bottom: 24px;
+  margin-bottom: 32px;
+  border-bottom: 1px solid var(--color-rule);
+}
+
+.notes__header h1 {
+  margin: 6px 0 10px 0;
+  font-size: 1.8rem;
+}
+
+.notes__header p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--color-ink-secondary);
+  font-style: italic;
+  max-width: 580px;
+  line-height: 1.6;
+}
+
+.notes__body {
+  display: flex;
+  flex-direction: column;
+  gap: 44px;
+}
+
+.notes__section-kicker {
+  font-family: var(--f-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+  margin-bottom: 6px;
+}
+
+.notes__section-title {
+  font-family: var(--f-display);
+  font-weight: 300;
+  font-size: 1.25rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-ink);
+  margin: 0 0 18px 0;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--color-rule);
+}
+
+.notes__section-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.notes__h {
+  font-family: var(--f-body);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-ink);
+  margin: 14px 0 -4px 0;
+  letter-spacing: -0.005em;
+}
+
+.notes__p {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.65;
+  color: var(--color-ink-secondary);
+}
+
+.notes__ul {
+  margin: 0;
+  padding: 0 0 0 20px;
+  font-size: 13.5px;
+  line-height: 1.65;
+  color: var(--color-ink-secondary);
+  list-style-type: square;
+}
+
+.notes__ul li + li {
+  margin-top: 10px;
+}
+
+.notes__ul li::marker {
+  color: var(--color-accent);
 }

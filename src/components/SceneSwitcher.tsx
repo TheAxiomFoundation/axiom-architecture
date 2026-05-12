@@ -8,6 +8,7 @@ export function SceneSwitcher({
   repos,
   detailMode,
   onDetailModeChange,
+  notesTabId,
 }: {
   layouts: Layout[];
   activeId: string;
@@ -15,7 +16,9 @@ export function SceneSwitcher({
   repos: RepoSpec[];
   detailMode: DetailMode;
   onDetailModeChange: (mode: DetailMode) => void;
+  notesTabId: string;
 }) {
+  const notesActive = activeId === notesTabId;
   // repos prop is kept for future re-introduction of a per-repo view; we no
   // longer surface the full list in the sidebar because each card already
   // carries its repo on the eyebrow.
@@ -92,6 +95,18 @@ export function SceneSwitcher({
             <span>read</span>
           </li>
         </ul>
+
+        <button
+          type="button"
+          className={`scene-switcher__notes-link ${
+            notesActive ? "scene-switcher__notes-link--active" : ""
+          }`}
+          onClick={() => onChange(notesTabId)}
+          title="Internal architectural review — not part of the main story"
+        >
+          <span className="scene-switcher__notes-glyph">§</span>
+          <span>Open questions</span>
+        </button>
       </div>
     </nav>
   );

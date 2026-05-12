@@ -23,7 +23,7 @@ const SECTIONS: Section[] = [
       {
         kind: "callout",
         tone: "note",
-        text: "End-to-end means: source text in corpus → encoded RuleSpec YAML → compiled ProgramSpec → executable runner → oracle validation. Five stages. CalFresh is currently blocked at stage 1.",
+        text: "End-to-end means: source text in corpus → encoded RuleSpec YAML → compiled ProgramSpec → executable runner → oracle validation. Five stages. As of 2026-05-12 the CalFresh source text is now in corpus locally (stage 1 done in dev — see § 12). Stages 2–5 still pending production credentials.",
       },
     ],
   },
@@ -69,14 +69,14 @@ PolicyEngine oracle delta report`,
         kind: "ul",
         items: [
           "Federal: 7 USC 2011–2036 and 7 CFR 273 — already in corpus, inherited by every state.",
-          "CA statutes: Welfare & Institutions Code §18900 et seq. (CalFresh enabling statute, vehicle exclusion in §18901.1, BBCE in §18901.10). Not in corpus.",
-          "CA regulations: CDSS MPP §63 (the operational manual — eligibility, deductions, allotments, work rules) plus periodic ACL/ACIN guidance letters. Not in corpus for SNAP; we have four CalWORKs ACLs only.",
+          "CA statutes: Welfare & Institutions Code §18900 et seq. (CalFresh enabling statute and most state-level divergences). Adapter already exists in axiom-corpus (california-codes-bulk) — extraction just had not been run for SNAP-relevant slices.",
+          "CA regulations: CDSS MPP §63 (the operational manual — eligibility, deductions, allotments, work rules) plus periodic ACL/ACIN guidance letters. Still not in corpus for SNAP; would require a new MPP adapter.",
         ],
       },
       {
         kind: "callout",
-        tone: "blocker",
-        text: "Today axiom-corpus has zero CalFresh-specific source text. The four CA documents in manifests/us-ca-cdss-acl-guidance.yaml are all CalWORKs (TANF) topics: vehicle_value_limit, maximum_resource_limit, maximum_aid_payment, standard_medical_deduction. No MPP §63, no W&I Code §18900s.",
+        tone: "note",
+        text: "Update 2026-05-12: ran california-codes-bulk against the leginfo bulk ZIP. WIC code extracted in full — 7,948 provisions (848 containers + 7,100 leaf sections), zero errors. All CalFresh-relevant §189xx sections present with real body text. See § 12 for the full transcript.",
       },
       {
         kind: "h",
@@ -216,9 +216,11 @@ imports:
   - us:statutes/7/2017/a         # allotment
 
   # CA divergences (state-specific)
-  - us-ca:statutes/wic/18901-1   # vehicle exclusion
-  - us-ca:statutes/wic/18901-10  # BBCE at 200% FPL
-  - us-ca:regulations/mpp/63-503 # standard utility allowances
+  - us-ca:statutes/wic/18901-9   # vehicle resource value alignment
+  - us-ca:statutes/wic/18901-09  # CalFresh income exclusions
+  - us-ca:statutes/wic/18901-2   # SUA via energy assistance
+  - us-ca:statutes/wic/18901-10  # face-to-face interview exemption
+  - us-ca:statutes/wic/18901-12  # student exemption (refs 7 CFR 273.5)
 
 rules:
   - name: snap_gross_income_eligible
@@ -415,10 +417,11 @@ cargo run -- run-compiled --artifact /tmp/calfresh.compiled.json < request.json`
       {
         kind: "ul",
         items: [
-          "Source coverage in corpus is essentially zero for CalFresh. axiom-encode will hard-stop on every citation. This is the gating constraint — everything else is downstream.",
-          "No CDSS MPP scraper in axiom-scrapers. Either build one or scope down to W&I Code (cleaner HTML on leginfo.legislature.ca.gov, smaller surface).",
+          "Source coverage in corpus is local-only — the WIC JSONL is on disk but data/ is gitignored. To make it live: sync-r2 (needs R2 credentials) and load-supabase (needs Supabase write credentials).",
+          "No CDSS MPP scraper exists. WIC statutes alone don't cover everything operators apply (deduction tables, ABAWD waiver geographies, county-level options). MPP §63 ingestion is a real-work item.",
           "rulespec-us-ca has no oracle workflow. Trivial copy from rulespec-us-ny once encoding lands.",
           "AXIOM_ENCODE_APPLY_SIGNING_KEY is required for any --apply. Operator infra question, not a code change.",
+          "Dependency lockfile is wedged on Python 3.14 + macOS. uv.lock pins pyroaring 1.0.3 (no 3.14 wheels and source build fails on Apple clang 17). Working installs use Python 3.14 + pip install --prefer-binary, which floats pyroaring to 1.1.0 (3.14 wheels exist). Worth fixing the lockfile.",
         ],
       },
     ],
@@ -447,7 +450,136 @@ cargo run -- run-compiled --artifact /tmp/calfresh.compiled.json < request.json`
     ],
   },
   {
-    kicker: "§ 11",
+    kicker: "§ 12",
+    title: "What actually happened on the first run (2026-05-12)",
+    blocks: [
+      {
+        kind: "p",
+        text: "First real attempt to take CalFresh through stage 1. Honest log of what worked, what was wrong, and where the friction is.",
+      },
+      {
+        kind: "h",
+        text: "Setup friction (1–2 hours)",
+      },
+      {
+        kind: "ul",
+        items: [
+          "uv sync failed: pyroaring 1.0.3 (pinned in uv.lock) has no Python 3.14 wheels and source build fails on Apple clang 17 (atomic implementation + missing C++ stdlib include).",
+          "Workaround that worked: uv venv .venv-py314 --python 3.14 then .venv-py314/bin/python -m pip install --prefer-binary -e . — this floats pyroaring to 1.1.0 which has 3.14 wheels.",
+          "Lockfile drift is the real fix. Refresh uv.lock to pyroaring 1.1.0 so uv sync works out of the box.",
+        ],
+      },
+      {
+        kind: "h",
+        text: "Source verification before running anything",
+      },
+      {
+        kind: "p",
+        text: "Downloaded the 912 MB leginfo bulk ZIP directly. Confirmed schema before running the extractor:",
+      },
+      {
+        kind: "code",
+        text: `# WIC code is in CODES_TBL.dat
+$ unzip -p pubinfo_2025.zip CODES_TBL.dat | grep WIC
+\`WIC\`	\`Welfare and Institutions Code - WIC\`
+
+# §18900–18906 sections present in LAW_SECTION_TBL.dat
+$ unzip -p pubinfo_2025.zip LAW_SECTION_TBL.dat \\
+    | awk -F'\\t' '$2=="\`WIC\`" && $3 ~ /^\`1890[0-6][.\`]/' | wc -l
+52`,
+      },
+      {
+        kind: "h",
+        text: "The actual extraction",
+      },
+      {
+        kind: "code",
+        text: `.venv-py314/bin/axiom-corpus-ingest extract-california-codes \\
+  --base data/corpus \\
+  --version "2026-05-12" \\
+  --source-zip /tmp/ca-leginfo/pubinfo_2025.zip \\
+  --only-title WIC \\
+  --source-as-of "2026-05-12" \\
+  --expression-date "2026-05-12"`,
+      },
+      {
+        kind: "p",
+        text: "Result:",
+      },
+      {
+        kind: "code",
+        text: `{
+  "adapter": "california-codes-bulk",
+  "container_count": 848,
+  "matched_count": 7948,
+  "missing_count": 0,
+  "provision_count": 7948,
+  "provisions_path": "data/corpus/provisions/us-ca/statute/2026-05-12-us-ca-title-WIC.jsonl",
+  "section_count": 7100,
+  "errors": []
+}`,
+      },
+      {
+        kind: "p",
+        text: "7,948 provisions, zero errors. 14,200 section rows in the JSONL counting all amendment-versions across history. Runtime: under a minute after the ZIP was downloaded.",
+      },
+      {
+        kind: "h",
+        text: "Mapping that came out of the extracted data",
+      },
+      {
+        kind: "p",
+        text: "My v1 of this playbook guessed which §18901.x sections covered which CalFresh divergences. Now that the bodies are actually parsed, here's the corrected map:",
+      },
+      {
+        kind: "ul",
+        items: [
+          "§18900.2 — Renames Food Stamps → CalFresh in CA law",
+          "§18901.09 — Income exclusions for CalFresh eligibility",
+          "§18901.2 — Standard Utility Allowance via energy assistance benefits",
+          "§18901.6 — Transitional CalFresh from CalWORKs exits",
+          "§18901.9 — Vehicle resource value alignment (this is CA's \"exclude vehicles\" provision — not §18901.1 as I had said)",
+          "§18901.10 — Face-to-face interview exemption rules",
+          "§18901.11 — E&T program component eligibility",
+          "§18901.12 — Student exemption (explicit cross-reference to 7 CFR 273.5(b)(11)(iv))",
+          "§18901.35 — Expedited eligibility processing",
+          "§18904.25 — Homeless expedited services",
+          "§18910–18917 — General CalFresh administration, multilingual outreach, disaster CalFresh",
+        ],
+      },
+      {
+        kind: "callout",
+        tone: "note",
+        text: "Lesson: do not write encoding docs from memory. Run the extract first. The first version of this playbook had §18901.1 as vehicle exclusion and §18901.10 as BBCE — both wrong. The real provisions are different and the divergence landscape is wider than I had in mind. Source-first is also documentation-first.",
+      },
+      {
+        kind: "h",
+        text: "What is still needed to make this live",
+      },
+      {
+        kind: "ul",
+        items: [
+          "sync-r2: push data/corpus/{sources,inventory,provisions,coverage}/us-ca/... to the axiom-corpus R2 bucket. Needs ~/.config/axiom-foundation/r2-credentials.json.",
+          "load-supabase: push the 7,948 provision rows into corpus.provisions. Needs Supabase write credentials.",
+          "Then: axiom-encode encode \"CA W&I Code 18901.9\" will succeed because corpus has the row.",
+        ],
+      },
+      {
+        kind: "h",
+        text: "Honest scope of what \"stage 1 done\" means",
+      },
+      {
+        kind: "p",
+        text: "What's done: WIC statute text is in corpus locally. CalFresh-relevant §18900s, plus all the rest of WIC, with real bodies. Adapter validated against real production data on a real machine.",
+      },
+      {
+        kind: "p",
+        text: "What's not done: the MPP §63 manual (the operational rules CDSS counties actually use day-to-day) is not in corpus and requires a new adapter. Statutes alone won't give an encoder enough to produce a working CalFresh implementation — the SUA tables, deduction values, ABAWD waiver geographies, and county-option lists all live in MPP. Stage 1 is partial, not complete.",
+      },
+    ],
+  },
+  {
+    kicker: "§ 13",
     title: "Learnings from the recon",
     blocks: [
       {
@@ -458,6 +590,9 @@ cargo run -- run-compiled --artifact /tmp/calfresh.compiled.json < request.json`
           "State repo size is small by design — composition modules import federal rules wholesale and only encode divergences. The NY SNAP module is ~30 imports and ~6 derived rules. CA should be similar.",
           "Repo naming is inconsistent: GitHub canonical names are rulespec-us-* but local checkouts and several docs use rules-us-* (and axiom-rules-engine vs axiom-rules). Worth reconciling before more state repos populate. (Same drift the architecture critique flagged — but now with concrete evidence.)",
           "Source-first is enforced. No corpus row → no encoding. This is the architectural commitment that makes coverage talk honest. Honor it.",
+          "Coverage gap was \"adapter exists, never run for this scope.\" The california-codes-bulk adapter has been in axiom-corpus the whole time — I just hadn't run it. Worth surveying which jurisdiction × document_class slots have adapters-but-not-runs and triaging the cheapest ones first.",
+          "Don't write the encoding playbook from memory. Run the extract, then read the bodies. v1 of this doc had wrong section numbers for the two flagship CA divergences (§18901.1, §18901.10). § 12 is the corrected map. Source-first applies to documentation too.",
+          "Dev environment for axiom-corpus is fragile on Python 3.14 + macOS. uv.lock pins a pyroaring version with no 3.14 wheels and a source build that fails on Apple clang 17. Worth refreshing the lock.",
         ],
       },
     ],

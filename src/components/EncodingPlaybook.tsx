@@ -579,6 +579,15 @@ operative text correctly placed in body.`,
         text: "Pick sections at different depths in the hierarchy: one top-level container, one mid-level chapter, one deeply nested subsection. Pick at least one section with weird characters (quotes, em-dashes, footnote markers). Pick at least one recently amended section to confirm the version handling is right.",
       },
       {
+        kind: "callout",
+        tone: "blocker",
+        text: "Worked example — CA MPP §63, 2026-05-12. First-pass spot check on 5 subsections returned 1/5 byte matches. Four of the five extracted bodies were 5–50× longer than canonical text. Root cause was a regex that required title-cased subsection headers (\".21 Screening\") but missed sentence-form subsections (\".31 The CWD shall not deny eligibility...\"), folding those into the parent body. Without the spot check, we would have published 175 corrupted rows into corpus.provisions. Levels 1 and 2 both passed cleanly during the same run: coverage_complete: true, zero duplicates, zero missing, zero extras. matched_count is a citation-path set check. It says nothing about whether the body text in those rows is correct.",
+      },
+      {
+        kind: "p",
+        text: "After the regex fix, the spot check returned 5/5 and the provision count went from 175 to 559 — the deep .NN and .NNN subsections that had been silently absorbed into their parents now surfaced as their own rows. Be ready to explain large deltas after a parser change; they're usually the right thing.",
+      },
+      {
         kind: "h",
         text: "Level 3.5 — Cross-version stability",
       },

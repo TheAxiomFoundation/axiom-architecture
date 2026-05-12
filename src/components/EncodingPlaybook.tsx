@@ -131,6 +131,41 @@ uv run axiom-corpus-ingest load-supabase \\
         tone: "note",
         text: "Cost of doing this properly: building a CDSS MPP scraper is real work — MPP is ~2,000 pages of mixed-format content. The lighter near-term path is W&I Code only (clean HTML on leginfo.legislature.ca.gov, comparable scraper to what already exists for other states).",
       },
+      {
+        kind: "h",
+        text: "Adapter precedents — model new work on these",
+      },
+      {
+        kind: "p",
+        text: "Before writing a new adapter, find the closest existing one. axiom-corpus already has 35+ adapters covering most US states. The repo's loose convention is:",
+      },
+      {
+        kind: "ul",
+        items: [
+          "State statute adapters live in src/axiom_corpus/corpus/state_adapters/<state>.py (one file per state).",
+          "State regulation adapters live flat in src/axiom_corpus/corpus/<state>.py or <regulation-system>.py (one file per system).",
+          "Format-specific parsing logic lives in src/axiom_corpus/parsers/us_<st>/{statutes,regulations}.py.",
+          "Each adapter is registered in cli.py via an alias map (e.g., \"california-codes-bulk\") and gets its own extract-<name> CLI subcommand.",
+        ],
+      },
+      {
+        kind: "h",
+        text: "Direct precedents for an MPP §63 adapter",
+      },
+      {
+        kind: "ul",
+        items: [
+          "src/axiom_corpus/corpus/nycrr.py — NY Codes, Rules and Regulations. Handles 18 NYCRR 387 (NY SNAP). Same structural role as MPP §63: state operational rules implementing federal SNAP. NY already runs this through to an encoded RuleSpec + PolicyEngine oracle. Highest-fidelity precedent.",
+          "src/axiom_corpus/corpus/colorado.py — Colorado regulations including 10 CCR 2506-1 (CO SNAP). Mature, end-to-end-encoded jurisdiction (see rulespec-us-co/policies/cdhs/snap/). Second-closest precedent.",
+          "manifests/us-tx-texas-works-manual.yaml — Texas Works Manual. Direct structural twin of MPP: state agency operational manual covering SNAP/TANF administration. Closest precedent in *manifest* form. Worth reading before authoring us-ca-cdss-mpp-calfresh.yaml.",
+          "manifests/us-dc-child-care-subsidy-manual.yaml — DC operational manual. Different program but same source pattern (PDF-published state agency manual).",
+        ],
+      },
+      {
+        kind: "callout",
+        tone: "note",
+        text: "Practical recommendation: read nycrr.py end-to-end before designing california_mpp.py. NY's SNAP encoding is the existing case where the full corpus → RuleSpec → PolicyEngine oracle loop closes — and the corpus side of that loop is nycrr.py. Mirror its conventions for citation_path layout, parent/child hierarchy, version handling, and inventory emission. Less invention, more imitation.",
+      },
     ],
   },
   {
@@ -446,6 +481,110 @@ cargo run -- run-compiled --artifact /tmp/calfresh.compiled.json < request.json`
         kind: "callout",
         tone: "note",
         text: "Realistic timeline: a competent operator with axiom-encode access and PolicyEngine familiarity could get CA SNAP statutes encoded and passing a 20-household smoke against PolicyEngine in roughly 1–2 weeks of focused work. Full MPP §63 coverage is months — comparable to the NY effort, which is still incomplete.",
+      },
+    ],
+  },
+  {
+    kicker: "§ 11",
+    title: "How do we know an adapter works?",
+    blocks: [
+      {
+        kind: "p",
+        text: "An adapter that runs without raising is not the same as an adapter that produced correct data. Four levels of confidence — each one stronger than the last. Don't skip levels.",
+      },
+      {
+        kind: "h",
+        text: "Level 1 — Self-reported success",
+      },
+      {
+        kind: "p",
+        text: "The adapter emits a StateStatuteExtractReport (or equivalent for regulations). Acceptance gates:",
+      },
+      {
+        kind: "ul",
+        items: [
+          "error_count == 0 and errors is empty",
+          "coverage_complete: true",
+          "missing_count == 0 (every source section it expected to find was found)",
+          "extra_count == 0 (no orphan rows emitted)",
+          "matched_count > 0 and matches the inventory length",
+          "provision_count == matched_count + container_count",
+        ],
+      },
+      {
+        kind: "p",
+        text: "Example from the CA WIC run on 2026-05-12: error_count 0, missing 0, extra 0, matched 7,948, sections 7,100, containers 848. Necessary but not sufficient — an adapter can hit all these counters and still emit garbage bodies.",
+      },
+      {
+        kind: "h",
+        text: "Level 2 — Schema and shape checks",
+      },
+      {
+        kind: "ul",
+        items: [
+          "Every row has a non-null citation_path matching the expected jurisdiction pattern (us-ca/statute/wic/... here).",
+          "Every \"section\" kind row has a non-empty body (no silent text loss).",
+          "Containers (\"code\", \"division\", \"part\", \"chapter\", \"article\") have heading but null body — by design.",
+          "Heading and identifiers serialize as valid JSON, no encoding artifacts (e.g., literal \\u escapes leaking through).",
+          "Kind distribution looks like the source's actual structure (CA WIC: 14,200 sections, 448 articles, 328 chapters, 21 divisions — matches the expected legal hierarchy).",
+        ],
+      },
+      {
+        kind: "h",
+        text: "Level 3 — Byte-level spot check against the canonical source",
+      },
+      {
+        kind: "p",
+        text: "Pick 3–5 known sections, fetch the canonical text from the source-of-truth website (leginfo for CA, NY Open Legislation for NYS, Justia/eCFR for federal, etc.), and diff. Body text should match byte-for-byte after normalizing whitespace.",
+      },
+      {
+        kind: "code",
+        text: `# CA WIC §18901.9 (vehicle exclusion) on 2026-05-12
+adapter body  → "(a) For the purpose of eligibility under this chapter,
+                 the rules governing the resource value of motor vehicles
+                 shall be aligned with an alternative program allowed
+                 under federal food stamp law…"
+
+leginfo body  → "(a) For the purpose of eligibility under this chapter,
+                 the rules governing the resource value of motor vehicles
+                 shall be aligned with an alter…" (truncated in render)
+
+Result: identical. Section number prefix correctly split into heading,
+operative text correctly placed in body.`,
+      },
+      {
+        kind: "p",
+        text: "Pick sections at different depths in the hierarchy: one top-level container, one mid-level chapter, one deeply nested subsection. Pick at least one section with weird characters (quotes, em-dashes, footnote markers). Pick at least one recently amended section to confirm the version handling is right.",
+      },
+      {
+        kind: "h",
+        text: "Level 4 — Downstream consumer accepts the output",
+      },
+      {
+        kind: "p",
+        text: "The final proof: axiom-encode can resolve a citation, axiom-encode --apply produces RuleSpec, axiom-rules-engine compiles, axiom-encode snap-ecps-compare matches PolicyEngine on a real household. If all four stages downstream of corpus accept the adapter's rows without error, the adapter is functionally correct for the purpose it serves.",
+      },
+      {
+        kind: "p",
+        text: "Anything short of Level 4 leaves room for surprise. NY's SNAP encoding has closed this loop — that's the strongest existence proof we have for any state. CA is at Level 3 for WIC statutes as of 2026-05-12.",
+      },
+      {
+        kind: "h",
+        text: "Anti-patterns",
+      },
+      {
+        kind: "ul",
+        items: [
+          "Trusting matched_count alone — an adapter can match 100% of expected sections and still corrupt every body.",
+          "Skipping the byte diff for \"obviously simple\" sources — the CA leginfo bulk has 14,200 amendment-versioned sections and silent parser bugs are easy to ship.",
+          "Treating one spot-check as sufficient — pick multiple sections at different depths and amendment states.",
+          "Promoting to production (sync-r2 + load-supabase) before Level 3. Once a citation_path is published, it is forever; getting the body text wrong in the first publish means every encoding that references it carries the error.",
+        ],
+      },
+      {
+        kind: "callout",
+        tone: "blocker",
+        text: "If a corpus row was published with bad body text and an encoding references it, fixing the source requires republishing under either a new citation_path (breaks every downstream reference) or with the same path (silent body change with no consumer notification). Neither is good. Verify before publishing.",
       },
     ],
   },

@@ -51,15 +51,15 @@ const SECTIONS: Section[] = [
       },
       {
         kind: "p",
-        text: "Conventions vary subtly per jurisdiction — slashes vs dashes, parens stripping, decimal-preserving, @variant suffixes. Documented only inside adapter code. Paths are forever — once minted, renaming breaks every downstream system. That is an unstated architectural commitment. Fix: a citation-path SPEC document with a per-jurisdiction section and a round-trip test against canonical fixtures.",
+        text: "Conventions vary subtly per jurisdiction — slashes vs dashes, parens stripping, decimal-preserving, @variant suffixes. Documented only inside adapter code. Paths are forever — once minted, renaming breaks every downstream system. That is an unstated architectural commitment. Concrete failure observed during the CA MPP adapter build: a chapter container at us-ca/regulation/mpp/63-300 collided with the section §63-300 because no spec said which level owns the bare \"63-300\" path; the duplicate only surfaced because compare_provision_coverage happens to check for duplicate citation paths. The same path conventions for different containers within the same regulation are decided ad-hoc by whoever writes the adapter. Fix: a citation-path SPEC document with a per-jurisdiction section and a round-trip test against canonical fixtures.",
       },
       {
         kind: "h",
-        text: "4. axiom-rules and axiom-programs do not talk",
+        text: "4. Validation is per-program and lives in the wrong layer",
       },
       {
         kind: "p",
-        text: "The execution engine exists in Rust. The validation framework exists in Python. The slot where they should connect (AxiomRulesRunner in axiom-programs) is raise NotImplementedError. So today: an executor with no validator and a validator with no executor. There is literally no automated signal that any RuleSpec encoding is correct. We are shipping encodings on faith. Fix: wire the runner.",
+        text: "Corrected from the original draft of this critique: I previously claimed AxiomRulesRunner in axiom-programs/axiom-oracles is raise NotImplementedError and that nothing validates encodings. That specific claim is wrong. Validation IS wired — but it lives inside axiom-encode (axiom-encode snap-ecps-compare), not in the validation framework I expected. NY's CI runs it on every PR; CA will once the rulespec-us-ca oracle workflow lands. The remaining architectural concern is real and worth keeping: validation is a per-program comparator that someone has to build, one program at a time. SNAP has snap-ecps-compare; TANF, Medicaid, EITC presumably do not. There is no general \"axiom-rules engine output vs. oracle output\" framework — there is a SNAP-shaped comparator that happens to exist. Fix: extract a generic Oracle interface in axiom-oracles that snap-ecps-compare and future-program comparators both implement, so new programs get validation for free rather than each program building its own.",
       },
       {
         kind: "h",
@@ -75,7 +75,7 @@ const SECTIONS: Section[] = [
       },
       {
         kind: "p",
-        text: "sync-r2 is operator discipline. Nothing in production reads from R2. If you stop syncing, nothing visibly breaks for a while; if you keep syncing, you pay for a tier nobody uses. Fix: commit (build a consumer — diff API, historical query, bulk download) or remove.",
+        text: "sync-r2 is operator discipline. Nothing in production reads from R2. Newly confirmed by the CA SNAP end-to-end pass: extract → Supabase load → encoder-ready works without ever touching R2; the encoder resolves citations against local JSONL → Supabase, not R2. If you stop syncing, nothing visibly breaks for a while; if you keep syncing, you pay for a tier nobody uses. Fix: commit (build a consumer — diff API, historical query, bulk download) or remove.",
       },
       {
         kind: "h",
@@ -91,7 +91,7 @@ const SECTIONS: Section[] = [
       },
       {
         kind: "p",
-        text: "Extract, sync R2, load Supabase, build nav — every step is a person remembering to run a command. There is no orchestrator, no \"corpus is N hours stale\" signal, no retry. For a corpus that ingests living law, this is risky over time. Fix: a scheduled orchestrator that runs the canonical extract sequence per jurisdiction and posts a delta report. Operators intervene on failure; they do not drive the happy path.",
+        text: "Extract, sync R2, load Supabase, build nav — every step is a person remembering to run a command. Concrete walked sequence from the CA MPP session: extract-california-mpp-calfresh → load-supabase (× 2, statutes and regulations) → manual vercel --prod for the docs viewer → would need manual axiom-encode encode --apply next. Five commands, four credentials (Supabase service-role key, R2 credentials file — missing, encoder signing key — missing, Vercel auth). No orchestrator, no \"corpus is N hours stale\" signal, no retry. For a corpus that ingests living law, this is risky over time. Fix: a scheduled orchestrator that runs the canonical extract sequence per jurisdiction and posts a delta report. Operators intervene on failure; they do not drive the happy path.",
       },
       {
         kind: "h",
@@ -107,7 +107,29 @@ const SECTIONS: Section[] = [
       },
       {
         kind: "p",
-        text: "axiom-demo-shell hard-codes three URLs. The architecture viewer also lists three consumer apps. When a fourth lands, both have to update. demo-shell's README admits it is temporary but it has been there long enough to be load-bearing. Fix: pick. Retire demo-shell once axiom-foundation.org has the consolidated surface, or commit to it as the real product.",
+        text: "axiom-demo-shell hard-codes three URLs. The architecture viewer also lists three consumer apps. When a fourth lands, both have to update. demo-shell's README admits it is temporary but it has been there long enough to be load-bearing. Fix: pick. Retire demo-shell once axiom-foundation.org has the consolidated surface, or commit to it as the real product. Status: lowest-stakes item on this list — nothing has actually been bitten by this in practice. Tracking only; will auto-resolve when demo-shell retires.",
+      },
+      {
+        kind: "h",
+        text: "11. Operator-surface gaps as a meta-pattern",
+      },
+      {
+        kind: "p",
+        text: "Each of the items above is small individually. Together they form a real shape: across five different surfaces, the same gap appears.",
+      },
+      {
+        kind: "ul",
+        items: [
+          "has_rulespec (corpus → app coverage flag): mechanism is a filesystem walk that works; operator surface is undocumented and depends on which machine ran it.",
+          "Supabase credentials: SUPABASE_SERVICE_ROLE_KEY env var works once set; the canonical store ~/.config/axiom-foundation/supabase.env is empty on operator workstations, no setup doc.",
+          "R2 mirror: sync-r2 works; ~/.config/axiom-foundation/r2-credentials.json does not exist on operator workstations, no setup doc, no key-distribution path.",
+          "Encoder apply signing key: HMAC mechanism is well-engineered with signed manifests and verifiable via CI; AXIOM_ENCODE_APPLY_SIGNING_KEY is set as a GitHub org secret but is not retrievable for operator workstations (secrets are write-only after set), no documented setup or rotation procedure.",
+          "Vercel auto-deploy for docs viewer: works once configured; GitHub app permission was never granted on the TheAxiomFoundation org, so every merge to main requires a manual vercel --prod run from a workstation.",
+        ],
+      },
+      {
+        kind: "p",
+        text: "Pattern: infrastructure mechanisms are well-built; the operator surface (\"how do I turn this on for a new operator?\") is consistently missing. Onboarding a new contributor — or even getting back up to speed after a laptop refresh — currently requires re-deriving each setup step from code. Fix: a single operator-setup runbook in axiom-corpus/docs/ that walks through every credential, every config file, every GitHub app permission, with rotation procedures where applicable. Followed by treating new infrastructure mechanisms as incomplete until they have a documented operator surface.",
       },
     ],
   },

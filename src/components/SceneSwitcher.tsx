@@ -9,6 +9,7 @@ export function SceneSwitcher({
   detailMode,
   onDetailModeChange,
   notesTabId,
+  playbookTabId,
 }: {
   layouts: Layout[];
   activeId: string;
@@ -17,8 +18,10 @@ export function SceneSwitcher({
   detailMode: DetailMode;
   onDetailModeChange: (mode: DetailMode) => void;
   notesTabId: string;
+  playbookTabId: string;
 }) {
   const notesActive = activeId === notesTabId;
+  const playbookActive = activeId === playbookTabId;
   // repos prop is kept for future re-introduction of a per-repo view; we no
   // longer surface the full list in the sidebar because each card already
   // carries its repo on the eyebrow.
@@ -96,17 +99,30 @@ export function SceneSwitcher({
           </li>
         </ul>
 
-        <button
-          type="button"
-          className={`scene-switcher__notes-link ${
-            notesActive ? "scene-switcher__notes-link--active" : ""
-          }`}
-          onClick={() => onChange(notesTabId)}
-          title="Internal architectural review — not part of the main story"
-        >
-          <span className="scene-switcher__notes-glyph">§</span>
-          <span>Open questions</span>
-        </button>
+        <div className="scene-switcher__hidden-links">
+          <button
+            type="button"
+            className={`scene-switcher__notes-link ${
+              playbookActive ? "scene-switcher__notes-link--active" : ""
+            }`}
+            onClick={() => onChange(playbookTabId)}
+            title="Operator playbook — how to take a state benefit program end-to-end"
+          >
+            <span className="scene-switcher__notes-glyph">§</span>
+            <span>Encoding playbook</span>
+          </button>
+          <button
+            type="button"
+            className={`scene-switcher__notes-link ${
+              notesActive ? "scene-switcher__notes-link--active" : ""
+            }`}
+            onClick={() => onChange(notesTabId)}
+            title="Internal architectural review — not part of the main story"
+          >
+            <span className="scene-switcher__notes-glyph">§</span>
+            <span>Open questions</span>
+          </button>
+        </div>
       </div>
     </nav>
   );

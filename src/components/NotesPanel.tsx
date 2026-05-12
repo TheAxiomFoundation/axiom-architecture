@@ -131,6 +131,22 @@ const SECTIONS: Section[] = [
         kind: "p",
         text: "Pattern: infrastructure mechanisms are well-built; the operator surface (\"how do I turn this on for a new operator?\") is consistently missing. Onboarding a new contributor — or even getting back up to speed after a laptop refresh — currently requires re-deriving each setup step from code. Fix: a single operator-setup runbook in axiom-corpus/docs/ that walks through every credential, every config file, every GitHub app permission, with rotation procedures where applicable. Followed by treating new infrastructure mechanisms as incomplete until they have a documented operator surface.",
       },
+      {
+        kind: "h",
+        text: "12. The visibility gate is a separate manual step disconnected from data load",
+      },
+      {
+        kind: "p",
+        text: "Loading data and making it visible are separate operator actions, connected only by someone remembering to edit manifests/releases/current.json and run sync-release-scopes. This produced the UK regression (4,705 provisions invisible) and the verify-release-coverage CLI immediately uncovered four more silently invisible jurisdictions on the day it shipped: us-ar (34,668), us-mo (702), us-ms (25,480), us-nh (584). All four had been loaded without ever being added to the manifest. Two of them (us-ar and us-ms) have production_status: supabase_only_legacy in the operator queue file, meaning the queue says they SHOULD be visible — they just never were. This is exactly the operator-surface meta-pattern from § b11, but with the worst blast radius: ~61k production provisions sitting invisible to users, with no signal that anything was wrong until someone wrote a check that asked.",
+      },
+      {
+        kind: "h",
+        text: "13. sync-release-scopes is destructive-replace",
+      },
+      {
+        kind: "p",
+        text: "The current sync function does deactivate-all-current-scopes then re-insert from the local manifest. That is silently wrong when the manifest is on a feature branch that doesn't include scopes that exist on other branches. Concrete example from 2026-05-12: a manifest update on the UK release-scopes branch (based on main) ran sync-release-scopes and accidentally deactivated us-wa/regulation, because that scope had been added in a different feature branch (codex/washington-wac-regulations) that wasn't merged to main yet. 54,708 Washington regulation provisions silently went invisible. Recovered by direct UPDATE. The bug class: any sync from any branch whose manifest is stale or partial can unpromote unrelated work. Fix: make the default behavior upsert-incremental; add an --exclusive flag for cases that genuinely want full replacement.",
+      },
     ],
   },
   {
@@ -160,6 +176,29 @@ const SECTIONS: Section[] = [
       {
         kind: "p",
         text: "Stack today: source text → provisions → YAML → compiled. No node for \"SNAP\" or \"EITC\" — concepts are implicit in YAML filenames and case keys. A Concept Registry with many-to-many to provisions and rules would make coverage talk honest (\"SNAP is encoded in 7 jurisdictions\" is a query), enable upstream change detection (\"SNAP-related provision changed in 7 USC 2014\"), and give encoder prioritization a real surface. More speculative than A or B.",
+      },
+      {
+        kind: "h",
+        text: "D. Auto-register on load + explicit publish — eliminate the manifest gate",
+      },
+      {
+        kind: "p",
+        text: "Today the release manifest (manifests/releases/current.json) is the source-of-truth for what corpus content is visible to the app. It is operator-edited. Every failure of class § b12 / § b13 traces back to this design: the visibility decision is a separate manual step disconnected from data load, propagated by a destructive sync.",
+      },
+      {
+        kind: "p",
+        text: "Proposed shift, in two PRs:",
+      },
+      {
+        kind: "ul",
+        items: [
+          "PR A — make sync-release-scopes upsert-incremental by default; add --exclusive flag for cases that want full replacement. This alone removes the entire class of \"my sync from a stale branch unpromoted someone else's work.\" Half a day of effort, opt-in flag preserves backward compatibility.",
+          "PR B — load-supabase auto-inserts a release_scopes row when it sees a new (jurisdiction, document_class), but with active=false. New CLI: axiom-corpus-ingest publish --jurisdiction X --doc-type Y flips active=true. Idempotent, non-destructive, observable. The manifest file becomes either auto-generated documentation or is deprecated entirely. Adds ~3 days of effort but eliminates the UK / us-ar / us-mo / us-ms / us-nh / us-wa class of bugs from ever recurring.",
+        ],
+      },
+      {
+        kind: "p",
+        text: "Why this is a meaningful shift, not just a bug fix: it changes the architectural primitive from \"data + separate manual config\" to \"data with a self-describing publish state.\" Loaded but unpublished becomes a queryable state, not an absence in a JSON file. Skipping the publish step is detectable (one query for \"what's loaded but unpublished?\"), not silent. The verify-release-coverage check from PR #47 becomes redundant in this world because the gap simply cannot form.",
       },
     ],
   },
@@ -199,7 +238,15 @@ const SECTIONS: Section[] = [
     blocks: [
       {
         kind: "p",
-        text: "Encoding Registry (A). It resolves the most other tensions in the system — has_rulespec, validation coverage, encoded-discoverability, encoder prioritization — and unlocks the next year of product surface without locking in any one direction on engine delivery (B) or ontology (C).",
+        text: "Encoding Registry (A) remains the highest-leverage architectural shift — it resolves the most other tensions in the system (has_rulespec, validation coverage, encoded-discoverability, encoder prioritization) and unlocks the next year of product surface without locking in any one direction on engine delivery (B) or ontology (C).",
+      },
+      {
+        kind: "p",
+        text: "But after the 2026-05-12 session: D (auto-register + publish) is the highest-leverage operational fix. It eliminates a real, recurring bug class with confirmed production blast radius — UK 4,705 + Canada 22,275 + the four state statutes (~61k) + us-wa/regulation 54,708. ~135k production provisions affected today, with no plausible cap on how many more would have accumulated. The verify-release-coverage check from PR #47 is a detector; D is a preventer.",
+      },
+      {
+        kind: "p",
+        text: "Order: D first (high-confidence ROI, well-scoped two-PR sequence), then A (the architectural ambition).",
       },
     ],
   },

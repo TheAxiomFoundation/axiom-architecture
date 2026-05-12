@@ -133,6 +133,28 @@ uv run axiom-corpus-ingest load-supabase \\
       },
       {
         kind: "h",
+        text: "When do we need a new adapter?",
+      },
+      {
+        kind: "p",
+        text: "Decision tree, in order. Stop at the first match — most often you don't need new code.",
+      },
+      {
+        kind: "ul",
+        items: [
+          "1. A manifest already covers this source? Use it. (CA W&I Code → california-codes-bulk existed; the work was just running it.)",
+          "2. An existing adapter covers the same format from a different jurisdiction? Extend its manifest. (Justia state code patterns work across many states with config-only changes.)",
+          "3. The source shares a format with one we handle but the URL or structure differs? New manifest entry, no new code. (Most state statutes that publish USLM-style XML fall here.)",
+          "4. The format itself is genuinely new — different publisher, different schema, custom PDF layout, agency manual in a one-off DOCX template, an overlay model where ACL/ACIN letters supersede portions of a base manual → New adapter required.",
+        ],
+      },
+      {
+        kind: "callout",
+        tone: "note",
+        text: "Concrete signal: when authoring a new manifest, look at the adapter: field. If you can put an existing adapter name there, you don't need new code. If you can't, you do.",
+      },
+      {
+        kind: "h",
         text: "Adapter precedents — model new work on these",
       },
       {
@@ -558,6 +580,29 @@ operative text correctly placed in body.`,
       },
       {
         kind: "h",
+        text: "Level 3.5 — Cross-version stability",
+      },
+      {
+        kind: "p",
+        text: "Re-run the adapter against a newer source release. Two invariants must hold:",
+      },
+      {
+        kind: "ul",
+        items: [
+          "Sections that were NOT amended produce identical row content — same id (deterministic UUID5 from citation_path), same body, same sha256 of the body. Idempotency under non-change.",
+          "Sections that WERE amended produce predictable diffs — same citation_path, new version_date, new body content, new sha256. The row history should let consumers detect what changed.",
+        ],
+      },
+      {
+        kind: "p",
+        text: "Why it matters: if non-amended sections drift between runs (whitespace normalization, header reformatting, character encoding choices vary), the parser is sensitive to upstream cosmetic changes. Future amendments will then produce false diffs — every release will look like everything changed — and you lose the ability to detect real legal changes. This is silently catastrophic for change-detection consumers.",
+      },
+      {
+        kind: "p",
+        text: "Cheap test: extract the same source twice (same input, same version), confirm byte-equal JSONL outputs. Then extract a slightly older release (e.g., previous year's leginfo bulk) and confirm only amended sections diff.",
+      },
+      {
+        kind: "h",
         text: "Level 4 — Downstream consumer accepts the output",
       },
       {
@@ -733,6 +778,79 @@ $ unzip -p pubinfo_2025.zip LAW_SECTION_TBL.dat \\
           "Don't write the encoding playbook from memory. Run the extract, then read the bodies. v1 of this doc had wrong section numbers for the two flagship CA divergences (§18901.1, §18901.10). § 12 is the corrected map. Source-first applies to documentation too.",
           "Dev environment for axiom-corpus is fragile on Python 3.14 + macOS. uv.lock pins a pyroaring version with no 3.14 wheels and a source build that fails on Apple clang 17. Worth refreshing the lock.",
         ],
+      },
+    ],
+  },
+  {
+    kicker: "§ 14",
+    title: "What \"all the CA SNAP rules\" actually requires",
+    blocks: [
+      {
+        kind: "p",
+        text: "Encoding a complete CalFresh calculator means having every authoritative source it depends on in corpus. Statutes alone are not enough — they grant authority but don't set the operational numbers. Honest inventory of what CalFresh draws on, and where we stand today:",
+      },
+      {
+        kind: "h",
+        text: "Federal layer",
+      },
+      {
+        kind: "ul",
+        items: [
+          "7 USC 2011–2036 (Food and Nutrition Act, statute) — eligibility framework, allotment formula authority. Status: in corpus, encoded in rulespec-us.",
+          "7 CFR 273 (regulation) — federal operational rules. Income, resources, deductions, work rules. Status: in corpus, encoded.",
+          "USDA FNS COLA guidance (sub-regulatory) — per-fiscal-year max allotments, FPL income limits, standard deductions. Status: in corpus via us-snap-guidance manifest, encoded as policies/usda/snap/fy-2026-cola/.",
+        ],
+      },
+      {
+        kind: "h",
+        text: "California layer",
+      },
+      {
+        kind: "ul",
+        items: [
+          "CA W&I §18900–18929 (state statute, CalFresh chapter) — state divergences from federal: vehicle exclusion authority, SUA via energy assistance, interview exemptions, E&T, student rules, transitional CalFresh. Status: in corpus locally as of 2026-05-12 (7,948 WIC provisions). Not yet sync-r2'd or loaded to Supabase. Not encoded.",
+          "CDSS MPP §63 (state regulation) — the operational manual counties use day-to-day. Carries the actual numbers: SUA tier values for FY 2026, ABAWD waiver geographies, county-option lists, deduction tables, allotment computation workflow. Status: no adapter, not in corpus. This is the gap.",
+          "CDSS ACL / ACIN letters (sub-regulatory) — overlay updates to MPP between formal manual revisions. Periodic FY recalibrations and policy clarifications. Status: 4 CalWORKs letters in corpus via us-ca-cdss-acl-guidance manifest. Zero CalFresh letters.",
+        ],
+      },
+      {
+        kind: "h",
+        text: "What this means concretely",
+      },
+      {
+        kind: "p",
+        text: "Without MPP §63, an encoder cannot answer questions like \"what is the FY 2026 SUA for a CA household with heating costs?\" The W&I Code says CDSS shall set utility allowances per energy-assistance receipt — it doesn't say what the values are. The values live in MPP §63-503 and are refreshed annually via ACL.",
+      },
+      {
+        kind: "p",
+        text: "Comparison with NY (which has a working end-to-end CalFresh-equivalent encoding): NY's corpus carries 7 USC + 7 CFR + 18 NYCRR 387 + NY-OTDA guidance. All four layers. CA has the first two plus a partial fourth and is missing the third — the most important one for operational fidelity.",
+      },
+      {
+        kind: "callout",
+        tone: "blocker",
+        text: "Bottom line: a complete CA SNAP encoding requires a CDSS MPP §63 adapter. Statute-only ingestion (what we have today) gets you the authority story — \"CA implements CalFresh, aligns vehicle treatment with federal alt program\" — but cannot produce a benefit-calculation engine because the operational tables live in MPP. This is the next real work item.",
+      },
+      {
+        kind: "h",
+        text: "Realistic scope for an MPP adapter",
+      },
+      {
+        kind: "p",
+        text: "Full MPP §63 is ~2,000 pages and not all of it is encoding-relevant. Minimum viable subset for a working CalFresh encoding:",
+      },
+      {
+        kind: "ul",
+        items: [
+          "§63-301 Standards of eligibility (~30 pages)",
+          "§63-402 Deductions and SUA tables (~50 pages)",
+          "§63-407 Resource determination including vehicles (~20 pages)",
+          "§63-501 Eligibility determination workflow (~25 pages)",
+          "§63-503 Allotment computation tables (~20 pages)",
+        ],
+      },
+      {
+        kind: "p",
+        text: "~150 pages, one cohesive workstream, modeled on src/axiom_corpus/corpus/nycrr.py. Estimated effort: 2–3 weeks of focused engineer time to land Level 3 verification for this subset. Full §63 coverage is 2–3 months. ACL overlay handling is another ~1 week on top.",
       },
     ],
   },

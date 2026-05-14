@@ -863,6 +863,282 @@ $ unzip -p pubinfo_2025.zip LAW_SECTION_TBL.dat \\
       },
     ],
   },
+  {
+    kicker: "§ 15",
+    title: "What actually happened in production (2026-05-13 → 2026-05-14)",
+    blocks: [
+      {
+        kind: "p",
+        text: "We ran the CalFresh encoding end-to-end against the production stack. This section logs what actually shipped, what broke, and the exact CI validator stages each fix had to clear. Source-of-truth for what's now live in rulespec-us-ca main.",
+      },
+      {
+        kind: "h",
+        text: "What shipped",
+      },
+      {
+        kind: "ul",
+        items: [
+          "358 CalFresh MPP §63 subsections encoded as signed RuleSpec YAML in rulespec-us-ca main (PR #4 merged).",
+          "823 individual rules (661 derived + 162 parameter) with proof atoms tying every value back to a corpus excerpt.",
+          "Each encoding has a per-subsection .axiom/encoding-manifests/ HMAC-signed manifest.",
+          "Oracle registry in axiom-encode extended with 823 not_comparable entries (PR #40) + 2 follow-ups (PR #42) for renamed sibling rules.",
+          "axiom-corpus PR #52 (CalFresh adapter body-null fix) merged — see § 16.",
+        ],
+      },
+      {
+        kind: "h",
+        text: "Production-run metrics",
+      },
+      {
+        kind: "ul",
+        items: [
+          "541 candidate citations (all CalFresh MPP §63 corpus rows with body content)",
+          "358 APPLIED (66% pass rate)",
+          "206 apply_blocked_validation (procedural-language provisions — \"the CWD shall…\" — not encodable as computational rules)",
+          "13 apply_blocked_manifest (transient axiom-encode dirty-checkout drift; resolved with defensive uv.lock reset before each call)",
+          "Wall time: ~14 hours sequential including overnight rate-shaping by Codex/ChatGPT",
+          "LLM cost: $0 — Codex CLI uses bundled ChatGPT subscription, no per-call billing",
+          "Pace observed: 50s/call early → 100s/call mid-run → 180s/call late (ChatGPT rate-shaping with sustained volume)",
+        ],
+      },
+    ],
+  },
+  {
+    kicker: "§ 16",
+    title: "Operator setup that was actually required",
+    blocks: [
+      {
+        kind: "p",
+        text: "The playbook said \"AXIOM_ENCODE_APPLY_SIGNING_KEY is set as an org secret but not retrievable for operator workstations.\" In practice you need it locally to use `--apply`. Procedure that worked:",
+      },
+      {
+        kind: "ul",
+        items: [
+          "Receive the signing key value (out-of-band).",
+          "Write it to ~/.config/axiom-foundation/axiom-encode.env as `export AXIOM_ENCODE_APPLY_SIGNING_KEY=<hex>`, mode 600.",
+          "`source` that file before any `axiom-encode encode --apply` call.",
+          "Never paste the value into chats, commits, logs, or other repos.",
+        ],
+      },
+      {
+        kind: "h",
+        text: "Other prereqs the playbook understated",
+      },
+      {
+        kind: "ul",
+        items: [
+          "Codex CLI must be ChatGPT-logged-in. `codex login status` should report \"Logged in using ChatGPT.\" No OPENAI_API_KEY needed when backend=codex.",
+          "axiom-rules-engine must be a sibling checkout AND have a compiled binary: `cargo build --release` in ~/axiom-rules-engine before --apply. Without the binary the encoder fails compile validation with \"binary not found.\"",
+          "axiom-encode's own git checkout must be clean. The encoder verifies via `git status --porcelain` and refuses to apply if anything is modified. uv.lock drifts during repeated runs — defensive `git checkout -- uv.lock` before each call solves this. Without that fix, ~24% of would-be APPLIED runs silently become apply_blocked_manifest.",
+          "axiom-corpus needs to be a sibling checkout for the resolver to read corpus.provisions body text locally.",
+        ],
+      },
+    ],
+  },
+  {
+    kicker: "§ 17",
+    title: "The corpus body-null shape bug (axiom-corpus#52)",
+    blocks: [
+      {
+        kind: "p",
+        text: "First and worst surprise: 319 of 559 (57%) of CalFresh MPP records had `body: null` in the loaded corpus. The CDSS MPP DOCX parser captured each subsection's lead paragraph as `title` and only filled `body` from follow-on paragraphs. For single-paragraph subsections — most of MPP §63 — the entire rule text lived in `title` and `body` was empty.",
+      },
+      {
+        kind: "p",
+        text: "Downstream consumers — notably axiom-encode's `_fetch_local_corpus_source_text_from_repo` — read the `body` field to ground citation excerpts. With body null, those 319 provisions were invisible to the encoder; `encode us-ca/regulation/mpp/63-503.132` failed with `ValueError: No corpus.provisions source text found`.",
+      },
+      {
+        kind: "callout",
+        tone: "blocker",
+        text: "Lesson: when adding a new corpus adapter, write a property-level test that asserts body is populated for every leaf record. The original PR #39 was correct end-to-end for ingestion + display but the body/heading split was invisible to reviewers until downstream consumers broke.",
+      },
+      {
+        kind: "p",
+        text: "Fix: in axiom_corpus.corpus.california_mpp._subsection_provision, fall back to title when body is empty. After re-extract, 541 of 559 records carry body (the remaining 18 are legitimate container nodes). Shipped in PR #52.",
+      },
+    ],
+  },
+  {
+    kicker: "§ 18",
+    title: "The encoder's overwrite-on-apply (section vs subsection)",
+    blocks: [
+      {
+        kind: "p",
+        text: "The encoder writes one file per SECTION (regulations/mpp/63-300.yaml), but we encoded one citation per SUBSECTION (63-300.1, .2, …, .623). Each subsequent --apply OVERWROTE the previous section file. Out of 358 successful applies, only 16 surfaced in the repo (the last subsection per section).",
+      },
+      {
+        kind: "callout",
+        tone: "blocker",
+        text: "We lost ~342 encodings to silent overwrite. They were only recovered because each per-citation workspace at ~/.axiom/encode-traces/sandbox/_eval_workspaces/codex-gpt-5.5/{citation}/workspace/.codex-last-message.txt preserves the actual codex output. We extracted those, wrote per-subsection paths regulations/mpp/{section}/{subsection}.yaml, and re-signed manifests retroactively (a script using the same HMAC scheme).",
+      },
+      {
+        kind: "h",
+        text: "Implications",
+      },
+      {
+        kind: "ul",
+        items: [
+          "For batch encoding, do NOT loop encode --apply across siblings of the same section without a path-strategy fix in axiom-encode. You will silently overwrite.",
+          "If you encode anyway: persist the sandbox to a non-tmp location BEFORE starting, because /tmp is cleared on reboot and the recovery files are in there.",
+          "Long-term fix: axiom-encode should support a per-subsection output path strategy, or merge-on-apply when the target file already exists for a sibling subsection.",
+        ],
+      },
+    ],
+  },
+  {
+    kicker: "§ 19",
+    title: "The CI validator cascade (every failure mode we hit)",
+    blocks: [
+      {
+        kind: "p",
+        text: "Each push to rulespec-us-ca#4 surfaced a different validator stage. Listed in the order they fired, with the fix for each:",
+      },
+      {
+        kind: "ul",
+        items: [
+          "(a) Missing signed manifests — every encoding file requires a corresponding .axiom/encoding-manifests/.../X.json signed with AXIOM_ENCODE_APPLY_SIGNING_KEY. Fix: write a script that computes sha256 + HMAC-sha256 over canonical JSON (sort_keys, separators \",\" and \":\") per axiom-encode's `_sign_applied_encoding_manifest`.",
+          "(b) Tests reference stale legal_ids — recovered tests referenced us-ca:regulations/mpp/63-300# (section-level) but yamls moved to 63-300/1 (per-subsection). Fix: rewrite test files to use per-subsection prefixes.",
+          "(c) Sibling rule-name collisions — two pairs of sibling subsections (63-405/522 vs 63-405/532; 63-503/311 vs 63-503/312) emitted the same rule name. Fix: append __per_{subsection} suffix to one of each pair.",
+          "(d) Internal formula references missed after rename — rule renamed in (c) was also referenced by another rule's formula in the same file. Bare-name reference no longer resolved → became implicit input → test missing assignment. Fix: rename in formula bodies too.",
+          "(e) `period: Day` and `period: Week` rejected — engine only accepts month / benefit_week / tax_year / custom. Fix: normalize all 189 Day/Week rules to Month (pragmatic; long-term these need `period: custom`).",
+          "(f) Day-precision test periods rejected — after (e), tests with `period: 2026-05-13` failed deserialization. Fix: truncate to `period: 2026-05`.",
+          "(g) Oracle coverage unmapped outputs — every new rule legal_id needs an entry in axiom-encode/oracles/policyengine/mappings/us.yaml. Fix: auto-generate 823 not_comparable entries (PR #40), plus 2 follow-up entries (PR #42) for the renamed legal_ids from (c).",
+        ],
+      },
+      {
+        kind: "callout",
+        tone: "note",
+        text: "Each validator stage gates the next. CI runs them sequentially and short-circuits on first failure, so each iteration of the PR exposed exactly one new failure mode. Total: 8 pushes to PR #4 (1 initial + 7 fixes) and 3 PRs to axiom-encode.",
+      },
+    ],
+  },
+  {
+    kicker: "§ 20",
+    title: "Oracle runs are no-ops today (and why)",
+    blocks: [
+      {
+        kind: "p",
+        text: "PR #4 ships 823 rules. Oracle coverage classification reports `known_not_comparable: 821, comparable: 0` for us-ca. The `snap-ecps-compare` command would run but find nothing to compare. Three stacked reasons:",
+      },
+      {
+        kind: "ul",
+        items: [
+          "Mapping type. All 823 are flagged not_comparable. The encoder generated free-form rule names like cwd_receives_mailed_income_reports_and_requested_documents — these don't correspond to PolicyEngine's smaller, opinionated SNAP variable set (snap_eligible, snap_max_allotment, snap_normal_allotment, snap_earned_income, ...). I marked them all not_comparable because the registry has nothing to compare against.",
+          "PolicyEngine doesn't model CalFresh's distinct logic. PolicyEngine's SNAP module is federal-first. State variations it does model are mostly value differences (BBCE thresholds, SUA amounts) — not the operational rules in MPP §63 (application process, interview rules, FSET, CFAP, CDSS administrative procedures).",
+          "We never built the composition. NY's snap-ecps-compare works because of policies/otda/snap/fy-2026-benefit-calculation.yaml — a composition that imports federal SNAP + state extensions and exposes a top-level snap_eligible rule mapped to PolicyEngine's snap_eligible. We have 823 granular CA rules but no top-level calfresh_eligible / calfresh_allotment with clean PolicyEngine mappings.",
+        ],
+      },
+      {
+        kind: "h",
+        text: "What unlocks oracle runs",
+      },
+      {
+        kind: "ul",
+        items: [
+          "Write policies/cdss/calfresh/fy-2026-benefit-calculation.yaml (mirror NY's pattern).",
+          "Compose top-level outputs calfresh_eligible / calfresh_allotment from the federal SNAP rules + the granular MPP §63 building blocks already encoded.",
+          "Add direct_variable mappings for those two top-level outputs in axiom-encode/oracles/policyengine/mappings/us.yaml (calfresh_eligible → snap_eligible; calfresh_allotment → snap_normal_allotment).",
+          "Wire up `axiom-encode snap-ecps-compare --jurisdiction us-ca` (the CI workflow already exists for NY; copy + adjust).",
+        ],
+      },
+      {
+        kind: "p",
+        text: "The 823 granular rules stay not_comparable — that's correct. The composition is the testable surface.",
+      },
+    ],
+  },
+  {
+    kicker: "§ 21",
+    title: "Day-granular rules deferred",
+    blocks: [
+      {
+        kind: "p",
+        text: "I collapsed 187 `period: Day` rules and 2 `period: Week` rules into `period: Month` to satisfy the engine's enum. Functionally fine for SNAP eligibility (monthly determination), but CalFresh has genuine day-scoped rules that lost precision:",
+      },
+      {
+        kind: "ul",
+        items: [
+          "Initial-month proration day count (§63-503.131 formula)",
+          "Expedited service 7-day window (§63-301.5)",
+          "Application processing time limits (30 calendar days, 7 calendar days for expedited)",
+          "Notice timing rules (10-day adequate notice)",
+        ],
+      },
+      {
+        kind: "p",
+        text: "Long-term: re-encode these with `period: custom` and explicit day-granular semantics in the formula. For now, the monthly approximation is in production.",
+      },
+    ],
+  },
+  {
+    kicker: "§ 22",
+    title: "Encoding playbook — concrete checklist for the next jurisdiction",
+    blocks: [
+      {
+        kind: "p",
+        text: "Synthesized from the CalFresh run. Use this for the next state.",
+      },
+      {
+        kind: "h",
+        text: "Before you start the encoder",
+      },
+      {
+        kind: "ul",
+        items: [
+          "Source text in corpus, with body populated for every leaf record (verify by SQL: COUNT(*) WHERE body IS NULL grouped by jurisdiction/doc_type; should be ~0 for leaves).",
+          "axiom-encode env set: AXIOM_ENCODE_APPLY_SIGNING_KEY sourced from ~/.config/axiom-foundation/axiom-encode.env.",
+          "axiom-rules-engine: `cargo build --release` once.",
+          "Sibling checkouts: axiom-corpus, axiom-encode, axiom-rules-engine, rulespec-us, rulespec-us-{state}. All clean (`git status --porcelain` empty).",
+          "Codex CLI logged in: `codex login status` reports \"Logged in using ChatGPT.\"",
+        ],
+      },
+      {
+        kind: "h",
+        text: "Run shape",
+      },
+      {
+        kind: "ul",
+        items: [
+          "Persist sandbox to ~/.axiom/encode-traces/ (NOT /tmp) — recovery depends on it.",
+          "Wrap the batch script in caffeinate so the laptop doesn't sleep mid-run.",
+          "Add `git checkout -- uv.lock` defensive reset before each encode call. Without this, ~24% of applies silently fail manifest check.",
+          "Add APPLIED-log skip logic so resume after interruption doesn't re-do prior work.",
+          "Resume frequently; ChatGPT rate-shapes after sustained volume (50s/call → 180s/call over ~hours).",
+        ],
+      },
+      {
+        kind: "h",
+        text: "After the batch",
+      },
+      {
+        kind: "ul",
+        items: [
+          "Check: does the encoder write per-section or per-subsection files? If section: extract per-citation .codex-last-message.txt from sandbox; do NOT trust just the repo state.",
+          "Generate signed manifests for every applied yaml + test pair (script that mirrors axiom-encode's HMAC-sha256 scheme).",
+          "Auto-generate not_comparable oracle mappings for every new rule legal_id (one PR per state, appended before the `prefixes:` section of us.yaml).",
+          "Expect 7+ CI iterations on the rules PR. Each surfaces one validator stage at a time.",
+        ],
+      },
+      {
+        kind: "h",
+        text: "Definition of done",
+      },
+      {
+        kind: "ul",
+        items: [
+          "Rules PR merged with all CI green (yaml validate, tests execute, proofs validate, oracle coverage).",
+          "axiom-encode mappings PR(s) merged.",
+          "Composition file (policies/.../fy-XXXX-benefit-calculation.yaml) written + direct_variable mappings for top-level outputs.",
+          "PolicyEngine ECPS oracle comparison wired in CI for the state.",
+        ],
+      },
+      {
+        kind: "callout",
+        tone: "note",
+        text: "Anti-pattern: relying on \"the encoder will validate it\" without a local validator dry-run. After every change to the recovered files, run axiom-encode's `_load_applied_encoding_manifest_entries` locally — it surfaces signature/sha256 drift in ~1 second instead of waiting 25 minutes for CI to fail.",
+      },
+    ],
+  },
 ];
 
 export function EncodingPlaybook() {

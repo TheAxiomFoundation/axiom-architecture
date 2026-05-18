@@ -879,20 +879,46 @@ export const NODES: NodeSpec[] = [
     summary: "Encoder pipeline",
     detail:
       "Drives the creation of RuleSpec YAML for provisions in the corpus. Combines " +
-      "LLM workflows with structured validation, then opens PRs against rules-* repos.",
+      "LLM workflows with structured validation, signed apply manifests, and a " +
+      "growing set of deterministic post-encode repair commands.",
     mechanics:
       "Reads corpus.provisions to know what provisions exist. For a target provision, " +
-      "drafts a candidate RuleSpec via prompt orchestration, validates against " +
-      "machine-readable test cases, iterates until clean, then commits YAML. Run " +
-      "history (scores, iterations, agent transcripts) lands in corpus.encoding_runs.",
+      "drafts a candidate RuleSpec via prompt orchestration (Codex CLI by default, " +
+      "OpenAI Responses API and Claude CLI also wired). The prompt injects directives " +
+      "from the canonical-concept registry scoped by text match, so the model picks " +
+      "approved variable names on first pass rather than after a wasted iteration. " +
+      "Validates against machine-readable test cases, iterates until clean, then " +
+      "writes RuleSpec and companion .test.yaml under a per-citation output path. " +
+      "`--apply` signs an HMAC-sha256 manifest with versioned encoder provenance, " +
+      "enforces the concept registry (refusing to install blocked synonyms or " +
+      "drifting producer anchors), and refuses to overwrite a target whose declared " +
+      "corpus_citation_path differs from the incoming file. Run history (scores, " +
+      "iterations, agent transcripts) lands in corpus.encoding_runs.",
     rationale:
-      "Encoding is the bottleneck for downstream usefulness. ~60 RuleSpec files exist " +
-      "today across 1.75M provisions. Any tool that compounds encoder throughput is " +
-      "high-leverage.",
+      "Encoding is the bottleneck for downstream usefulness. Any tool that compounds " +
+      "encoder throughput — concept registry, repair commands, oracle comparators — " +
+      "is high-leverage. Hardening the apply surface matters because silent drift " +
+      "(naming, output paths, source verification) cost real production encodes " +
+      "during the CalFresh ship and is much more expensive to recover than to prevent.",
     important: [
       "One-way dependency on corpus. The encoder NEVER writes to corpus.provisions.",
       "Closes the feedback loop indirectly — the next navigation rebuild observes " +
         "newly-authored YAML and sets has_rulespec=true.",
+      "Canonical-concept registry (src/axiom_encode/concepts/) locks each legal " +
+        "concept to one approved variable name; 27 SNAP entries today. Apply-time " +
+        "validator refuses drift; prompt-time injection prevents drift.",
+      "Output paths split dotted leaves (CDSS-style `63-503.132` → " +
+        "`regulations/mpp/63-503/132.yaml`) and derive from the requested citation, " +
+        "not the resolver-returned path. Apply-time collision guard prevents silent " +
+        "overwrites of sibling encodes.",
+      "14 `repair-*` subcommands handle deterministic post-encode fixups so most " +
+        "former CI failures become local one-liners.",
+      "Per-program oracle comparators live in axiom-encode, not axiom-programs: " +
+        "`snap-ecps-compare` for SNAP, `tax-ecps-compare` for federal tax with " +
+        "section-by-section PolicyEngine mappings (32, 151, 172, 199A, 213, 6012 and " +
+        "growing). `concepts-audit` walks the corpus for registry drift.",
+      "Apply requires versioned encoder provenance (≥ 0.2.87) — dirty/unversioned " +
+        "checkouts are rejected so every applied manifest is reproducible.",
       "Telemetry lands in encodings.encoding_runs (run id, iterations, scores, " +
         "agent_model, session_id, file_path). telemetry.agent_transcripts holds the " +
         "per-tool-use detail.",

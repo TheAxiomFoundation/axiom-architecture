@@ -983,6 +983,11 @@ $ unzip -p pubinfo_2025.zip LAW_SECTION_TBL.dat \\
           "Long-term fix: axiom-encode should support a per-subsection output path strategy, or merge-on-apply when the target file already exists for a sibling subsection.",
         ],
       },
+      {
+        kind: "callout",
+        tone: "note",
+        text: "Resolved 2026-05-18 in axiom-encode#73. Three layered defenses now ship: (1) `_source_identifier_to_relative_rulespec_path` splits dotted leaves so CDSS-style `63-503.132` nests as `regulations/mpp/63-503/132.yaml`; (2) `_run_single_eval` derives the output path from the requested citation, not the resolver-returned `citation_path`, so a parent-row fallback no longer relocates the encode; (3) `_apply_generated_encoding_result` refuses to overwrite a target whose declared `corpus_citation_path` differs from the incoming file's. The two ‘do NOT loop’ implications above no longer apply for encodes against axiom-encode ≥ 0.2.87.",
+      },
     ],
   },
   {
@@ -1009,6 +1014,22 @@ $ unzip -p pubinfo_2025.zip LAW_SECTION_TBL.dat \\
         kind: "callout",
         tone: "note",
         text: "Each validator stage gates the next. CI runs them sequentially and short-circuits on first failure, so each iteration of the PR exposed exactly one new failure mode. Total: 8 pushes to PR #4 (1 initial + 7 fixes) and 3 PRs to axiom-encode.",
+      },
+      {
+        kind: "h",
+        text: "What's now caught earlier (as of 2026-05-18)",
+      },
+      {
+        kind: "ul",
+        items: [
+          "(a) Signed manifests — written automatically by `encode --apply` with versioned encoder provenance (axiom-encode#64, encoder ≥ 0.2.87). No hand-rolled HMAC script needed.",
+          "(b)/(c)/(d) Stale legal_ids, sibling rule-name collisions, formula references — concept registry catches blocked synonyms and canonical drift at apply time (axiom-encode#41/#43); registry directives are also injected into the encoder prompt so the model picks canonical names on first pass (axiom-encode#72).",
+          "(e)/(f) period: Day/Week — still hits at apply time. Worked around by collapsing to Month; long-term needs `period: custom` runtime support.",
+          "(g) Oracle coverage unmapped outputs — `axiom-encode oracle-coverage` reports unmapped rules; `concepts-audit` walks the corpus for drift. Per-section `not_comparable` entries still added manually one PR at a time, but federal tax is landing section-by-section (32, 151, 172, 199A, 213, 6012 mapped since 2026-05-14).",
+          "(h) NEW: concept-registry drift — `_enforce_canonical_concept_registry` refuses to install YAML that uses a blocked synonym, applies a canonical under the wrong producer anchor, or fails to parse.",
+          "(i) NEW: output-path collisions — three-layer fix in axiom-encode#73 (see § 18 callout).",
+          "Plus 14 deterministic `axiom-encode repair-*` subcommands replace most of the hand-written fix scripts: repair-floor, repair-final-amount, repair-zero-tests, repair-unused-imports, repair-proof-hash, repair-proof-reference, repair-section-172-c, repair-section-911-a-1, repair-section-63-f-tests, repair-imported-test-inputs, repair-oracle-parameter-tests, repair-tax-filing, repair-tax-status-component, repair-source-proofs.",
+        ],
       },
     ],
   },
@@ -1044,6 +1065,11 @@ $ unzip -p pubinfo_2025.zip LAW_SECTION_TBL.dat \\
       {
         kind: "p",
         text: "The 823 granular rules stay not_comparable — that's correct. The composition is the testable surface.",
+      },
+      {
+        kind: "callout",
+        tone: "note",
+        text: "Update 2026-05-18: a sibling `axiom-encode tax-ecps-compare` command now exists alongside `snap-ecps-compare`, and federal tax oracle mappings are landing per IRC section (32, 151, 172, 199A, 213, 6012 since 2026-05-14). The per-program comparator architecture is still in force — each program needs its own comparator wired in — but the SNAP-only framing of this section is now out of date for tax.",
       },
     ],
   },
@@ -1087,9 +1113,11 @@ $ unzip -p pubinfo_2025.zip LAW_SECTION_TBL.dat \\
         items: [
           "Source text in corpus, with body populated for every leaf record (verify by SQL: COUNT(*) WHERE body IS NULL grouped by jurisdiction/doc_type; should be ~0 for leaves).",
           "axiom-encode env set: AXIOM_ENCODE_APPLY_SIGNING_KEY sourced from ~/.config/axiom-foundation/axiom-encode.env.",
+          "axiom-encode version ≥ 0.2.87 (required for versioned-provenance apply guard).",
           "axiom-rules-engine: `cargo build --release` once.",
           "Sibling checkouts: axiom-corpus, axiom-encode, axiom-rules-engine, rulespec-us, rulespec-us-{state}. All clean (`git status --porcelain` empty).",
           "Codex CLI logged in: `codex login status` reports \"Logged in using ChatGPT.\"",
+          "Canonical-concept registry covers the program: `axiom-encode concepts-audit` against the corpus reports zero drift, or new entries have been added to src/axiom_encode/concepts/data/ before the batch.",
         ],
       },
       {
@@ -1113,10 +1141,11 @@ $ unzip -p pubinfo_2025.zip LAW_SECTION_TBL.dat \\
       {
         kind: "ul",
         items: [
-          "Check: does the encoder write per-section or per-subsection files? If section: extract per-citation .codex-last-message.txt from sandbox; do NOT trust just the repo state.",
-          "Generate signed manifests for every applied yaml + test pair (script that mirrors axiom-encode's HMAC-sha256 scheme).",
-          "Auto-generate not_comparable oracle mappings for every new rule legal_id (one PR per state, appended before the `prefixes:` section of us.yaml).",
-          "Expect 7+ CI iterations on the rules PR. Each surfaces one validator stage at a time.",
+          "Per-subsection files happen automatically now (axiom-encode#73) — the encoder writes `regulations/.../{section}/{subsection}.yaml` for dotted citations, and `--apply` refuses to overwrite a target with a different `corpus_citation_path`. No sandbox-extraction recovery needed for new runs.",
+          "Signed manifests are written automatically by `encode --apply`. The hand-rolled HMAC script from the CalFresh recovery is obsolete.",
+          "Run `axiom-encode repair-*` for any validator failures rather than hand-scripting fixes. See § 19 for the list of 14 deterministic repair subcommands.",
+          "Auto-generate not_comparable oracle mappings for every new rule legal_id (still one PR per state today; appended before the `prefixes:` section of us.yaml). For tax citations, `tax-ecps-compare` mappings land per IRC section.",
+          "Expect 2–3 CI iterations on the rules PR rather than 7+ — the concept registry, prompt injection, and apply-time guards short-circuit most former CI failures.",
         ],
       },
       {
@@ -1136,6 +1165,64 @@ $ unzip -p pubinfo_2025.zip LAW_SECTION_TBL.dat \\
         kind: "callout",
         tone: "note",
         text: "Anti-pattern: relying on \"the encoder will validate it\" without a local validator dry-run. After every change to the recovered files, run axiom-encode's `_load_applied_encoding_manifest_entries` locally — it surfaces signature/sha256 drift in ~1 second instead of waiting 25 minutes for CI to fail.",
+      },
+    ],
+  },
+  {
+    kicker: "§ 23",
+    title: "What changed since the CalFresh ship (2026-05-14 → 2026-05-18)",
+    blocks: [
+      {
+        kind: "p",
+        text: "The encoder hardened materially in the days after the CalFresh PR landed. Sections § 15–§ 22 above remain the source of truth for what actually happened in production; this section is the diff for what next-state operators should expect.",
+      },
+      {
+        kind: "h",
+        text: "Prevention shipped",
+      },
+      {
+        kind: "ul",
+        items: [
+          "Canonical-concept registry (axiom-encode#41, #43): SNAP registry locks 27 concepts to one canonical variable name each, with blocked synonyms and producer anchors. `_enforce_canonical_concept_registry` refuses to install drift at apply time.",
+          "Concept registry injected into the encoder prompt (axiom-encode#72): the model now sees a terse 'use these names, never these synonyms' block scoped to whichever concepts appear in source or context. Verified live on 7 CFR 273.10 — the encoder emitted 9 canonical SNAP names and zero blocked synonyms on first pass.",
+          "Output-path collision fix (axiom-encode#73, closes #71): three layers — dotted-leaf splitting in the path strategy, requested-citation drives output path (not resolver-resolved), apply-time guard refuses to overwrite a target whose declared `corpus_citation_path` differs. Eliminates the entire 342-encoding-loss class of bug from the CalFresh run.",
+          "Versioned encoder provenance for apply (axiom-encode#64, version 0.2.87): every applied manifest records the encoder build; apply refuses if the build is dirty or unversioned.",
+          "Source-text verification prefers corpus (axiom-encode#61): citation excerpts ground against corpus.provisions rows rather than fetched/cached upstream text. Tighter source verification.",
+        ],
+      },
+      {
+        kind: "h",
+        text: "Deterministic repair subcommands (replacing hand-written fix scripts)",
+      },
+      {
+        kind: "p",
+        text: "14 `axiom-encode repair-*` subcommands now ship for post-encode fixups: repair-floor, repair-final-amount, repair-zero-tests, repair-unused-imports, repair-proof-hash, repair-proof-reference, repair-section-172-c, repair-section-911-a-1, repair-section-63-f-tests, repair-imported-test-inputs, repair-oracle-parameter-tests, repair-tax-filing, repair-tax-status-component, repair-source-proofs. Each one targets a specific validator-failure class observed in production.",
+      },
+      {
+        kind: "h",
+        text: "Oracle coverage expanded beyond SNAP",
+      },
+      {
+        kind: "p",
+        text: "Federal tax has a sibling `axiom-encode tax-ecps-compare` command. PolicyEngine mappings for IRC sections 32 (earned income), 151, 172, 199A, 213, 6012 have landed section-by-section since 2026-05-14. The per-program comparator architecture (Open questions § b 4) is still in force, but the SNAP-only framing of § 20 is now historical.",
+      },
+      {
+        kind: "h",
+        text: "What's still open",
+      },
+      {
+        kind: "ul",
+        items: [
+          "Day-granular periods (§ 21) — engine still only accepts month / benefit_week / tax_year / custom. CalFresh's 187 Day rules remain collapsed to Month in production.",
+          "Composition modules — `policies/cdss/calfresh/fy-2026-benefit-calculation.yaml` is still unwritten; CalFresh oracle runs remain no-ops until a composition exposes a top-level `calfresh_eligible` / `calfresh_allotment` mappable to PolicyEngine.",
+          "Generic per-program oracle comparator (Open questions § b 4) — SNAP and tax each have bespoke comparators; TANF/Medicaid/EITC would still need their own.",
+          "Auto-register on load + explicit publish (Open questions § c D) — release-scopes still operator-edited; visibility gaps still possible.",
+        ],
+      },
+      {
+        kind: "callout",
+        tone: "note",
+        text: "Net effect on the playbook: the bulk of recovery and hand-scripting steps from § 15–§ 22 are no longer needed for fresh encodes against axiom-encode ≥ 0.2.87. The historical record stays — it explains why the current guardrails exist — but the next-jurisdiction operator should read § 22 and § 23 as the live checklist, not § 15–§ 21.",
       },
     ],
   },

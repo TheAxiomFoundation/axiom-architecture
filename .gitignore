@@ -3,3 +3,5 @@ dist/
 .vite/
 *.log
 .vercel
+.DS_Store
+.claude/

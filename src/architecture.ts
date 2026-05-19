@@ -17,7 +17,8 @@ export type Repo =
   | "axiom-corpus"
   | "axiom-encode"
   | "axiom-rules"
-  | "axiom-programs"
+  | "axiom-oracles"
+  | "axiom-compose"
   | "axiom-foundation.org"
   | "axiom-demo-shell"
   | "rules-us"
@@ -50,10 +51,16 @@ export const REPOS: RepoSpec[] = [
       "Rust runtime engine: compiles + executes RuleSpec YAML. CLI binary + Python bindings.",
   },
   {
-    id: "axiom-programs",
-    label: "axiom-programs",
+    id: "axiom-oracles",
+    label: "axiom-oracles",
     description:
-      "Oracle comparison toolkit. Runs cases through Axiom + PolicyEngine + TAXSIM + ACCESS NYC for validation.",
+      "Oracle comparison toolkit. Runs programs through Axiom + PolicyEngine + TAXSIM + ACCESS NYC for validation. Reusable comparisons registry; matrix-runs every entry on a weekly schedule.",
+  },
+  {
+    id: "axiom-compose",
+    label: "axiom-compose",
+    description:
+      "Planned. Deterministic program assembler: spec + atomic rulespec corpus → runnable program, no per-program code anywhere. Replaces composition YAMLs in rulespec-* and precompiled artifacts in consumers.",
   },
   {
     id: "axiom-foundation.org",
@@ -766,10 +773,13 @@ export const NODES: NodeSpec[] = [
     mechanics:
       "Colorado is the deepest example today: rules-us-co/regulations/10-ccr-2506-1/ " +
       "holds ~34 encoded SNAP-administration sections. Other state repos exist mostly " +
-      "as placeholders. The Colorado SNAP composition file " +
+      "as placeholders. A legacy Colorado SNAP composition file " +
       "(rules-us-co/policies/cdhs/snap/fy-2026-benefit-calculation.yaml) imports " +
       "23 rules — federal USDA parameters and Colorado overlays — and composes them " +
-      "into a single executable module for microsimulation.",
+      "into a single executable module. Compositions are pending removal: " +
+      "rulespec-* repos hold atomic encoded law only; program assembly moves to " +
+      "axiom-compose so that policies/ is reserved for actual published guidance " +
+      "(IRS Rev Procs, USDA COLA tables), not software-engineered compositions.",
     important: [
       "rules-us-co has ~34 paths under regulations/10-ccr-2506-1/. The Colorado " +
         "Code of Regulations citation '10 CCR 2506-1' becomes '10-ccr-2506-1' in repo " +
@@ -913,10 +923,14 @@ export const NODES: NodeSpec[] = [
         "overwrites of sibling encodes.",
       "14 `repair-*` subcommands handle deterministic post-encode fixups so most " +
         "former CI failures become local one-liners.",
-      "Per-program oracle comparators live in axiom-encode, not axiom-programs: " +
-        "`snap-ecps-compare` for SNAP, `tax-ecps-compare` for federal tax with " +
-        "section-by-section PolicyEngine mappings (32, 151, 172, 199A, 213, 6012 and " +
-        "growing). `concepts-audit` walks the corpus for registry drift.",
+      "Per-program oracle comparators live in axiom-encode, called by axiom-oracles " +
+        "comparison runners: `snap-ecps-compare` for SNAP, `tax-ecps-compare` for " +
+        "federal tax with section-by-section PolicyEngine mappings (32, 151, 172, " +
+        "199A, 213, 6012 and growing). `concepts-audit` walks the corpus for " +
+        "name-drift between producer rules and the canonical-concept registry " +
+        "(src/axiom_encode/concepts/), which gates `encode --apply`: any generated " +
+        "RuleSpec using a blocked synonym or claiming a canonical at the wrong " +
+        "anchor is rejected before it lands in a rulespec-* repo.",
       "Apply requires versioned encoder provenance (≥ 0.2.87) — dirty/unversioned " +
         "checkouts are rejected so every applied manifest is reproducible.",
       "Telemetry lands in encodings.encoding_runs (run id, iterations, scores, " +
@@ -985,36 +999,44 @@ export const NODES: NodeSpec[] = [
     ],
   },
   {
-    id: "axiom-programs",
-    label: "axiom-programs",
+    id: "axiom-oracles",
+    label: "axiom-oracles",
     layer: "consumer",
-    repo: "axiom-programs",
-    summary: "Oracle-comparison toolkit",
+    repo: "axiom-oracles",
+    summary: "Oracle-comparison toolkit + reusable comparisons registry",
     detail:
       "Validation toolkit that pits Axiom's RuleSpec implementations against external " +
       "'oracles' (reference implementations): PolicyEngine, TAXSIM, Atlanta Fed PRD, " +
-      "ACCESS NYC. Same concept-keyed test case runs through all engines; the comparator " +
-      "normalises results and produces JSON mismatch reports.",
+      "ACCESS NYC. Each comparison is declared as one YAML file in comparisons/; a " +
+      "matrix workflow runs every entry weekly. Adding a new program comparison is a " +
+      "single YAML PR.",
     mechanics:
-      "Four layers. (1) Thin case schema (core/case.py): Case has facts, entities " +
-      "(concept-keyed), and requested outputs — no universal household ontology. " +
-      "(2) Engine adapters (adapters/): one per oracle implementing EngineAdapter with " +
-      "run_cases() / run_households(). PolicyEngineRunner imports policyengine_us; " +
-      "AccessNycApiRunner hits the REST screening API; AccessNycPythonRunner calls the " +
-      "Drools replatform; TaxsimPackageRunner wraps policyengine_taxsim; PrdPackageRunner " +
-      "wraps Atlanta Fed PRD; AxiomRulesRunner is currently a stub waiting to wire " +
-      "axiom-rules execution. (3) Mappings + Comparator (comparison/): concept_mappings." +
-      "yaml maps canonical Axiom concept ids to per-engine targets (e.g. SNAP → policy" +
-      "engine: snap, accessnyc: S2R007, axiom: us:policies/usda/snap/…). The comparator " +
-      "aligns results by household_id and emits typed mismatches (amount_difference, " +
-      "eligibility_left_only, …). (4) Populations + CLI: enhanced_cps.py samples " +
-      "households from HuggingFace's policyengine-us-data datasets; CLI: " +
-      "`axiom-programs compare <left> <right>`.",
+      "Five layers. (1) Comparisons registry (comparisons/*.yaml): declarative spec " +
+      "per comparison — name, runner type, scope, parameters, schedule. fiit-ecps and " +
+      "co-snap-ecps ship today; FIIT runs at ~99.6% agreement. " +
+      "(2) Orchestrator (scripts/run_comparison.py): dispatches by runner type, " +
+      "produces a JSON report. (3) Thin case schema (core/case.py): Case has facts, " +
+      "entities (concept-keyed), and requested outputs — no universal household " +
+      "ontology. (4) Engine adapters (adapters/): one per oracle implementing " +
+      "EngineAdapter with run_cases() / run_households(). PolicyEngineRunner imports " +
+      "policyengine_us; AccessNycApiRunner hits the REST screening API; " +
+      "AccessNycPythonRunner calls the Drools replatform; TaxsimPackageRunner wraps " +
+      "policyengine_taxsim; PrdPackageRunner wraps Atlanta Fed PRD; AxiomRulesRunner " +
+      "executes via a precompiled artifact (today for CO SNAP) or directly through " +
+      "axiom-encode's per-surface harness (today for FIIT). " +
+      "(5) Mappings + Comparator (comparison/): concept_mappings.yaml maps canonical " +
+      "Axiom concept ids to per-engine targets (e.g. SNAP → policyengine: snap, " +
+      "accessnyc: S2R007, axiom: us:policies/usda/snap/…). The comparator aligns " +
+      "results by household_id and emits typed mismatches (amount_difference, " +
+      "eligibility_left_only, …). Matrix CI workflow (.github/workflows/comparisons.yml) " +
+      "runs every registered comparison and uploads JSON artifacts.",
     rationale:
       "Validation is hard without ground truth. Comparing Axiom's output against " +
       "established calculators across many synthetic + real households gives a coverage " +
       "signal: where we disagree with the oracle, dig in. Concept-keyed cases let one " +
-      "test data set drive every engine without rewriting inputs per oracle.",
+      "test data set drive every engine without rewriting inputs per oracle. The " +
+      "registry makes the validation work reusable: any program that fits an existing " +
+      "runner type becomes a one-line PR, not a code change.",
     important: [
       "Cases are intentionally thin and concept-keyed, not a universal household " +
         "ontology. Adapters project concepts into their own input languages.",
@@ -1023,27 +1045,86 @@ export const NODES: NodeSpec[] = [
       "ACCESS NYC Drools execution is stubbed locally because the public repo lacks " +
         "compiled classes. Python replatform is the working local path; REST API is " +
         "available too.",
-      "AxiomRulesRunner is empty — work-in-progress to call into axiom-rules. Until it " +
-        "lands, Axiom values can't be compared automatically.",
+      "AxiomRulesRunner now works end-to-end: federal tax via live-compile of rulespec-us " +
+        "surfaces, Colorado SNAP via a precompiled artifact (pending axiom-compose " +
+        "consolidation, tracked in axiom-oracles#19).",
       "Report schema is versioned: COMPARISON_REPORT_SCHEMA_VERSION = " +
         "'axiom.comparison_report.v1'.",
       "Locale/scope filters in mappings handle geographic restrictions (ACCESS NYC is " +
         "NYC-only; PolicyEngine and Axiom are US-wide).",
+      "Reports are gitignored by convention; CI uploads them as workflow artifacts. " +
+        "Dashboard wiring of FIIT alongside CO SNAP is a known follow-up (shape adapter " +
+        "needed because tax-ecps-compare is surface-aggregated while the existing " +
+        "dashboard report is per-case).",
       "Does NOT integrate with axiom-corpus (no imports, no direct data flow); reads " +
-        "rules-* repos only as Drools static-audit sources, not as RuleSpec inputs.",
+        "rules-* / rulespec-* repos only as engine inputs.",
     ],
     files: [
-      "axiom-programs/axiom_programs/core/case.py",
-      "axiom-programs/axiom_programs/adapters/policyengine/runner.py",
-      "axiom-programs/axiom_programs/adapters/accessnyc/",
-      "axiom-programs/axiom_programs/adapters/taxsim/runner.py",
-      "axiom-programs/axiom_programs/adapters/prd/runner.py",
-      "axiom-programs/axiom_programs/comparison/comparator.py",
-      "axiom-programs/axiom_programs/comparison/mappings.py",
-      "axiom-programs/axiom_programs/populations/enhanced_cps.py",
-      "axiom-programs/axiom_programs/config/concept_mappings.yaml",
+      "axiom-oracles/comparisons/fiit-ecps.yaml",
+      "axiom-oracles/comparisons/co-snap-ecps.yaml",
+      "axiom-oracles/comparisons/README.md",
+      "axiom-oracles/scripts/run_comparison.py",
+      "axiom-oracles/.github/workflows/comparisons.yml",
+      "axiom-oracles/axiom_oracles/core/case.py",
+      "axiom-oracles/axiom_oracles/adapters/policyengine/runner.py",
+      "axiom-oracles/axiom_oracles/adapters/accessnyc/",
+      "axiom-oracles/axiom_oracles/adapters/taxsim/runner.py",
+      "axiom-oracles/axiom_oracles/adapters/prd/runner.py",
+      "axiom-oracles/axiom_oracles/comparison/comparator.py",
+      "axiom-oracles/axiom_oracles/comparison/mappings.py",
+      "axiom-oracles/axiom_oracles/populations/enhanced_cps.py",
+      "axiom-oracles/axiom_oracles/config/concept_mappings.yaml",
     ],
-    commands: ["axiom-programs compare", "axiom-programs accessnyc audit"],
+    commands: [
+      "scripts/run_comparison.py --list",
+      "scripts/run_comparison.py <name> --summary",
+      "axiom-oracles compare",
+      "axiom-oracles accessnyc audit",
+    ],
+  },
+  {
+    id: "axiom-compose",
+    label: "axiom-compose",
+    layer: "rules",
+    repo: "axiom-compose",
+    summary: "Planned: deterministic program assembler",
+    detail:
+      "Planned, in design. Pure-function utility: (spec, atomic rulespec corpus) → " +
+      "runnable program. Single, standard entry point every Axiom tool will use to " +
+      "assemble programs (FIIT, SNAP, EITC, etc.) for execution. Replaces today's two " +
+      "patterns — checked-in composition YAMLs in rulespec-* and precompiled artifacts " +
+      "in consumers — with one declarative spec + live composition.",
+    mechanics:
+      "Hard architectural rule: no program-specific code anywhere. Every synthesis " +
+      "decision reduces to (a) an atomic encoded rule in rulespec-*, (b) a generic " +
+      "transformation pattern that applies to ≥2 program families, or (c) a " +
+      "declarative parameter in the spec. The composer's core does dependency " +
+      "closure from declared outputs, applies generic patterns (concept-registry " +
+      "aliasing, override semantics, tiered-table extension), and emits a program " +
+      "for the engine to compile. Each program is described by a tiny YAML spec " +
+      "(program, outputs, period, scope anchors) — data, not code.",
+    rationale:
+      "Today's composition files (e.g. rules-us-co/policies/cdhs/snap/fy-2026-benefit-" +
+      "calculation.yaml) mix encoded law with software glue and drift silently across " +
+      "consumers. Five separate apps reference CO SNAP today; each could go stale. " +
+      "Centralising assembly into a single deterministic utility removes the " +
+      "duplication, lets rulespec-* return to atomic-only, and makes drift loudly " +
+      "detectable via golden tests.",
+    important: [
+      "Not yet built. Tracked separately; reflected here as planned architecture.",
+      "Multi-program classification (CO SNAP + FIIT + at least one more) gates the " +
+        "design: patterns that emerge from ≥2 program families enter the composer; " +
+        "everything else stays in atomic law or gets re-encoded.",
+      "Convergence point for axiom-oracles: once axiom-compose lands, the two runner " +
+        "types in scripts/run_comparison.py collapse to one. Tracked at " +
+        "axiom-oracles#19.",
+    ],
+    files: [
+      "axiom-compose/src/axiom_compose/core.py (planned)",
+      "axiom-compose/src/axiom_compose/transformations.py (planned)",
+      "axiom-compose/src/axiom_compose/spec.py (planned)",
+    ],
+    commands: ["axiom-compose <spec.yaml> (planned)"],
   },
   {
     id: "axiom-demo-shell",
@@ -1132,10 +1213,14 @@ export const EDGES: EdgeSpec[] = [
   { from: "axiom-rules", to: "finbot", kind: "solid", label: "executes" },
   { from: "axiom-rules", to: "dashboard-builder", kind: "solid" },
 
-  // axiom-programs validates against external oracles
-  { from: "rules-us", to: "axiom-programs", kind: "read", label: "compares" },
-  { from: "rules-state", to: "axiom-programs", kind: "read" },
-  { from: "axiom-rules", to: "axiom-programs", kind: "read" },
+  // axiom-oracles validates against external oracles
+  { from: "rules-us", to: "axiom-oracles", kind: "read", label: "compares" },
+  { from: "rules-state", to: "axiom-oracles", kind: "read" },
+  { from: "axiom-rules", to: "axiom-oracles", kind: "read" },
+  // axiom-compose (planned) consumes atomic rulespec, feeds the engine
+  { from: "rules-us", to: "axiom-compose", kind: "read", label: "atomic only" },
+  { from: "rules-state", to: "axiom-compose", kind: "read" },
+  { from: "axiom-compose", to: "axiom-rules", kind: "derived", label: "runnable program" },
 
   // axiom-demo-shell embeds the front-end demos (three short edges; one label
   // is enough — repeating it three times is just noise).
@@ -1201,7 +1286,8 @@ const POS: Record<string, [number, number]> = {
   "rules-other": [1720, 640],
   // Col 6 — execution + validation
   "axiom-rules": [2140, 320],
-  "axiom-programs": [2140, 560],
+  "axiom-compose": [2140, 460],
+  "axiom-oracles": [2140, 640],
   // Col 7 — consumer apps
   "axiom-foundation": [2560, 240],
   finbot: [2560, 400],
@@ -1226,7 +1312,8 @@ const ENCODING_NEW_IDS = [
   "rules-state",
   "rules-other",
   "axiom-rules",
-  "axiom-programs",
+  "axiom-compose",
+  "axiom-oracles",
 ];
 
 const CONSUMER_NEW_IDS = [
@@ -1296,9 +1383,11 @@ export const LAYOUTS: Layout[] = [
     eyebrow: "§ 04 · Encoding",
     description:
       "axiom-encode reads the corpus and writes RuleSpec YAML into the rules-* " +
-      "repos. axiom-rules (Rust) compiles + executes that YAML. axiom-programs " +
-      "validates outputs against external oracles (PolicyEngine, TAXSIM, " +
-      "ACCESS NYC). The next nav rebuild closes the loop via has_rulespec.",
+      "repos. axiom-rules (Rust) compiles + executes that YAML. axiom-compose " +
+      "(planned) assembles programs from atomic encoded law on demand. " +
+      "axiom-oracles validates outputs against external oracles (PolicyEngine, " +
+      "TAXSIM, ACCESS NYC) via a reusable comparisons registry. The next nav " +
+      "rebuild closes the loop via has_rulespec.",
     nodes: placeAll(ENCODING_VISIBLE),
     edges: edgesAmong(new Set(ENCODING_VISIBLE)),
   },

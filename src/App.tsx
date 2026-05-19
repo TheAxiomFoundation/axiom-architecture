@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Background,
   Controls,
@@ -106,7 +106,13 @@ export const PLAYBOOK_TAB_ID = "encoding-playbook";
 export function App() {
   const [activeLayoutId, setActiveLayoutId] = useState(LAYOUTS[0].id);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [detailMode, setDetailMode] = useState<DetailMode>("external");
+
+  // Hover wins over click for neighbor-highlighting so glancing at the graph
+  // doesn't require committing to a selection. Click still opens the detail
+  // panel — that's a deliberate, separate action.
+  const highlightId = hoveredId ?? selectedId;
 
   const showNotes = activeLayoutId === NOTES_TAB_ID;
   const showPlaybook = activeLayoutId === PLAYBOOK_TAB_ID;
@@ -120,8 +126,8 @@ export function App() {
   );
 
   const neighbors = useMemo(
-    () => (selectedId ? neighborsOf(selectedId, layout.edges) : null),
-    [selectedId, layout.edges],
+    () => (highlightId ? neighborsOf(highlightId, layout.edges) : null),
+    [highlightId, layout.edges],
   );
 
   const relatedIds = useMemo(() => {
@@ -133,18 +139,53 @@ export function App() {
   }, [neighbors]);
 
   const rfNodes = useMemo(
-    () => toRfNodes(layout.nodes, catalog, selectedId, relatedIds),
-    [layout, catalog, selectedId, relatedIds],
+    () => toRfNodes(layout.nodes, catalog, highlightId, relatedIds),
+    [layout, catalog, highlightId, relatedIds],
   );
   const rfEdges = useMemo(
-    () => toRfEdges(layout.edges, selectedId),
-    [layout, selectedId],
+    () => toRfEdges(layout.edges, highlightId),
+    [layout, highlightId],
   );
 
   const handleNodeClick = useCallback<NodeMouseHandler>((_, node) => {
     setSelectedId(node.id);
   }, []);
 
+  // Cursor moving between close-together nodes fires leave→enter on
+  // back-to-back nodes; clearing hoveredId immediately on leave causes the
+  // highlight to drop for one frame and then re-establish, which reads as a
+  // flicker. Defer the clear so a fast enter on an adjacent node cancels it.
+  const leaveTimerRef = useRef<number | null>(null);
+
+  const handleNodeMouseEnter = useCallback<NodeMouseHandler>((_, node) => {
+    if (leaveTimerRef.current !== null) {
+      window.clearTimeout(leaveTimerRef.current);
+      leaveTimerRef.current = null;
+    }
+    setHoveredId(node.id);
+  }, []);
+
+  const handleNodeMouseLeave = useCallback<NodeMouseHandler>(() => {
+    if (leaveTimerRef.current !== null) {
+      window.clearTimeout(leaveTimerRef.current);
+    }
+    leaveTimerRef.current = window.setTimeout(() => {
+      setHoveredId(null);
+      leaveTimerRef.current = null;
+    }, 80);
+  }, []);
+
+  useEffect(
+    () => () => {
+      if (leaveTimerRef.current !== null) {
+        window.clearTimeout(leaveTimerRef.current);
+      }
+    },
+    [],
+  );
+
+  // The detail panel always tracks the clicked selection, not the transient
+  // hover, so reading the panel content doesn't fight cursor movement.
   const selectedNode = selectedId ? catalog.get(selectedId) ?? null : null;
   const detailOpen = selectedNode !== null && !showDoc;
 
@@ -189,6 +230,8 @@ export function App() {
               nodeTypes={NODE_TYPES}
               edgeTypes={EDGE_TYPES}
               onNodeClick={handleNodeClick}
+              onNodeMouseEnter={handleNodeMouseEnter}
+              onNodeMouseLeave={handleNodeMouseLeave}
               onPaneClick={() => setSelectedId(null)}
               fitView
               fitViewOptions={{ padding: 0.18 }}

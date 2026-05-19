@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Background,
   Controls,
@@ -151,13 +151,38 @@ export function App() {
     setSelectedId(node.id);
   }, []);
 
+  // Cursor moving between close-together nodes fires leave→enter on
+  // back-to-back nodes; clearing hoveredId immediately on leave causes the
+  // highlight to drop for one frame and then re-establish, which reads as a
+  // flicker. Defer the clear so a fast enter on an adjacent node cancels it.
+  const leaveTimerRef = useRef<number | null>(null);
+
   const handleNodeMouseEnter = useCallback<NodeMouseHandler>((_, node) => {
+    if (leaveTimerRef.current !== null) {
+      window.clearTimeout(leaveTimerRef.current);
+      leaveTimerRef.current = null;
+    }
     setHoveredId(node.id);
   }, []);
 
   const handleNodeMouseLeave = useCallback<NodeMouseHandler>(() => {
-    setHoveredId(null);
+    if (leaveTimerRef.current !== null) {
+      window.clearTimeout(leaveTimerRef.current);
+    }
+    leaveTimerRef.current = window.setTimeout(() => {
+      setHoveredId(null);
+      leaveTimerRef.current = null;
+    }, 80);
   }, []);
+
+  useEffect(
+    () => () => {
+      if (leaveTimerRef.current !== null) {
+        window.clearTimeout(leaveTimerRef.current);
+      }
+    },
+    [],
+  );
 
   // The detail panel always tracks the clicked selection, not the transient
   // hover, so reading the panel content doesn't fight cursor movement.

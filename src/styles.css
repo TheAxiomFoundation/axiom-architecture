@@ -449,12 +449,15 @@ body::before {
 }
 
 .axiom-node--related {
-  border-color: var(--color-rule-strong);
-  box-shadow: 0 4px 12px -8px rgba(28, 25, 23, 0.25);
+  border-color: var(--color-accent);
+  background: var(--color-accent-light);
+  box-shadow: 0 0 0 1px var(--color-accent),
+    0 6px 16px -8px rgba(146, 64, 14, 0.35);
 }
 
 .axiom-node--dimmed {
-  opacity: 0.4;
+  opacity: 0.25;
+  filter: saturate(0.5);
 }
 
 .axiom-node__eyebrow {

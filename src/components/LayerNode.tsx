@@ -7,6 +7,7 @@ const REPO_LABEL: Record<Repo, string> = {
   "axiom-rules": "axiom-rules",
   "axiom-oracles": "axiom-oracles",
   "axiom-compose": "axiom-compose",
+  "axiom-programs": "axiom-programs",
   "axiom-foundation.org": "axiom-foundation.org",
   "axiom-demo-shell": "axiom-demo-shell",
   "rules-us": "rules-us",

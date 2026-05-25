@@ -19,6 +19,7 @@ export type Repo =
   | "axiom-rules"
   | "axiom-oracles"
   | "axiom-compose"
+  | "axiom-programs"
   | "axiom-foundation.org"
   | "axiom-demo-shell"
   | "rules-us"
@@ -60,7 +61,13 @@ export const REPOS: RepoSpec[] = [
     id: "axiom-compose",
     label: "axiom-compose",
     description:
-      "Planned. Deterministic program assembler: spec + atomic rulespec corpus → runnable program, no per-program code anywhere. Replaces composition YAMLs in rulespec-* and precompiled artifacts in consumers.",
+      "Planned. Deterministic program assembler: spec + atomic rulespec corpus → runnable program, no per-program code anywhere. Consumes specs from axiom-programs; replaces composition YAMLs in rulespec-* and precompiled artifacts in consumers.",
+  },
+  {
+    id: "axiom-programs",
+    label: "axiom-programs",
+    description:
+      "Declarative compose specs. One YAML per (jurisdiction, program, period). Documents which atomic rules from rulespec-* assemble into a runnable program. Consumed by axiom-compose. Country-agnostic layout (us/, us-co/, us-ca/, uk/, …).",
   },
   {
     id: "axiom-foundation.org",
@@ -1111,20 +1118,69 @@ export const NODES: NodeSpec[] = [
       "duplication, lets rulespec-* return to atomic-only, and makes drift loudly " +
       "detectable via golden tests.",
     important: [
-      "Not yet built. Tracked separately; reflected here as planned architecture.",
+      "Draft (axiom-compose#1). Spec loader, corpus indexer, and pure composition " +
+        "core work end-to-end on the first concrete spec (us-ca/snap/fy-2026); " +
+        "downstream engine round-trip + golden tests still gate moving out of draft.",
       "Multi-program classification (CO SNAP + FIIT + at least one more) gates the " +
         "design: patterns that emerge from ≥2 program families enter the composer; " +
         "everything else stays in atomic law or gets re-encoded.",
+      "Consumes specs from axiom-programs (one YAML per (jurisdiction, program, " +
+        "period)). axiom-programs decouples spec authoring from composer releases.",
       "Convergence point for axiom-oracles: once axiom-compose lands, the two runner " +
         "types in scripts/run_comparison.py collapse to one. Tracked at " +
         "axiom-oracles#19.",
     ],
     files: [
-      "axiom-compose/src/axiom_compose/core.py (planned)",
-      "axiom-compose/src/axiom_compose/transformations.py (planned)",
-      "axiom-compose/src/axiom_compose/spec.py (planned)",
+      "axiom-compose/src/axiom_compose/core.py",
+      "axiom-compose/src/axiom_compose/spec.py",
+      "axiom-programs/<jurisdiction>/<program>/<period>.yaml (compose inputs)",
     ],
     commands: ["axiom-compose <spec.yaml> (planned)"],
+  },
+  {
+    id: "axiom-programs",
+    label: "axiom-programs",
+    layer: "rules",
+    repo: "axiom-programs",
+    summary: "Declarative compose specs (one YAML per program × jurisdiction × period)",
+    detail:
+      "Home for the program compose specs that axiom-compose consumes. A program — " +
+      "us-co/snap for FY 2026, us-ca/snap, us/fiit — is an assembly of atomic rules " +
+      "drawn from one or more rulespec-* corpora. The assembly itself is NOT law: the " +
+      "law is the source statute/regulation encoded into atomic RuleSpec files. This " +
+      "repo holds the declarative spec describing how those atomic rules combine for " +
+      "a given (jurisdiction, program, period).",
+    mechanics:
+      "Layout: <jurisdiction>/<program>/<period>.yaml — e.g. us-ca/snap/fy-2026.yaml. " +
+      "Spec shape: program identifier, period, declared outputs (the rules the engine " +
+      "must produce), and scope arrays (federal + state) listing the atomic rule " +
+      "paths to import. axiom-compose resolves the scope against the relevant " +
+      "rulespec-* repos, links the imports via declared outputs, and emits a runnable " +
+      "program for the engine. No per-program code anywhere.",
+    rationale:
+      "Specs are not law (so they don't belong in rulespec-* corpora — that's the " +
+      "bucket-E violation we're eliminating from rules-us-co). Specs are not the " +
+      "composer (so they don't belong inside axiom-compose, which is the tool). And " +
+      "specs need their own release cycle independent of either. A separate repo with " +
+      "country-agnostic layout (us/, us-co/, uk/, …) is the right home: a new fiscal " +
+      "year spec or a new jurisdiction is one PR here, not a coordinated release " +
+      "across multiple repos.",
+    important: [
+      "Bootstrapped today. First concrete spec: us-ca/snap/fy-2026.yaml — compiles " +
+        "via axiom-compose#1 (2,339 atomic sources resolved across federal + CA).",
+      "Migration backlog tracked in README: rulespec-us-co/policies/cdhs/snap/" +
+        "fy-2026-benefit-calculation.yaml (bucket-E composition) and " +
+        "axiom-microsim/axiom_microsim/project/{co_snap,federal_ctc,federal_income_" +
+        "tax}.py (per-program Python adapters) both need to move here as declarative " +
+        "specs once axiom-compose graduates.",
+      "Not US-specific. Layout accommodates uk/, ca/, etc. as those rulespec corpora " +
+        "mature; no -us suffix on the repo name.",
+    ],
+    files: [
+      "axiom-programs/us-ca/snap/fy-2026.yaml",
+      "axiom-programs/README.md",
+    ],
+    commands: ["(declarative YAML — consumed by axiom-compose)"],
   },
   {
     id: "axiom-demo-shell",
@@ -1217,9 +1273,14 @@ export const EDGES: EdgeSpec[] = [
   { from: "rules-us", to: "axiom-oracles", kind: "read", label: "compares" },
   { from: "rules-state", to: "axiom-oracles", kind: "read" },
   { from: "axiom-rules", to: "axiom-oracles", kind: "read" },
-  // axiom-compose (planned) consumes atomic rulespec, feeds the engine
-  { from: "rules-us", to: "axiom-compose", kind: "read", label: "atomic only" },
+  // axiom-programs holds declarative compose specs; axiom-compose resolves
+  // their `scope` arrays against the atomic rulespec corpora, then emits
+  // runnable programs for the engine.
+  { from: "rules-us", to: "axiom-programs", kind: "read", label: "atomic only" },
+  { from: "rules-state", to: "axiom-programs", kind: "read" },
+  { from: "rules-us", to: "axiom-compose", kind: "read" },
   { from: "rules-state", to: "axiom-compose", kind: "read" },
+  { from: "axiom-programs", to: "axiom-compose", kind: "read", label: "specs" },
   { from: "axiom-compose", to: "axiom-rules", kind: "derived", label: "runnable program" },
 
   // axiom-demo-shell embeds the front-end demos (three short edges; one label
@@ -1284,6 +1345,8 @@ const POS: Record<string, [number, number]> = {
   "rules-us": [1720, 320],
   "rules-state": [1720, 480],
   "rules-other": [1720, 640],
+  // Col 5.5 — compose specs (declarative, between law and execution)
+  "axiom-programs": [1930, 480],
   // Col 6 — execution + validation
   "axiom-rules": [2140, 320],
   "axiom-compose": [2140, 460],
@@ -1311,6 +1374,7 @@ const ENCODING_NEW_IDS = [
   "rules-us",
   "rules-state",
   "rules-other",
+  "axiom-programs",
   "axiom-rules",
   "axiom-compose",
   "axiom-oracles",

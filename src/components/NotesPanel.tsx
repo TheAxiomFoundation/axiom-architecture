@@ -35,7 +35,7 @@ const SECTIONS: Section[] = [
       },
       {
         kind: "p",
-        text: "navigation_nodes.has_rulespec=true depends on whether the operator running build-navigation-index had ~/rules-us checked out. Production database state is a function of a developer's laptop. In CI without those checkouts, the flag silently demotes. There is no source of truth for what is encoded. Fix: replace the filesystem walk with a database table populated by rules-* CI on push, or a GitHub Tree API call at rebuild time. The data must be the same regardless of who runs the rebuild.",
+        text: "navigation_nodes.has_rulespec=true depends on whether the operator running build-navigation-index had ~/rulespec-us checked out. Production database state is a function of a developer's laptop. In CI without those checkouts, the flag silently demotes. There is no source of truth for what is encoded. Fix: replace the filesystem walk with a database table populated by rules-* CI on push, or a GitHub Tree API call at rebuild time. The data must be the same regardless of who runs the rebuild.",
       },
       {
         kind: "h",
@@ -43,7 +43,7 @@ const SECTIONS: Section[] = [
       },
       {
         kind: "p",
-        text: "The mapping jurisdiction → rules-* repo + path conventions exists in rulespec_paths.py, repo-map.ts, and repo-listing.ts, plus pieces inside every adapter. They mirror each other today; nothing enforces it. Next jurisdiction will introduce drift if a contributor edits only one. Fix: one source — a manifest in a config repo (or in axiom-rules) with generated bindings for each consumer.",
+        text: "The mapping jurisdiction → rules-* repo + path conventions exists in rulespec_paths.py, repo-map.ts, and repo-listing.ts, plus pieces inside every adapter. They mirror each other today; nothing enforces it. Next jurisdiction will introduce drift if a contributor edits only one. Fix: one source — a manifest in a config repo (or in axiom-rules-engine) with generated bindings for each consumer.",
       },
       {
         kind: "h",
@@ -59,7 +59,7 @@ const SECTIONS: Section[] = [
       },
       {
         kind: "p",
-        text: "Corrected from the original draft of this critique: I previously claimed AxiomRulesRunner in axiom-programs/axiom-oracles is raise NotImplementedError and that nothing validates encodings. That specific claim is wrong. Validation IS wired — but it lives inside axiom-encode (axiom-encode snap-ecps-compare), not in the validation framework I expected. NY's CI runs it on every PR; CA will once the rulespec-us-ca oracle workflow lands. The remaining architectural concern is real and worth keeping: validation is a per-program comparator that someone has to build, one program at a time. SNAP has snap-ecps-compare; federal tax now has tax-ecps-compare (sections 32, 151, 172, 199A, 213, 6012 mapped to PolicyEngine since 2026-05-14, growing section-by-section). TANF, Medicaid, EITC, state-specific benefits still have no comparator. There is no general \"axiom-rules engine output vs. oracle output\" framework — there are two program-shaped comparators (SNAP and tax) that happen to exist plus per-section mappings. Fix: extract a generic Oracle interface in axiom-oracles that snap-ecps-compare and tax-ecps-compare both implement so the next program inherits the scaffolding rather than rebuilding it.",
+        text: "Corrected from the original draft of this critique: I previously claimed AxiomRulesRunner in axiom-programs/axiom-oracles is raise NotImplementedError and that nothing validates encodings. That specific claim is wrong. Validation IS wired — but it lives inside axiom-encode (axiom-encode snap-ecps-compare), not in the validation framework I expected. NY's CI runs it on every PR; CA will once the rulespec-us-ca oracle workflow lands. The remaining architectural concern is real and worth keeping: validation is a per-program comparator that someone has to build, one program at a time. SNAP has snap-ecps-compare; federal tax now has tax-ecps-compare (sections 32, 151, 172, 199A, 213, 6012 mapped to PolicyEngine since 2026-05-14, growing section-by-section). TANF, Medicaid, EITC, state-specific benefits still have no comparator. There is no general \"axiom-rules-engine engine output vs. oracle output\" framework — there are two program-shaped comparators (SNAP and tax) that happen to exist plus per-section mappings. Fix: extract a generic Oracle interface in axiom-oracles that snap-ecps-compare and tax-ecps-compare both implement so the next program inherits the scaffolding rather than rebuilding it.",
       },
       {
         kind: "h",
@@ -95,7 +95,7 @@ const SECTIONS: Section[] = [
       },
       {
         kind: "h",
-        text: "9. ProgramSpec is invisible outside axiom-rules",
+        text: "9. ProgramSpec is invisible outside axiom-rules-engine",
       },
       {
         kind: "p",
@@ -159,7 +159,7 @@ const SECTIONS: Section[] = [
       },
       {
         kind: "p",
-        text: "An Encoding Registry holding (jurisdiction, citation_path, rule_id, repo, sha, last_compiled, validation_status, oracle_deltas), populated by rules-* CI on push, by axiom-encode on encoding, by axiom-rules on compile, by axiom-programs on validation. Everyone reads from it. has_rulespec becomes a join. Encoded-only browse becomes a real query. Encoder workbench sorts by least-covered concept. Validation gets a target. The most natural fit for what the system actually needs.",
+        text: "An Encoding Registry holding (jurisdiction, citation_path, rule_id, repo, sha, last_compiled, validation_status, oracle_deltas), populated by rules-* CI on push, by axiom-encode on encoding, by axiom-rules-engine on compile, by axiom-programs on validation. Everyone reads from it. has_rulespec becomes a join. Encoded-only browse becomes a real query. Encoder workbench sorts by least-covered concept. Validation gets a target. The most natural fit for what the system actually needs.",
       },
       {
         kind: "h",
@@ -167,7 +167,7 @@ const SECTIONS: Section[] = [
       },
       {
         kind: "p",
-        text: "axiom-rules is invoked subprocess-style. Fine for batch validation, wrong for real serving. Two directions: (B1) compile to WASM, run benefit calculations in the browser with zero PII roundtrip — cacheable, instant, regulator-friendly, a genuine differentiator versus PolicyEngine; (B2) long-lived engine service keeping ProgramSpecs warm. B1 is the more interesting bet — a different trust model for the product, not just faster.",
+        text: "axiom-rules-engine is invoked subprocess-style. Fine for batch validation, wrong for real serving. Two directions: (B1) compile to WASM, run benefit calculations in the browser with zero PII roundtrip — cacheable, instant, regulator-friendly, a genuine differentiator versus PolicyEngine; (B2) long-lived engine service keeping ProgramSpecs warm. B1 is the more interesting bet — a different trust model for the product, not just faster.",
       },
       {
         kind: "h",

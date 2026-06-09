@@ -29,7 +29,7 @@ previous one and adds a new column to the right:
 | § 01 · Sources | Upstream publishers (eCFR, USC, state codes, laws-lois, IRS bulk) |
 | § 02 · Ingest | Fetchers, parsers, source-first adapters, the JSONL artifact tree |
 | § 03 · Storage | R2 (cold) and Supabase (live) tables — provisions + derived |
-| § 04 · Encoding | axiom-encode, rules-* repos, axiom-rules (Rust runtime), axiom-programs (oracle validation) |
+| § 04 · Encoding | axiom-encode, rules-* repos, axiom-rules-engine (Rust runtime), axiom-programs (oracle validation) |
 | § 05 · Pipeline | axiom-foundation.org, finbot, dashboard-builder, axiom-demo-shell |
 
 Click any node and the canvas highlights its direct neighbours; the right

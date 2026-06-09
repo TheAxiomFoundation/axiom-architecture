@@ -16,15 +16,15 @@ export type Layer =
 export type Repo =
   | "axiom-corpus"
   | "axiom-encode"
-  | "axiom-rules"
+  | "axiom-rules-engine"
   | "axiom-oracles"
   | "axiom-compose"
   | "axiom-programs"
   | "axiom-foundation.org"
   | "axiom-demo-shell"
-  | "rules-us"
-  | "rules-us-state"
-  | "rules-non-us"
+  | "rulespec-us"
+  | "rulespec-us-state"
+  | "rulespec-non-us"
   | "infrastructure"
   | "external";
 
@@ -46,8 +46,8 @@ export const REPOS: RepoSpec[] = [
     description: "Encoder pipeline. Reads corpus, writes RuleSpec YAML.",
   },
   {
-    id: "axiom-rules",
-    label: "axiom-rules",
+    id: "axiom-rules-engine",
+    label: "axiom-rules-engine",
     description:
       "Rust runtime engine: compiles + executes RuleSpec YAML. CLI binary + Python bindings.",
   },
@@ -61,7 +61,7 @@ export const REPOS: RepoSpec[] = [
     id: "axiom-compose",
     label: "axiom-compose",
     description:
-      "Planned. Deterministic program assembler: spec + atomic rulespec corpus → runnable program, no per-program code anywhere. Consumes specs from axiom-programs; replaces composition YAMLs in rulespec-* and precompiled artifacts in consumers.",
+      "Deterministic program assembler: spec + atomic rulespec corpus → runnable program, no per-program code anywhere. Consumes specs from axiom-programs; replaces composition YAMLs in rulespec-* and precompiled artifacts in consumers.",
   },
   {
     id: "axiom-programs",
@@ -81,18 +81,18 @@ export const REPOS: RepoSpec[] = [
       "Landing page that embeds the three demos in iframes. Pure static HTML/CSS/JS.",
   },
   {
-    id: "rules-us",
-    label: "rules-us",
+    id: "rulespec-us",
+    label: "rulespec-us",
     description: "US federal RuleSpec YAML encodings.",
   },
   {
-    id: "rules-us-state",
-    label: "rules-us-{*}",
-    description: "Per-state RuleSpec repos (rules-us-co, rules-us-tx, …).",
+    id: "rulespec-us-state",
+    label: "rulespec-us-{*}",
+    description: "Per-state RuleSpec repos (rulespec-us-co, rulespec-us-tx, …).",
   },
   {
-    id: "rules-non-us",
-    label: "rules-uk · rules-ca",
+    id: "rulespec-non-us",
+    label: "rulespec-uk · rulespec-ca",
     description: "Non-US RuleSpec repos.",
   },
   {
@@ -149,9 +149,9 @@ export const NODES: NodeSpec[] = [
       "section/paragraph. The XML preserves hierarchy (title → chapter → part → subpart → " +
       "section) and the adapter keeps that hierarchy intact in citation_path.",
     important: [
-      "Title 7 (USDA / SNAP regs) is the most-encoded slice today — ~10 of the 24 rules-us " +
+      "Title 7 (USDA / SNAP regs) is the most-encoded slice today — ~10 of the 24 rulespec-us " +
         "encodings live there.",
-      "Federal regulation paths drop the publication suffix: rules-us stores " +
+      "Federal regulation paths drop the publication suffix: rulespec-us stores " +
         "regulations/7-cfr/273/7.yaml but the corpus row is us/regulation/7/273/7. The " +
         "adapter normalises this via _normalize_tail.",
       "Section-by-section iteration via lxml's root.iter() can be slow on Title 26 " +
@@ -718,10 +718,10 @@ export const NODES: NodeSpec[] = [
 
   // ── Rules repos ───────────────────────────────────────────────────
   {
-    id: "rules-us",
-    label: "rules-us",
+    id: "rulespec-us",
+    label: "rulespec-us",
     layer: "rules",
-    repo: "rules-us",
+    repo: "rulespec-us",
     summary: "US federal RuleSpec YAML",
     detail:
       "RuleSpec YAML files encoding executable computation for US federal benefit " +
@@ -736,7 +736,7 @@ export const NODES: NodeSpec[] = [
       "Person), period scope (Month, Year), and one or more versions keyed by " +
       "effective_from date. Formulas are Python-like expressions (if/else, match, " +
       "arithmetic, count_where(), table indexing) but not actual Python — they're " +
-      "parsed by the axiom-rules Rust engine at compile time.",
+      "parsed by the axiom-rules-engine Rust engine at compile time.",
     rationale:
       "Encoding lives in separate repos so the corpus stays purely about source text. " +
       "Encoding cadence and corpus cadence are independent — you can add a new rule " +
@@ -759,36 +759,36 @@ export const NODES: NodeSpec[] = [
         "month_allotment'), not by local name. Tests run against the compiled module " +
         "(after imports are merged), not individual rules.",
       "Imports use canonical paths ('us:statutes/7/2017/a') and resolve cross-repo " +
-        "(rules-us-co imports rules-us).",
+        "(rulespec-us-co imports rulespec-us).",
     ],
     files: [
-      "rules-us/statutes/",
-      "rules-us/regulations/",
-      "rules-us/policies/",
-      "rules-us/tests/",
+      "rulespec-us/statutes/",
+      "rulespec-us/regulations/",
+      "rulespec-us/policies/",
+      "rulespec-us/tests/",
     ],
   },
   {
     id: "rules-state",
-    label: "rules-us-{state}",
+    label: "rulespec-us-{state}",
     layer: "rules",
-    repo: "rules-us-state",
+    repo: "rulespec-us-state",
     summary: "Per-state RuleSpec",
     detail:
-      "One repo per state (rules-us-co, rules-us-tx, rules-us-ca, …). Same convention " +
-      "as rules-us. State-specific regulations and agency policy.",
+      "One repo per state (rulespec-us-co, rulespec-us-tx, rulespec-us-ca, …). Same convention " +
+      "as rulespec-us. State-specific regulations and agency policy.",
     mechanics:
-      "Colorado is the deepest example today: rules-us-co/regulations/10-ccr-2506-1/ " +
+      "Colorado is the deepest example today: rulespec-us-co/regulations/10-ccr-2506-1/ " +
       "holds ~34 encoded SNAP-administration sections. Other state repos exist mostly " +
       "as placeholders. A legacy Colorado SNAP composition file " +
-      "(rules-us-co/policies/cdhs/snap/fy-2026-benefit-calculation.yaml) imports " +
+      "(rulespec-us-co/policies/cdhs/snap/fy-2026-benefit-calculation.yaml) imports " +
       "23 rules — federal USDA parameters and Colorado overlays — and composes them " +
       "into a single executable module. Compositions are pending removal: " +
       "rulespec-* repos hold atomic encoded law only; program assembly moves to " +
       "axiom-compose so that policies/ is reserved for actual published guidance " +
       "(IRS Rev Procs, USDA COLA tables), not software-engineered compositions.",
     important: [
-      "rules-us-co has ~34 paths under regulations/10-ccr-2506-1/. The Colorado " +
+      "rulespec-us-co has ~34 paths under regulations/10-ccr-2506-1/. The Colorado " +
         "Code of Regulations citation '10 CCR 2506-1' becomes '10-ccr-2506-1' in repo " +
         "paths (dash-separated, lowercase).",
       "Many state RuleSpec files use kind: reiteration to declare 'this section " +
@@ -802,19 +802,19 @@ export const NODES: NodeSpec[] = [
   },
   {
     id: "rules-other",
-    label: "rules-uk · rules-ca",
+    label: "rulespec-uk · rulespec-ca",
     layer: "rules",
-    repo: "rules-non-us",
+    repo: "rulespec-non-us",
     summary: "Non-US RuleSpec",
     detail:
       "UK and Canadian RuleSpec repos. Same convention as the US repos but different " +
       "path conventions per jurisdiction's citation scheme.",
     important: [
-      "rules-uk holds 146 has_rulespec rows on the corpus side — most of those came " +
+      "rulespec-uk holds 146 has_rulespec rows on the corpus side — most of those came " +
         "from pre-existing has_rulespec flags in corpus.provisions, not from current " +
-        "rules-uk YAML.",
-      "rules-ca maps from canada/* corpus paths. The canada jurisdiction slug is " +
-        "non-obvious — JURISDICTION_REPO_MAP['canada'] = 'rules-ca', not 'rules-canada'.",
+        "rulespec-uk YAML.",
+      "rulespec-ca maps from canada/* corpus paths. The canada jurisdiction slug is " +
+        "non-obvious — JURISDICTION_REPO_MAP['canada'] = 'rulespec-ca', not 'rulespec-canada'.",
     ],
   },
 
@@ -946,10 +946,10 @@ export const NODES: NodeSpec[] = [
     ],
   },
   {
-    id: "axiom-rules",
-    label: "axiom-rules",
+    id: "axiom-rules-engine",
+    label: "axiom-rules-engine",
     layer: "consumer",
-    repo: "axiom-rules",
+    repo: "axiom-rules-engine",
     summary: "Rust engine — compiles + executes RuleSpec",
     detail:
       "The core Rust runtime that turns RuleSpec YAML into computation. Parses + " +
@@ -972,7 +972,7 @@ export const NODES: NodeSpec[] = [
       "orders-of-magnitude speedups when the rule set is dense-compatible.",
     rationale:
       "RuleSpec is the sole authoring surface; production rules live in jurisdiction " +
-      "repos (rules-us, rules-us-co…). Engine stays focused on runtime + schema. " +
+      "repos (rulespec-us, rulespec-us-co…). Engine stays focused on runtime + schema. " +
       "Filepath-as-id eliminates drift between repo and engine identity. Compiled " +
       "artifacts are JSON-serialisable so callers can run on ephemeral compute (Workers, " +
       "Lambda) without re-parsing the source YAML.",
@@ -994,15 +994,15 @@ export const NODES: NodeSpec[] = [
         "dense-extension binding is direct (numpy in, numpy out).",
     ],
     files: [
-      "axiom-rules/src/main.rs",
-      "axiom-rules/src/rulespec.rs",
-      "axiom-rules/src/spec.rs",
-      "axiom-rules/src/engine.rs",
-      "axiom-rules/src/dense.rs",
-      "axiom-rules/src/compile.rs",
-      "axiom-rules/python/axiom_rules/client.py",
-      "axiom-rules/docs/rulespec.md",
-      "axiom-rules/DECISIONS.md",
+      "axiom-rules-engine/src/main.rs",
+      "axiom-rules-engine/src/rulespec.rs",
+      "axiom-rules-engine/src/spec.rs",
+      "axiom-rules-engine/src/engine.rs",
+      "axiom-rules-engine/src/dense.rs",
+      "axiom-rules-engine/src/compile.rs",
+      "axiom-rules-engine/python/axiom_rules/client.py",
+      "axiom-rules-engine/docs/rulespec.md",
+      "axiom-rules-engine/DECISIONS.md",
     ],
   },
   {
@@ -1111,7 +1111,7 @@ export const NODES: NodeSpec[] = [
       "for the engine to compile. Each program is described by a tiny YAML spec " +
       "(program, outputs, period, scope anchors) — data, not code.",
     rationale:
-      "Today's composition files (e.g. rules-us-co/policies/cdhs/snap/fy-2026-benefit-" +
+      "Today's composition files (e.g. rulespec-us-co/policies/cdhs/snap/fy-2026-benefit-" +
       "calculation.yaml) mix encoded law with software glue and drift silently across " +
       "consumers. Five separate apps reference CO SNAP today; each could go stale. " +
       "Centralising assembly into a single deterministic utility removes the " +
@@ -1159,7 +1159,7 @@ export const NODES: NodeSpec[] = [
       "program for the engine. No per-program code anywhere.",
     rationale:
       "Specs are not law (so they don't belong in rulespec-* corpora — that's the " +
-      "bucket-E violation we're eliminating from rules-us-co). Specs are not the " +
+      "bucket-E violation we're eliminating from rulespec-us-co). Specs are not the " +
       "composer (so they don't belong inside axiom-compose, which is the tool). And " +
       "specs need their own release cycle independent of either. A separate repo with " +
       "country-agnostic layout (us/, us-co/, uk/, …) is the right home: a new fiscal " +
@@ -1243,12 +1243,12 @@ export const EDGES: EdgeSpec[] = [
 
   // Three rules-* edges into navigation share the has_rulespec verb;
   // label only one to keep the canvas readable.
-  { from: "rules-us", to: "navigation", kind: "derived", label: "has_rulespec" },
+  { from: "rulespec-us", to: "navigation", kind: "derived", label: "has_rulespec" },
   { from: "rules-state", to: "navigation", kind: "derived" },
   { from: "rules-other", to: "navigation", kind: "derived" },
 
   { from: "provisions", to: "axiom-encode", kind: "read" },
-  { from: "axiom-encode", to: "rules-us", kind: "solid", label: "writes YAML" },
+  { from: "axiom-encode", to: "rulespec-us", kind: "solid", label: "writes YAML" },
   { from: "axiom-encode", to: "rules-state", kind: "solid" },
   { from: "axiom-encode", to: "rules-other", kind: "solid" },
 
@@ -1260,28 +1260,28 @@ export const EDGES: EdgeSpec[] = [
   { from: "provisions", to: "finbot", kind: "read" },
   { from: "provisions", to: "dashboard-builder", kind: "read" },
 
-  // axiom-rules compiles + executes the RuleSpec YAML. Single labeled edge
-  // (rules-us) carries the verb; the others are visually identical so we
+  // axiom-rules-engine compiles + executes the RuleSpec YAML. Single labeled edge
+  // (rulespec-us) carries the verb; the others are visually identical so we
   // skip the duplicate labels.
-  { from: "rules-us", to: "axiom-rules", kind: "read", label: "compiles" },
-  { from: "rules-state", to: "axiom-rules", kind: "read" },
-  { from: "rules-other", to: "axiom-rules", kind: "read" },
-  { from: "axiom-rules", to: "finbot", kind: "solid", label: "executes" },
-  { from: "axiom-rules", to: "dashboard-builder", kind: "solid" },
+  { from: "rulespec-us", to: "axiom-rules-engine", kind: "read", label: "compiles" },
+  { from: "rules-state", to: "axiom-rules-engine", kind: "read" },
+  { from: "rules-other", to: "axiom-rules-engine", kind: "read" },
+  { from: "axiom-rules-engine", to: "finbot", kind: "solid", label: "executes" },
+  { from: "axiom-rules-engine", to: "dashboard-builder", kind: "solid" },
 
   // axiom-oracles validates against external oracles
-  { from: "rules-us", to: "axiom-oracles", kind: "read", label: "compares" },
+  { from: "rulespec-us", to: "axiom-oracles", kind: "read", label: "compares" },
   { from: "rules-state", to: "axiom-oracles", kind: "read" },
-  { from: "axiom-rules", to: "axiom-oracles", kind: "read" },
+  { from: "axiom-rules-engine", to: "axiom-oracles", kind: "read" },
   // axiom-programs holds declarative compose specs; axiom-compose resolves
   // their `scope` arrays against the atomic rulespec corpora, then emits
   // runnable programs for the engine.
-  { from: "rules-us", to: "axiom-programs", kind: "read", label: "atomic only" },
+  { from: "rulespec-us", to: "axiom-programs", kind: "read", label: "atomic only" },
   { from: "rules-state", to: "axiom-programs", kind: "read" },
-  { from: "rules-us", to: "axiom-compose", kind: "read" },
+  { from: "rulespec-us", to: "axiom-compose", kind: "read" },
   { from: "rules-state", to: "axiom-compose", kind: "read" },
   { from: "axiom-programs", to: "axiom-compose", kind: "read", label: "specs" },
-  { from: "axiom-compose", to: "axiom-rules", kind: "derived", label: "runnable program" },
+  { from: "axiom-compose", to: "axiom-rules-engine", kind: "derived", label: "runnable program" },
 
   // axiom-demo-shell embeds the front-end demos (three short edges; one label
   // is enough — repeating it three times is just noise).
@@ -1342,13 +1342,13 @@ const POS: Record<string, [number, number]> = {
   references: [1300, 720],
   // Col 5 — encoder + rules
   "axiom-encode": [1720, 80],
-  "rules-us": [1720, 320],
+  "rulespec-us": [1720, 320],
   "rules-state": [1720, 480],
   "rules-other": [1720, 640],
   // Col 5.5 — compose specs (declarative, between law and execution)
   "axiom-programs": [1930, 480],
   // Col 6 — execution + validation
-  "axiom-rules": [2140, 320],
+  "axiom-rules-engine": [2140, 320],
   "axiom-compose": [2140, 460],
   "axiom-oracles": [2140, 640],
   // Col 7 — consumer apps
@@ -1371,11 +1371,11 @@ const STORAGE_NEW_IDS = ["r2", "provisions", "navigation", "counts", "references
 
 const ENCODING_NEW_IDS = [
   "axiom-encode",
-  "rules-us",
+  "rulespec-us",
   "rules-state",
   "rules-other",
   "axiom-programs",
-  "axiom-rules",
+  "axiom-rules-engine",
   "axiom-compose",
   "axiom-oracles",
 ];
@@ -1447,7 +1447,7 @@ export const LAYOUTS: Layout[] = [
     eyebrow: "§ 04 · Encoding",
     description:
       "axiom-encode reads the corpus and writes RuleSpec YAML into the rules-* " +
-      "repos. axiom-rules (Rust) compiles + executes that YAML. axiom-compose " +
+      "repos. axiom-rules-engine (Rust) compiles + executes that YAML. axiom-compose " +
       "(planned) assembles programs from atomic encoded law on demand. " +
       "axiom-oracles validates outputs against external oracles (PolicyEngine, " +
       "TAXSIM, ACCESS NYC) via a reusable comparisons registry. The next nav " +
@@ -1465,7 +1465,7 @@ export const LAYOUTS: Layout[] = [
     eyebrow: "§ 05 · Pipeline",
     description:
       "axiom-foundation.org, finbot, and dashboard-builder all read from Supabase " +
-      "and call into axiom-rules for execution. axiom-demo-shell unifies the three " +
+      "and call into axiom-rules-engine for execution. axiom-demo-shell unifies the three " +
       "demo surfaces in a static landing page. Every block carries its repo on the " +
       "eyebrow so you can see who owns what at a glance.",
     nodes: placeAll(PIPELINE_VISIBLE),

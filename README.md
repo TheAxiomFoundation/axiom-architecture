@@ -29,8 +29,21 @@ previous one and adds a new column to the right:
 | § 01 · Sources | Upstream publishers (eCFR, USC, state codes, laws-lois, IRS bulk) |
 | § 02 · Ingest | Fetchers, parsers, source-first adapters, the JSONL artifact tree |
 | § 03 · Storage | R2 (cold) and Supabase (live) tables — provisions + derived |
-| § 04 · Encoding | axiom-encode, rules-* repos, axiom-rules-engine (Rust runtime), axiom-programs (oracle validation) |
+| § 04 · Encoding | axiom-encode, rulespec-* repos, axiom-rules-engine (Rust runtime), axiom-programs + axiom-compose (program assembly), axiom-oracles (validation) |
 | § 05 · Pipeline | axiom-foundation.org, finbot, dashboard-builder, axiom-demo-shell |
+
+Three documentation tabs live below the scenes in the sidebar:
+
+- **Encoding playbook** — how to take a state benefit program end-to-end.
+- **Specs & contracts** — the durable formats that hold the ecosystem
+  together (RuleSpec v1, ProvisionRecord JSONL, citation paths, compose
+  specs, proof atoms, signed apply manifests, the concepts registry,
+  comparison reports, benchmark gates) and where each canonical
+  definition lives.
+- **Open questions** — internal architectural review.
+
+Deeper write-ups live in `docs/` (`encoder-pipeline.md`,
+`corpus-encoding-mapping.md`).
 
 Click any node and the canvas highlights its direct neighbours; the right
 panel shows what the node does, which repository owns it, and what reads

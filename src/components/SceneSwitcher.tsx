@@ -10,6 +10,7 @@ export function SceneSwitcher({
   onDetailModeChange,
   notesTabId,
   playbookTabId,
+  specsTabId,
 }: {
   layouts: Layout[];
   activeId: string;
@@ -19,9 +20,11 @@ export function SceneSwitcher({
   onDetailModeChange: (mode: DetailMode) => void;
   notesTabId: string;
   playbookTabId: string;
+  specsTabId: string;
 }) {
   const notesActive = activeId === notesTabId;
   const playbookActive = activeId === playbookTabId;
+  const specsActive = activeId === specsTabId;
   // repos prop is kept for future re-introduction of a per-repo view; we no
   // longer surface the full list in the sidebar because each card already
   // carries its repo on the eyebrow.
@@ -110,6 +113,17 @@ export function SceneSwitcher({
           >
             <span className="scene-switcher__notes-glyph">§</span>
             <span>Encoding playbook</span>
+          </button>
+          <button
+            type="button"
+            className={`scene-switcher__notes-link ${
+              specsActive ? "scene-switcher__notes-link--active" : ""
+            }`}
+            onClick={() => onChange(specsTabId)}
+            title="Specs & contracts — the durable formats and where their canonical definitions live"
+          >
+            <span className="scene-switcher__notes-glyph">§</span>
+            <span>Specs &amp; contracts</span>
           </button>
           <button
             type="button"

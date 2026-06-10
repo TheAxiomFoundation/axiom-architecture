@@ -22,6 +22,9 @@ export type Repo =
   | "axiom-programs"
   | "axiom-foundation.org"
   | "axiom-demo-shell"
+  | "axiom-scrapers"
+  | "axiom-bills"
+  | "axiom-microsim"
   | "rulespec-us"
   | "rulespec-us-state"
   | "rulespec-non-us"
@@ -65,9 +68,12 @@ export const REPOS: RepoSpec[] = [
   },
   {
     id: "axiom-programs",
-    label: "axiom-programs",
+    label: "programs/ (in country monorepos)",
     description:
-      "Declarative compose specs. One YAML per (jurisdiction, program, period). Documents which atomic rules from rulespec-* assemble into a runnable program. Consumed by axiom-compose. Country-agnostic layout (us/, us-co/, us-ca/, uk/, …).",
+      "Declarative compose specs. One YAML per (jurisdiction, program, period). " +
+      "Live in each country monorepo's programs/ directory (rulespec-us/programs, " +
+      "rulespec-uk/programs) so specs version with the law they compose; the " +
+      "standalone axiom-programs repo is an archived pointer.",
   },
   {
     id: "axiom-foundation.org",
@@ -81,19 +87,42 @@ export const REPOS: RepoSpec[] = [
       "Landing page that embeds the three demos in iframes. Pure static HTML/CSS/JS.",
   },
   {
+    id: "axiom-scrapers",
+    label: "axiom-scrapers",
+    description: "State statute scrapers; output feeds corpus ingest.",
+  },
+  {
+    id: "axiom-bills",
+    label: "axiom-bills",
+    description:
+      "Live bill tracker (Congress.gov + ~20 state legislatures) feeding the encoding pipeline.",
+  },
+  {
+    id: "axiom-microsim",
+    label: "axiom-microsim",
+    description:
+      "PE-free population microsimulation over the Enhanced CPS, executing on axiom-rules-engine.",
+  },
+  {
     id: "rulespec-us",
     label: "rulespec-us",
-    description: "US federal RuleSpec YAML encodings.",
+    description:
+      "US country monorepo: us/ (federal) + us-al/…us-tx/ (states) + programs/ " +
+      "(compose specs). One SHA = the encoded law of the US.",
   },
   {
     id: "rulespec-us-state",
-    label: "rulespec-us-{*}",
-    description: "Per-state RuleSpec repos (rulespec-us-co, rulespec-us-tx, …).",
+    label: "rulespec-us/us-{*}/",
+    description:
+      "State jurisdiction directories inside rulespec-us — absorbed from the " +
+      "former standalone repos with full history.",
   },
   {
     id: "rulespec-non-us",
     label: "rulespec-uk · rulespec-ca",
-    description: "Non-US RuleSpec repos.",
+    description:
+      "Non-US country monorepos (rulespec-uk holds uk/ + " +
+      "uk-kingston-upon-thames/ + programs/).",
   },
   {
     id: "infrastructure",
@@ -770,34 +799,30 @@ export const NODES: NodeSpec[] = [
   },
   {
     id: "rules-state",
-    label: "rulespec-us-{state}",
+    label: "rulespec-us/us-{state}/",
     layer: "rules",
     repo: "rulespec-us-state",
-    summary: "Per-state RuleSpec",
+    summary: "Per-state jurisdiction dirs",
     detail:
-      "One repo per state (rulespec-us-co, rulespec-us-tx, rulespec-us-ca, …). Same convention " +
-      "as rulespec-us. State-specific regulations and agency policy.",
+      "One directory per state inside the rulespec-us country monorepo (us-co/, " +
+      "us-tx/, us-ca/, …) — absorbed from the former standalone rulespec-us-<state> " +
+      "repos with full history. Same convention as us/; durable ids unchanged " +
+      "(us-ca:regulations/mpp/63-300/1#rule).",
     mechanics:
-      "Colorado is the deepest example today: rulespec-us-co/regulations/10-ccr-2506-1/ " +
-      "holds ~34 encoded SNAP-administration sections. Other state repos exist mostly " +
-      "as placeholders. A legacy Colorado SNAP composition file " +
-      "(rulespec-us-co/policies/cdhs/snap/fy-2026-benefit-calculation.yaml) imports " +
-      "23 rules — federal USDA parameters and Colorado overlays — and composes them " +
-      "into a single executable module. Compositions are pending removal: " +
-      "rulespec-* repos hold atomic encoded law only; program assembly moves to " +
-      "axiom-compose so that policies/ is reserved for actual published guidance " +
-      "(IRS Rev Procs, USDA COLA tables), not software-engineered compositions.",
+      "California is the deepest jurisdiction (~360 modules under us-ca/regulations/" +
+      "mpp/); Colorado holds ~34 encoded SNAP-administration sections under " +
+      "us-co/regulations/10-ccr-2506-1/. Cross-jurisdiction changes (a federal rename " +
+      "plus its state importers) are now ONE atomic commit, and the whole closure " +
+      "validates in one CI run with zero external content checkouts.",
     important: [
-      "rulespec-us-co has ~34 paths under regulations/10-ccr-2506-1/. The Colorado " +
-        "Code of Regulations citation '10 CCR 2506-1' becomes '10-ccr-2506-1' in repo " +
-        "paths (dash-separated, lowercase).",
+      "Citation '10 CCR 2506-1' becomes '10-ccr-2506-1' in paths (dash-separated, " +
+        "lowercase).",
       "Many state RuleSpec files use kind: reiteration to declare 'this section " +
         "restates federal X'. Coverage marker, not executable.",
-      "Adding a new state: create the repo, add to repo-map.ts in the app, add to " +
-        "JURISDICTION_REPO_MAP in rulespec_paths.py.",
-      "Composition files (e.g. fy-2026-benefit-calculation.yaml) are how state " +
-        "microsimulations work: they import federal rules and overlay state-specific " +
-        "values into a single compiled ruleset.",
+      "Adding a new state: mkdir us-<state>/ in rulespec-us — CI discovers " +
+        "jurisdiction directories automatically (validate-roots: auto).",
+      "Pre-existing content debt surfaced at consolidation is ratcheted in " +
+        "known-validation-gaps.yaml (rulespec-us#394) — the list only shrinks.",
     ],
   },
   {
@@ -805,14 +830,14 @@ export const NODES: NodeSpec[] = [
     label: "rulespec-uk · rulespec-ca",
     layer: "rules",
     repo: "rulespec-non-us",
-    summary: "Non-US RuleSpec",
+    summary: "Non-US country monorepos",
     detail:
-      "UK and Canadian RuleSpec repos. Same convention as the US repos but different " +
-      "path conventions per jurisdiction's citation scheme.",
+      "One monorepo per sovereign legal system. rulespec-uk holds uk/ (national), " +
+      "uk-kingston-upon-thames/ (council), and programs/; rulespec-ca is Canada. " +
+      "Same convention as rulespec-us with each jurisdiction's citation scheme.",
     important: [
-      "rulespec-uk holds 146 has_rulespec rows on the corpus side — most of those came " +
-        "from pre-existing has_rulespec flags in corpus.provisions, not from current " +
-        "rulespec-uk YAML.",
+      "Sub-national jurisdictions live as directories inside their country " +
+        "monorepo (uk-kingston-upon-thames/), not separate repos.",
       "rulespec-ca maps from canada/* corpus paths. The canada jurisdiction slug is " +
         "non-obvious — JURISDICTION_REPO_MAP['canada'] = 'rulespec-ca', not 'rulespec-canada'.",
     ],
@@ -1124,8 +1149,8 @@ export const NODES: NodeSpec[] = [
       "Multi-program classification (CO SNAP + FIIT + at least one more) gates the " +
         "design: patterns that emerge from ≥2 program families enter the composer; " +
         "everything else stays in atomic law or gets re-encoded.",
-      "Consumes specs from axiom-programs (one YAML per (jurisdiction, program, " +
-        "period)). axiom-programs decouples spec authoring from composer releases.",
+      "Consumes specs from the country monorepos' programs/ directories (one YAML per (jurisdiction, program, " +
+        "period)). Specs version with the law they compose.",
       "Convergence point for axiom-oracles: once axiom-compose lands, the two runner " +
         "types in scripts/run_comparison.py collapse to one. Tracked at " +
         "axiom-oracles#19.",
@@ -1133,7 +1158,7 @@ export const NODES: NodeSpec[] = [
     files: [
       "axiom-compose/src/axiom_compose/core.py",
       "axiom-compose/src/axiom_compose/spec.py",
-      "axiom-programs/<jurisdiction>/<program>/<period>.yaml (compose inputs)",
+      "<country monorepo>/programs/<jurisdiction>/<program>/<period>.yaml (compose inputs)",
     ],
     commands: ["axiom-compose <spec.yaml> (planned)"],
   },
@@ -1177,8 +1202,8 @@ export const NODES: NodeSpec[] = [
         "mature; no -us suffix on the repo name.",
     ],
     files: [
-      "axiom-programs/us-ca/snap/fy-2026.yaml",
-      "axiom-programs/README.md",
+      "rulespec-us/programs/us-ca/snap/fy-2026.yaml",
+      "rulespec-us/programs/ · rulespec-uk/programs/",
     ],
     commands: ["(declarative YAML — consumed by axiom-compose)"],
   },
@@ -1220,6 +1245,61 @@ export const NODES: NodeSpec[] = [
       "axiom-demo-shell/styles.css",
       "axiom-demo-shell/README.md",
     ],
+  },
+
+  // ── Parallel ingest + simulation (added with the monorepo update) ──
+  {
+    id: "scrapers",
+    label: "axiom-scrapers",
+    layer: "ingest",
+    repo: "axiom-scrapers",
+    summary: "State statute scrapers",
+    detail:
+      "Per-state scrapers (19 states) producing paired section text + metadata " +
+      "files (axiom-source-section/v1) that corpus ingest consumes. Offline-first " +
+      "tests against saved HTML fixtures; soft-fail per section.",
+    important: [
+      "Output is local scratch — the corpus artifact store is the source of " +
+        "truth, not scraper output.",
+      "No scheduled runs yet; upstream site drift is discovered manually.",
+    ],
+    files: ["axiom-scrapers/src/axiom_scrapers/"],
+  },
+  {
+    id: "bills",
+    label: "axiom-bills",
+    layer: "ingest",
+    repo: "axiom-bills",
+    summary: "Live bill tracker",
+    detail:
+      "Tracks bills across Congress.gov and ~20 state legislatures with " +
+      "append-only status actions and normalized vocabularies. An enacted bill " +
+      "is the forward-looking 'law changed — encode it' signal into the " +
+      "encoding pipeline.",
+    important: [
+      "Own scrapers per legislature (deliberately not OpenStates).",
+      "Scheduled refresh workflows run daily; SQLite locally, Supabase in prod.",
+    ],
+    files: ["axiom-bills/src/axiom_bills/jurisdictions/"],
+  },
+  {
+    id: "microsim",
+    label: "axiom-microsim",
+    layer: "consumer",
+    repo: "axiom-microsim",
+    summary: "Population microsimulation",
+    detail:
+      "PolicyEngine-free microsimulation over the Enhanced CPS: loads microdata " +
+      "via h5py, projects households into RuleSpec inputs, executes compiled " +
+      "programs on axiom-rules-engine, and aggregates weighted costs, decile " +
+      "distributions, and reform deltas. FastAPI service locally and on Modal.",
+    important: [
+      "Federal income tax agrees with PolicyEngine at 99.8% on a 1,000-unit " +
+        "Enhanced CPS sample — independence proven, not claimed.",
+      "Per-program projections are hand-coded; reforms patch parameter YAML " +
+        "in memory and recompile (~70 ms).",
+    ],
+    files: ["axiom-microsim/axiom_microsim/"],
   },
 ];
 
@@ -1288,6 +1368,13 @@ export const EDGES: EdgeSpec[] = [
   { from: "axiom-foundation", to: "axiom-demo-shell", kind: "read", label: "iframe" },
   { from: "finbot", to: "axiom-demo-shell", kind: "read" },
   { from: "dashboard-builder", to: "axiom-demo-shell", kind: "read" },
+
+  // Parallel ingest + simulation.
+  { from: "state-sources", to: "scrapers", kind: "solid", label: "scrapes" },
+  { from: "scrapers", to: "adapters", kind: "solid", label: "section files" },
+  { from: "bills", to: "axiom-encode", kind: "read", label: "enacted bills" },
+  { from: "axiom-compose", to: "microsim", kind: "derived", label: "compiled programs" },
+  { from: "axiom-rules-engine", to: "microsim", kind: "solid", label: "executes" },
 ];
 
 export type Layout = {
@@ -1332,6 +1419,8 @@ const POS: Record<string, [number, number]> = {
   fetchers: [460, 200],
   parsers: [460, 420],
   adapters: [460, 640],
+  scrapers: [460, 860],
+  bills: [880, 760],
   // Col 3
   artifacts: [880, 420],
   // Col 4 — storage tier
@@ -1355,6 +1444,7 @@ const POS: Record<string, [number, number]> = {
   "axiom-foundation": [2560, 240],
   finbot: [2560, 400],
   "dashboard-builder": [2560, 560],
+  microsim: [2560, 720],
   // Col 8 — demo shell
   "axiom-demo-shell": [2980, 400],
 };
@@ -1365,7 +1455,7 @@ const placeAll = (ids: string[]) => ids.map(pos);
 // Each scene's "visible nodes" is cumulative: scene N = scene N-1 + new ones.
 const SOURCES_IDS = ["ecfr", "usc", "state-sources", "canada-source", "irs-bulk"];
 
-const INGEST_NEW_IDS = ["fetchers", "parsers", "adapters", "artifacts"];
+const INGEST_NEW_IDS = ["fetchers", "parsers", "adapters", "artifacts", "scrapers", "bills"];
 
 const STORAGE_NEW_IDS = ["r2", "provisions", "navigation", "counts", "references"];
 
@@ -1385,6 +1475,7 @@ const CONSUMER_NEW_IDS = [
   "finbot",
   "dashboard-builder",
   "axiom-demo-shell",
+  "microsim",
 ];
 
 const SOURCES_VISIBLE = SOURCES_IDS;

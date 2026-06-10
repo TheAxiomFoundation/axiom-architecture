@@ -14,6 +14,7 @@ import { LabeledEdge } from "./components/LabeledEdge";
 import { DetailPanel } from "./components/DetailPanel";
 import { EncodingPlaybook } from "./components/EncodingPlaybook";
 import { NotesPanel } from "./components/NotesPanel";
+import { SpecsPanel } from "./components/SpecsPanel";
 import { SceneSwitcher } from "./components/SceneSwitcher";
 import {
   LAYOUTS,
@@ -102,6 +103,7 @@ export type DetailMode = "external" | "internal";
 // documentation panel instead of the canvas.
 export const NOTES_TAB_ID = "notes";
 export const PLAYBOOK_TAB_ID = "encoding-playbook";
+export const SPECS_TAB_ID = "specs";
 
 export function App() {
   const [activeLayoutId, setActiveLayoutId] = useState(LAYOUTS[0].id);
@@ -116,7 +118,8 @@ export function App() {
 
   const showNotes = activeLayoutId === NOTES_TAB_ID;
   const showPlaybook = activeLayoutId === PLAYBOOK_TAB_ID;
-  const showDoc = showNotes || showPlaybook;
+  const showSpecs = activeLayoutId === SPECS_TAB_ID;
+  const showDoc = showNotes || showPlaybook || showSpecs;
 
   const catalog = useMemo(() => new Map(NODES.map((node) => [node.id, node])), []);
 
@@ -203,6 +206,7 @@ export function App() {
         onDetailModeChange={setDetailMode}
         notesTabId={NOTES_TAB_ID}
         playbookTabId={PLAYBOOK_TAB_ID}
+        specsTabId={SPECS_TAB_ID}
       />
       {showNotes ? (
         <main className="canvas canvas--notes">
@@ -211,6 +215,10 @@ export function App() {
       ) : showPlaybook ? (
         <main className="canvas canvas--notes">
           <EncodingPlaybook />
+        </main>
+      ) : showSpecs ? (
+        <main className="canvas canvas--notes">
+          <SpecsPanel />
         </main>
       ) : (
         <main className="canvas">

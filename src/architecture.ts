@@ -68,12 +68,12 @@ export const REPOS: RepoSpec[] = [
   },
   {
     id: "axiom-programs",
-    label: "programs/ (in country monorepos)",
+    label: "axiom-programs",
     description:
-      "Declarative compose specs. One YAML per (jurisdiction, program, period). " +
-      "Live in each country monorepo's programs/ directory (rulespec-us/programs, " +
-      "rulespec-uk/programs) so specs version with the law they compose; the " +
-      "standalone axiom-programs repo is an archived pointer.",
+      "Declarative compose specs. One YAML per (jurisdiction, program, period), " +
+      "plus precomposed artifacts under artifacts/ for deployments without " +
+      "axiom-compose. Destined for each country monorepo's programs/ directory " +
+      "once the consolidation PRs (rulespec-us#395, rulespec-uk#43) merge.",
   },
   {
     id: "axiom-foundation.org",
@@ -107,22 +107,25 @@ export const REPOS: RepoSpec[] = [
     id: "rulespec-us",
     label: "rulespec-us",
     description:
-      "US country monorepo: us/ (federal) + us-al/…us-tx/ (states) + programs/ " +
-      "(compose specs). One SHA = the encoded law of the US.",
+      "US federal RuleSpec corpus (statutes/, regulations/, policies/). The " +
+      "country-monorepo consolidation — absorbing the standalone state repos as " +
+      "us-al/…us-tx/ dirs plus programs/ — is in flight (rulespec-us#395, open).",
   },
   {
     id: "rulespec-us-state",
-    label: "rulespec-us/us-{*}/",
+    label: "rulespec-us-{state}",
     description:
-      "State jurisdiction directories inside rulespec-us — absorbed from the " +
-      "former standalone repos with full history.",
+      "18 standalone state repos today (rulespec-us-co, rulespec-us-ca, …). " +
+      "Will be absorbed into rulespec-us as us-{state}/ dirs with full history " +
+      "when rulespec-us#395 merges.",
   },
   {
     id: "rulespec-non-us",
     label: "rulespec-uk · rulespec-ca",
     description:
-      "Non-US country monorepos (rulespec-uk holds uk/ + " +
-      "uk-kingston-upon-thames/ + programs/).",
+      "Non-US corpora: rulespec-uk (national), rulespec-uk-kingston-upon-thames " +
+      "(council, separate repo today), rulespec-ca. UK consolidation into a " +
+      "country monorepo is in flight (rulespec-uk#43, open).",
   },
   {
     id: "infrastructure",
@@ -754,8 +757,9 @@ export const NODES: NodeSpec[] = [
     summary: "US federal RuleSpec YAML",
     detail:
       "RuleSpec YAML files encoding executable computation for US federal benefit " +
-      "programs. Per-provision: one YAML per addressable section/subsection. ~24 " +
-      "encoded files today, concentrated in SNAP regulations (CFR Title 7 Part 273).",
+      "and tax programs. Per-provision: one YAML per addressable section/subsection. " +
+      "~430 encoded modules today across statutes/ (Title 26 income tax, Title 7 " +
+      "SNAP, Title 42), regulations/ (7 CFR 273, 42 CFR Medicaid), and policies/.",
     mechanics:
       "Repository layout mirrors citation paths: statutes/26/3101/a.yaml ↔ " +
       "us/statute/26/3101/a. Each YAML begins with format: rulespec/v1 plus a module " +
@@ -799,28 +803,30 @@ export const NODES: NodeSpec[] = [
   },
   {
     id: "rules-state",
-    label: "rulespec-us/us-{state}/",
+    label: "rulespec-us-{state}",
     layer: "rules",
     repo: "rulespec-us-state",
-    summary: "Per-state jurisdiction dirs",
+    summary: "Per-state RuleSpec repos",
     detail:
-      "One directory per state inside the rulespec-us country monorepo (us-co/, " +
-      "us-tx/, us-ca/, …) — absorbed from the former standalone rulespec-us-<state> " +
-      "repos with full history. Same convention as us/; durable ids unchanged " +
-      "(us-ca:regulations/mpp/63-300/1#rule).",
+      "One standalone repo per state today — 18 of them (rulespec-us-al, -ar, -az, " +
+      "-ca, -co, -de, -fl, -ga, -id, -ma, -md, -nc, -nh, -ny, -ok, -sc, -tn, -tx). " +
+      "Same convention as rulespec-us; durable ids carry the state jurisdiction " +
+      "prefix (us-ca:regulations/mpp/63-300/1#rule).",
     mechanics:
-      "California is the deepest jurisdiction (~360 modules under us-ca/regulations/" +
-      "mpp/); Colorado holds ~34 encoded SNAP-administration sections under " +
-      "us-co/regulations/10-ccr-2506-1/. Cross-jurisdiction changes (a federal rename " +
-      "plus its state importers) are now ONE atomic commit, and the whole closure " +
-      "validates in one CI run with zero external content checkouts.",
+      "California is the deepest jurisdiction (~360 modules under regulations/mpp/); " +
+      "Colorado holds the encoded SNAP-administration sections under " +
+      "regulations/10-ccr-2506-1/ plus Colorado Works TANF. State files import " +
+      "federal rules cross-repo via canonical paths (us:statutes/7/2017/a). " +
+      "The in-flight consolidation (rulespec-us#395) absorbs these repos into " +
+      "rulespec-us as us-{state}/ dirs with full history, making cross-jurisdiction " +
+      "changes one atomic commit — durable ids stay byte-identical.",
     important: [
       "Citation '10 CCR 2506-1' becomes '10-ccr-2506-1' in paths (dash-separated, " +
         "lowercase).",
       "Many state RuleSpec files use kind: reiteration to declare 'this section " +
         "restates federal X'. Coverage marker, not executable.",
-      "Adding a new state: mkdir us-<state>/ in rulespec-us — CI discovers " +
-        "jurisdiction directories automatically (validate-roots: auto).",
+      "rulespec-us#395 must merge with a MERGE COMMIT, never squash — squashing " +
+        "flattens the 1,112 commits of absorbed state history the PR preserves.",
       "Pre-existing content debt surfaced at consolidation is ratcheted in " +
         "known-validation-gaps.yaml (rulespec-us#394) — the list only shrinks.",
     ],
@@ -830,14 +836,15 @@ export const NODES: NodeSpec[] = [
     label: "rulespec-uk · rulespec-ca",
     layer: "rules",
     repo: "rulespec-non-us",
-    summary: "Non-US country monorepos",
+    summary: "Non-US RuleSpec corpora",
     detail:
-      "One monorepo per sovereign legal system. rulespec-uk holds uk/ (national), " +
-      "uk-kingston-upon-thames/ (council), and programs/; rulespec-ca is Canada. " +
-      "Same convention as rulespec-us with each jurisdiction's citation scheme.",
+      "rulespec-uk (national UK law — Universal Credit regulations are the deepest " +
+      "slice), rulespec-uk-kingston-upon-thames (council-level, separate repo " +
+      "today), and rulespec-ca (Canada). Same convention as rulespec-us with each " +
+      "jurisdiction's citation scheme.",
     important: [
-      "Sub-national jurisdictions live as directories inside their country " +
-        "monorepo (uk-kingston-upon-thames/), not separate repos.",
+      "The UK consolidation (rulespec-uk#43, open) absorbs Kingston and the UK " +
+        "program specs into a country monorepo, mirroring rulespec-us#395.",
       "rulespec-ca maps from canada/* corpus paths. The canada jurisdiction slug is " +
         "non-obvious — JURISDICTION_REPO_MAP['canada'] = 'rulespec-ca', not 'rulespec-canada'.",
     ],
@@ -925,17 +932,23 @@ export const NODES: NodeSpec[] = [
       "growing set of deterministic post-encode repair commands.",
     mechanics:
       "Reads corpus.provisions to know what provisions exist. For a target provision, " +
+      "builds an isolated workspace (source.txt + auto-selected precedent context: " +
+      "child fragments, peer subsections, cross-references, definition stubs), then " +
       "drafts a candidate RuleSpec via prompt orchestration (Codex CLI by default, " +
-      "OpenAI Responses API and Claude CLI also wired). The prompt injects directives " +
-      "from the canonical-concept registry scoped by text match, so the model picks " +
-      "approved variable names on first pass rather than after a wasted iteration. " +
-      "Validates against machine-readable test cases, iterates until clean, then " +
-      "writes RuleSpec and companion .test.yaml under a per-citation output path. " +
-      "`--apply` signs an HMAC-sha256 manifest with versioned encoder provenance, " +
-      "enforces the concept registry (refusing to install blocked synonyms or " +
-      "drifting producer anchors), and refuses to overwrite a target whose declared " +
-      "corpus_citation_path differs from the incoming file. Run history (scores, " +
-      "iterations, agent transcripts) lands in corpus.encoding_runs.",
+      "OpenAI Responses API and Claude CLI also wired). The prompt mandates proof " +
+      "atoms on every rule — typed citations (amount, condition, formula, table_cell, " +
+      "import …) tying each executable element to exact source text — and injects " +
+      "directives from the canonical-concept registry so the model picks approved " +
+      "variable names on first pass. Generated YAML then runs a four-tier validator " +
+      "pipeline: engine compile → 50+ CI checks (ungrounded-literal detection, proof " +
+      "validation, subparagraph coverage, test execution) → oracle comparison " +
+      "(PolicyEngine within 2% tolerance) → four parallel LLM reviewers. " +
+      "`--apply` re-validates in a temp policy-repo overlay with deterministic " +
+      "repairs between attempts, signs an HMAC-sha256 manifest with versioned " +
+      "encoder provenance, enforces the concept registry (refusing blocked synonyms " +
+      "or drifting producer anchors), and refuses to overwrite a target whose " +
+      "declared corpus_citation_path differs from the incoming file. Run history " +
+      "(scores, iterations, agent transcripts) lands in encodings.encoding_runs.",
     rationale:
       "Encoding is the bottleneck for downstream usefulness. Any tool that compounds " +
       "encoder throughput — concept registry, repair commands, oracle comparators — " +
@@ -953,12 +966,17 @@ export const NODES: NodeSpec[] = [
         "`regulations/mpp/63-503/132.yaml`) and derive from the requested citation, " +
         "not the resolver-returned path. Apply-time collision guard prevents silent " +
         "overwrites of sibling encodes.",
-      "14 `repair-*` subcommands handle deterministic post-encode fixups so most " +
+      "25 `repair-*` subcommands handle deterministic post-encode fixups so most " +
         "former CI failures become local one-liners.",
+      "`eval-suite` runs benchmark manifests (16 suites under benchmarks/) with " +
+        "readiness gates — min success / compile / CI / zero-ungrounded / oracle " +
+        "pass rates, max mean cost — resumable via a suite-results.jsonl ledger.",
       "Per-program oracle comparators live in axiom-encode, called by axiom-oracles " +
-        "comparison runners: `snap-ecps-compare` for SNAP, `tax-ecps-compare` for " +
-        "federal tax with section-by-section PolicyEngine mappings (32, 151, 172, " +
-        "199A, 213, 6012 and growing). `concepts-audit` walks the corpus for " +
+        "comparison runners: `snap-ecps-compare` (8 states), `tax-ecps-compare` for " +
+        "federal tax with section-by-section PolicyEngine mappings (§1 rates, §21 " +
+        "CDCC, §24 CTC, §25A AOTC, §26 nonrefundable credits, §32 EITC, " +
+        "§1401–§3121 payroll, and growing), and `efrs-uk` for UK Universal Credit / " +
+        "Pension Credit against the Enhanced FRS. `concepts-audit` walks the corpus for " +
         "name-drift between producer rules and the canonical-concept registry " +
         "(src/axiom_encode/concepts/), which gates `encode --apply`: any generated " +
         "RuleSpec using a blocked synonym or claiming a canonical at the wrong " +
@@ -1044,8 +1062,10 @@ export const NODES: NodeSpec[] = [
       "single YAML PR.",
     mechanics:
       "Five layers. (1) Comparisons registry (comparisons/*.yaml): declarative spec " +
-      "per comparison — name, runner type, scope, parameters, schedule. fiit-ecps and " +
-      "co-snap-ecps ship today; FIIT runs at ~99.6% agreement. " +
+      "per comparison — name, runner type, scope, parameters, schedule. 13 entries " +
+      "today: SNAP ECPS comparisons for 8 states (al, ca, co, ma, nc, ny, sc, tn), " +
+      "co-state-income-tax-ecps, fiit-ecps (~99.6% agreement), and two UK EFRS " +
+      "comparisons (uk-universal-credit-efrs, uk-tax-benefits-efrs). " +
       "(2) Orchestrator (scripts/run_comparison.py): dispatches by runner type, " +
       "produces a JSON report. (3) Thin case schema (core/case.py): Case has facts, " +
       "entities (concept-keyed), and requested outputs — no universal household " +
@@ -1077,9 +1097,10 @@ export const NODES: NodeSpec[] = [
       "ACCESS NYC Drools execution is stubbed locally because the public repo lacks " +
         "compiled classes. Python replatform is the working local path; REST API is " +
         "available too.",
-      "AxiomRulesRunner now works end-to-end: federal tax via live-compile of rulespec-us " +
-        "surfaces, Colorado SNAP via a precompiled artifact (pending axiom-compose " +
-        "consolidation, tracked in axiom-oracles#19).",
+      "AxiomRulesRunner works end-to-end: federal tax via live-compile of rulespec-us " +
+        "surfaces, state SNAP via precompiled artifacts, and UK Universal Credit " +
+        "through an axiom-compose composed program (#61) — the first runner on the " +
+        "compose path; collapsing the rest is tracked in axiom-oracles#19.",
       "Report schema is versioned: COMPARISON_REPORT_SCHEMA_VERSION = " +
         "'axiom.comparison_report.v1'.",
       "Locale/scope filters in mappings handle geographic restrictions (ACCESS NYC is " +
@@ -1119,48 +1140,49 @@ export const NODES: NodeSpec[] = [
     label: "axiom-compose",
     layer: "rules",
     repo: "axiom-compose",
-    summary: "Planned: deterministic program assembler",
+    summary: "Deterministic program assembler",
     detail:
-      "Planned, in design. Pure-function utility: (spec, atomic rulespec corpus) → " +
-      "runnable program. Single, standard entry point every Axiom tool will use to " +
-      "assemble programs (FIIT, SNAP, EITC, etc.) for execution. Replaces today's two " +
-      "patterns — checked-in composition YAMLs in rulespec-* and precompiled artifacts " +
-      "in consumers — with one declarative spec + live composition.",
+      "Pure-function utility: (spec, atomic rulespec corpus) → runnable program. " +
+      "The single, standard entry point Axiom tools use to assemble programs " +
+      "(SNAP, FIIT, Universal Credit, …) for execution. Live: CI composes the real " +
+      "CA SNAP program across repos on every push, and axiom-oracles runs UK " +
+      "Universal Credit through a composed program.",
     mechanics:
       "Hard architectural rule: no program-specific code anywhere. Every synthesis " +
       "decision reduces to (a) an atomic encoded rule in rulespec-*, (b) a generic " +
       "transformation pattern that applies to ≥2 program families, or (c) a " +
       "declarative parameter in the spec. The composer's core does dependency " +
-      "closure from declared outputs, applies generic patterns (concept-registry " +
-      "aliasing, override semantics, tiered-table extension), and emits a program " +
-      "for the engine to compile. Each program is described by a tiny YAML spec " +
-      "(program, outputs, period, scope anchors) — data, not code.",
+      "closure from declared outputs, applies the generic transformation registry — " +
+      "conditional value, any_of, formula + data-relation rewrites, derived_relation, " +
+      "concept-registry aliasing — AND-gates eligibility via auto_gate_outputs " +
+      "(program-token match + minimal cover), and emits a program for the engine " +
+      "to compile. Each program is a tiny YAML spec (program, outputs, period, " +
+      "scope anchors) — data, not code.",
     rationale:
-      "Today's composition files (e.g. rulespec-us-co/policies/cdhs/snap/fy-2026-benefit-" +
-      "calculation.yaml) mix encoded law with software glue and drift silently across " +
-      "consumers. Five separate apps reference CO SNAP today; each could go stale. " +
-      "Centralising assembly into a single deterministic utility removes the " +
-      "duplication, lets rulespec-* return to atomic-only, and makes drift loudly " +
-      "detectable via golden tests.",
+      "Checked-in composition files (e.g. rulespec-us-co/policies/cdhs/snap/fy-2026-" +
+      "benefit-calculation.yaml) mix encoded law with software glue and drift " +
+      "silently across consumers. Centralising assembly into one deterministic " +
+      "utility removes the duplication, lets rulespec-* return to atomic-only, and " +
+      "makes drift loudly detectable.",
     important: [
-      "Draft (axiom-compose#1). Spec loader, corpus indexer, and pure composition " +
-        "core work end-to-end on the first concrete spec (us-ca/snap/fy-2026); " +
-        "downstream engine round-trip + golden tests still gate moving out of draft.",
-      "Multi-program classification (CO SNAP + FIIT + at least one more) gates the " +
-        "design: patterns that emerge from ≥2 program families enter the composer; " +
-        "everything else stays in atomic law or gets re-encoded.",
-      "Consumes specs from the country monorepos' programs/ directories (one YAML per (jurisdiction, program, " +
-        "period)). Specs version with the law they compose.",
-      "Convergence point for axiom-oracles: once axiom-compose lands, the two runner " +
-        "types in scripts/run_comparison.py collapse to one. Tracked at " +
-        "axiom-oracles#19.",
+      "Safety rails: composition fails fast on dangling scope entries (#15) and " +
+        "refuses to compose when declared eligibility outputs would leave rules " +
+        "orphaned (#9) — broken specs die loudly, not silently.",
+      "Loads country-monorepo checkouts alongside legacy standalone jurisdiction " +
+        "repos (#16), so it works on both sides of the rulespec-us#395 migration.",
+      "Consumes specs from axiom-programs (one YAML per jurisdiction, program, " +
+        "period); specs move into each country monorepo's programs/ when the " +
+        "consolidations merge.",
+      "Convergence point for axiom-oracles: UK UC already runs via a composed " +
+        "program (axiom-oracles#61); collapsing the remaining precompiled-artifact " +
+        "runners is tracked at axiom-oracles#19.",
     ],
     files: [
       "axiom-compose/src/axiom_compose/core.py",
       "axiom-compose/src/axiom_compose/spec.py",
-      "<country monorepo>/programs/<jurisdiction>/<program>/<period>.yaml (compose inputs)",
+      "axiom-programs/<jurisdiction>/<program>/<period>.yaml (compose inputs)",
     ],
-    commands: ["axiom-compose <spec.yaml> (planned)"],
+    commands: ["axiom-compose <spec.yaml>"],
   },
   {
     id: "axiom-programs",
@@ -1181,29 +1203,32 @@ export const NODES: NodeSpec[] = [
       "must produce), and scope arrays (federal + state) listing the atomic rule " +
       "paths to import. axiom-compose resolves the scope against the relevant " +
       "rulespec-* repos, links the imports via declared outputs, and emits a runnable " +
-      "program for the engine. No per-program code anywhere.",
+      "program for the engine. No per-program code anywhere. artifacts/ holds " +
+      "precomposed RuleSpec / precompiled engine artifacts for deployments that " +
+      "don't run axiom-compose.",
     rationale:
       "Specs are not law (so they don't belong in rulespec-* corpora — that's the " +
-      "bucket-E violation we're eliminating from rulespec-us-co). Specs are not the " +
-      "composer (so they don't belong inside axiom-compose, which is the tool). And " +
-      "specs need their own release cycle independent of either. A separate repo with " +
-      "country-agnostic layout (us/, us-co/, uk/, …) is the right home: a new fiscal " +
-      "year spec or a new jurisdiction is one PR here, not a coordinated release " +
-      "across multiple repos.",
+      "bucket-E violation being eliminated from rulespec-us-co). Specs are not the " +
+      "composer (so they don't belong inside axiom-compose, which is the tool). " +
+      "Long-term home is each country monorepo's programs/ directory so specs " +
+      "version with the law they compose — that move ships with rulespec-us#395 / " +
+      "rulespec-uk#43.",
     important: [
-      "Bootstrapped today. First concrete spec: us-ca/snap/fy-2026.yaml — compiles " +
-        "via axiom-compose#1 (2,339 atomic sources resolved across federal + CA).",
+      "Current inventory: SNAP compose specs for 8 states (al, ca, co, ma, nc, ny, " +
+        "sc, tn), us-co/tanf (Colorado Works), us/payroll/oasdi-wage-tax, and " +
+        "uk/universal-credit fy-2026-27 (with housing schedules wired in).",
       "Migration backlog tracked in README: rulespec-us-co/policies/cdhs/snap/" +
         "fy-2026-benefit-calculation.yaml (bucket-E composition) and " +
         "axiom-microsim/axiom_microsim/project/{co_snap,federal_ctc,federal_income_" +
         "tax}.py (per-program Python adapters) both need to move here as declarative " +
-        "specs once axiom-compose graduates.",
-      "Not US-specific. Layout accommodates uk/, ca/, etc. as those rulespec corpora " +
-        "mature; no -us suffix on the repo name.",
+        "specs.",
+      "Not US-specific. Layout accommodates uk/, ca/, etc.; no -us suffix on the " +
+        "repo name.",
     ],
     files: [
-      "rulespec-us/programs/us-ca/snap/fy-2026.yaml",
-      "rulespec-us/programs/ · rulespec-uk/programs/",
+      "axiom-programs/us-ca/snap/fy-2026.yaml",
+      "axiom-programs/uk/universal-credit/fy-2026-27.yaml",
+      "axiom-programs/artifacts/",
     ],
     commands: ["(declarative YAML — consumed by axiom-compose)"],
   },
@@ -1537,11 +1562,11 @@ export const LAYOUTS: Layout[] = [
     title: "Add encoding + execution",
     eyebrow: "§ 04 · Encoding",
     description:
-      "axiom-encode reads the corpus and writes RuleSpec YAML into the rules-* " +
+      "axiom-encode reads the corpus and writes RuleSpec YAML into the rulespec-* " +
       "repos. axiom-rules-engine (Rust) compiles + executes that YAML. axiom-compose " +
-      "(planned) assembles programs from atomic encoded law on demand. " +
+      "assembles runnable programs from atomic encoded law + declarative specs. " +
       "axiom-oracles validates outputs against external oracles (PolicyEngine, " +
-      "TAXSIM, ACCESS NYC) via a reusable comparisons registry. The next nav " +
+      "TAXSIM, ACCESS NYC) via a 13-entry comparisons registry. The next nav " +
       "rebuild closes the loop via has_rulespec.",
     nodes: placeAll(ENCODING_VISIBLE),
     edges: edgesAmong(new Set(ENCODING_VISIBLE)),

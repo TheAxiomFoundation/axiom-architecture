@@ -43,7 +43,10 @@ Three documentation tabs live below the scenes in the sidebar:
 - **Open questions** — internal architectural review.
 
 Deeper write-ups live in `docs/` (`encoder-pipeline.md`,
-`corpus-encoding-mapping.md`).
+`corpus-encoding-mapping.md`), and `docs/decisions/` holds the
+architecture decision records — one page per cross-repo decision with a
+load-bearing `Status` line (proposed / in-flight / shipped / superseded)
+so "is this shipped yet?" has a checkable answer.
 
 Click any node and the canvas highlights its direct neighbours; the right
 panel shows what the node does, which repository owns it, and what reads

@@ -110,6 +110,8 @@ export function App() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [detailMode, setDetailMode] = useState<DetailMode>("external");
+  // Mobile only: the sidebar collapses to an off-canvas drawer toggled here.
+  const [navOpen, setNavOpen] = useState(false);
 
   // Hover wins over click for neighbor-highlighting so glancing at the graph
   // doesn't require committing to a selection. Click still opens the detail
@@ -194,12 +196,32 @@ export function App() {
 
   return (
     <div className={`layout ${detailOpen ? "layout--detail-open" : ""}`}>
+      <button
+        type="button"
+        className="nav-toggle"
+        aria-label="Open menu"
+        aria-expanded={navOpen}
+        onClick={() => setNavOpen(true)}
+      >
+        <span className="nav-toggle__bars" aria-hidden="true" />
+      </button>
+      {navOpen && (
+        <button
+          type="button"
+          className="scene-backdrop"
+          aria-label="Close menu"
+          onClick={() => setNavOpen(false)}
+        />
+      )}
       <SceneSwitcher
         layouts={LAYOUTS}
         activeId={activeLayoutId}
+        open={navOpen}
+        onClose={() => setNavOpen(false)}
         onChange={(id) => {
           setActiveLayoutId(id);
           setSelectedId(null);
+          setNavOpen(false);
         }}
         repos={REPOS}
         detailMode={detailMode}

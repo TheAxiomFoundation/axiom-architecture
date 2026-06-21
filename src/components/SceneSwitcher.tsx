@@ -11,6 +11,8 @@ export function SceneSwitcher({
   notesTabId,
   playbookTabId,
   specsTabId,
+  open = false,
+  onClose,
 }: {
   layouts: Layout[];
   activeId: string;
@@ -21,6 +23,8 @@ export function SceneSwitcher({
   notesTabId: string;
   playbookTabId: string;
   specsTabId: string;
+  open?: boolean;
+  onClose?: () => void;
 }) {
   const notesActive = activeId === notesTabId;
   const playbookActive = activeId === playbookTabId;
@@ -31,10 +35,18 @@ export function SceneSwitcher({
   void repos;
 
   return (
-    <nav className="scene-switcher">
+    <nav className={`scene-switcher ${open ? "scene-switcher--open" : ""}`}>
       <div className="scene-switcher__wordmark">
         <span className="glyph-axiom">∀</span>
         <span className="scene-switcher__wordmark-text">Architecture</span>
+        <button
+          type="button"
+          className="scene-switcher__close"
+          aria-label="Close menu"
+          onClick={onClose}
+        >
+          ×
+        </button>
       </div>
 
       <ul className="scene-switcher__scenes">

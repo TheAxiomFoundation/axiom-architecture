@@ -960,6 +960,74 @@ body::before {
 }
 
 /* ────────────────────────────────────────────────────────────
+   Mobile drawer controls — hidden on desktop, shown ≤ 768px
+   ──────────────────────────────────────────────────────────── */
+
+.nav-toggle {
+  display: none;
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 28;
+  width: 42px;
+  height: 42px;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-paper-elevated);
+  border: 1px solid var(--color-rule);
+  border-radius: 9px;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(28, 25, 23, 0.06);
+}
+
+.nav-toggle__bars,
+.nav-toggle__bars::before,
+.nav-toggle__bars::after {
+  content: "";
+  display: block;
+  width: 18px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--color-ink);
+}
+
+.nav-toggle__bars {
+  position: relative;
+}
+
+.nav-toggle__bars::before {
+  position: absolute;
+  left: 0;
+  top: -6px;
+}
+
+.nav-toggle__bars::after {
+  position: absolute;
+  left: 0;
+  top: 6px;
+}
+
+.scene-switcher__close {
+  display: none;
+  margin-left: auto;
+  width: 32px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-rule);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-ink);
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.scene-backdrop {
+  display: none;
+}
+
+/* ────────────────────────────────────────────────────────────
    Responsive — phones & small tablets (≤ 768px)
 
    The desktop layout is a fixed multi-column grid (sidebar + canvas +
@@ -974,85 +1042,97 @@ body::before {
   html,
   body,
   #root {
-    height: auto;
-    min-height: 100%;
+    height: 100%;
   }
 
-  /* Single column; let the page scroll vertically instead of forcing
-     three fixed columns into a phone-width viewport. */
+  /* The canvas takes the full viewport; the sidebar is lifted out of flow
+     into an off-canvas drawer, so the diagram gets the whole width. */
   .layout,
   .layout--detail-open {
-    display: flex;
-    flex-direction: column;
+    display: block;
     grid-template-columns: none;
-    height: auto;
-    min-height: 100vh;
+    height: 100vh;
+    overflow: hidden;
   }
 
-  /* Sidebar spans the full width and sits on top; it no longer needs to
-     scroll independently since the whole page scrolls. */
+  /* Sidebar → off-canvas drawer that slides in from the left. */
   .scene-switcher {
-    width: 100%;
-    border-right: none;
-    border-bottom: 1px solid var(--color-rule);
-    padding: 20px 16px;
-    overflow-y: visible;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: min(82vw, 320px);
+    border-right: 1px solid var(--color-rule);
+    padding: 20px 18px;
+    overflow-y: auto;
+    transform: translateX(-100%);
+    transition: transform 240ms var(--ease-out);
+    z-index: 30;
+    box-shadow: 0 0 44px rgba(28, 25, 23, 0.18);
   }
 
-  /* Lay the scene buttons out in a wrapping grid so they don't form a
-     tall stack that pushes the canvas far down the page. */
+  .scene-switcher--open {
+    transform: translateX(0);
+  }
+
+  /* Show the drawer controls. */
+  .nav-toggle {
+    display: inline-flex;
+  }
+
+  .scene-switcher__close {
+    display: inline-flex;
+  }
+
+  .scene-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 25;
+    border: 0;
+    padding: 0;
+    background: rgba(28, 25, 23, 0.42);
+    cursor: pointer;
+  }
+
+  /* Inside the drawer the scenes stay a normal vertical list. */
   .scene-switcher__scenes {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 6px;
-    margin-top: 16px;
-  }
-
-  .scene-switcher__scenes li + li {
-    margin-top: 0;
-  }
-
-  .scene-switcher__footer {
     margin-top: 18px;
   }
 
-  /* Let the Detail label/pill row wrap instead of overflowing the narrow
-     sidebar when the pill can't sit beside the label. */
+  /* Let the Detail label/pill row wrap if the pill can't sit beside it. */
   .scene-switcher__row {
     flex-wrap: wrap;
   }
 
-  /* The canvas has no intrinsic height once the grid row is gone, and
-     React Flow renders nothing in a zero-height box — give it a usable
-     viewport-relative height. */
+  /* Canvas fills the viewport; leave room at top-left for the toggle. */
   .canvas {
-    min-height: 70vh;
-  }
-
-  .canvas--notes {
+    height: 100vh;
     min-height: 0;
   }
 
   .canvas__header {
-    padding: 18px 18px 16px 18px;
+    padding: 16px 18px 14px 64px;
   }
 
-  /* React Flow measures its container on mount; in a flex column with no
-     fixed row height it can initialise against a zero/unstable height and
-     fitView then parks the nodes off-screen (blank canvas). Give the flow
-     box an explicit height so it measures correctly. */
+  /* React Flow measures its container on mount; flex:1 inside the
+     full-height canvas gives it a stable, non-zero height to fit into. */
   .canvas__flow {
-    flex: none;
-    height: 65vh;
-    min-height: 360px;
+    flex: 1;
+    min-height: 0;
   }
 
-  /* Detail panel: overlay the whole screen instead of being a fixed
-     380px third column (which doesn't fit on a phone). */
+  /* Documentation tabs replace the canvas and need to scroll internally. */
+  .canvas--notes {
+    height: 100vh;
+    overflow-y: auto;
+  }
+
+  /* Detail panel: overlay the whole screen instead of a third column. */
   .detail-panel {
     position: fixed;
     inset: 0;
-    z-index: 20;
+    z-index: 40;
     border-left: none;
     width: 100%;
     max-width: 100%;
@@ -1064,10 +1144,10 @@ body::before {
     height: 36px;
   }
 
-  /* Documentation panels (.notes) carry generous desktop padding that
-     wastes horizontal space on a phone. */
+  /* Documentation panels carry generous desktop padding; reclaim space,
+     and clear the fixed toggle in the top-left. */
   .notes {
-    padding: 28px 18px 64px 18px;
+    padding: 24px 18px 64px 64px;
   }
 
   .notes__header h1 {
@@ -1075,16 +1155,8 @@ body::before {
   }
 
   /* Wide code blocks scroll within their own box rather than widening
-     the page. (overflow-x: auto already set; ensure it can shrink.) */
+     the page. */
   .notes__code {
     max-width: 100%;
-  }
-}
-
-/* Small tablets / large phones in landscape: enough width to lay the
-   scene buttons out three-up so the wrapping grid isn't sparse. */
-@media (min-width: 540px) and (max-width: 768px) {
-  .scene-switcher__scenes {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }

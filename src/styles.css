@@ -958,3 +958,133 @@ body::before {
   color: var(--color-ink-secondary);
   font-style: italic;
 }
+
+/* ────────────────────────────────────────────────────────────
+   Responsive — phones & small tablets (≤ 768px)
+
+   The desktop layout is a fixed multi-column grid (sidebar + canvas +
+   optional detail panel). At narrow widths those fixed pixel columns
+   overflow the viewport, so we collapse the grid into a single scrolling
+   column: the scene switcher stacks above the canvas, the canvas gets an
+   explicit height (React Flow needs one), and the detail panel becomes a
+   full-screen overlay instead of a third column.
+   ──────────────────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  html,
+  body,
+  #root {
+    height: auto;
+    min-height: 100%;
+  }
+
+  /* Single column; let the page scroll vertically instead of forcing
+     three fixed columns into a phone-width viewport. */
+  .layout,
+  .layout--detail-open {
+    display: flex;
+    flex-direction: column;
+    grid-template-columns: none;
+    height: auto;
+    min-height: 100vh;
+  }
+
+  /* Sidebar spans the full width and sits on top; it no longer needs to
+     scroll independently since the whole page scrolls. */
+  .scene-switcher {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--color-rule);
+    padding: 20px 16px;
+    overflow-y: visible;
+  }
+
+  /* Lay the scene buttons out in a wrapping grid so they don't form a
+     tall stack that pushes the canvas far down the page. */
+  .scene-switcher__scenes {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    margin-top: 16px;
+  }
+
+  .scene-switcher__scenes li + li {
+    margin-top: 0;
+  }
+
+  .scene-switcher__footer {
+    margin-top: 18px;
+  }
+
+  /* Let the Detail label/pill row wrap instead of overflowing the narrow
+     sidebar when the pill can't sit beside the label. */
+  .scene-switcher__row {
+    flex-wrap: wrap;
+  }
+
+  /* The canvas has no intrinsic height once the grid row is gone, and
+     React Flow renders nothing in a zero-height box — give it a usable
+     viewport-relative height. */
+  .canvas {
+    min-height: 70vh;
+  }
+
+  .canvas--notes {
+    min-height: 0;
+  }
+
+  .canvas__header {
+    padding: 18px 18px 16px 18px;
+  }
+
+  /* React Flow measures its container on mount; in a flex column with no
+     fixed row height it can initialise against a zero/unstable height and
+     fitView then parks the nodes off-screen (blank canvas). Give the flow
+     box an explicit height so it measures correctly. */
+  .canvas__flow {
+    flex: none;
+    height: 65vh;
+    min-height: 360px;
+  }
+
+  /* Detail panel: overlay the whole screen instead of being a fixed
+     380px third column (which doesn't fit on a phone). */
+  .detail-panel {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    border-left: none;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  /* Roomier tap target for the close button on touch. */
+  .detail-panel__close {
+    width: 36px;
+    height: 36px;
+  }
+
+  /* Documentation panels (.notes) carry generous desktop padding that
+     wastes horizontal space on a phone. */
+  .notes {
+    padding: 28px 18px 64px 18px;
+  }
+
+  .notes__header h1 {
+    font-size: 1.5rem;
+  }
+
+  /* Wide code blocks scroll within their own box rather than widening
+     the page. (overflow-x: auto already set; ensure it can shrink.) */
+  .notes__code {
+    max-width: 100%;
+  }
+}
+
+/* Small tablets / large phones in landscape: enough width to lay the
+   scene buttons out three-up so the wrapping grid isn't sparse. */
+@media (min-width: 540px) and (max-width: 768px) {
+  .scene-switcher__scenes {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}

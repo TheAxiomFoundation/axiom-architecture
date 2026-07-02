@@ -1,8 +1,10 @@
 # 0005 — Program compose specs live in axiom-programs, then move into country monorepos
 
-**Status:** in-flight (specs live in axiom-programs today; the move into
-each country monorepo's `programs/` ships with the ADR 0001
-consolidations)
+**Status:** shipped, with a twist (the ADR 0001 consolidations copied the
+US specs into rulespec-us `programs/` on 2026-06-12, but axiom-programs
+was NOT retired — it remains the staging home, its README now pulls
+legacy compositions *into* it, and the two homes are copies that can
+drift. axiom-oracles vendors a third copy under its own `programs/`.)
 
 ## Context
 
@@ -25,13 +27,14 @@ compose — that move is part of rulespec-us#395 / rulespec-uk#43.
 
 - A new fiscal-year spec or jurisdiction is one PR, not a coordinated
   release.
-- Inventory as of June 2026: SNAP specs for 8 states (al, ca, co, ma,
-  nc, ny, sc, tn), us-co/tanf (Colorado Works), us/payroll/
-  oasdi-wage-tax, uk/universal-credit fy-2026-27 (housing schedules
-  wired in).
-- Two homes in sequence means consumers must follow the move when the
-  consolidations merge; axiom-compose already resolves both layouts
-  (axiom-compose#16).
+- Inventory as of July 2026 (15 specs in axiom-programs): SNAP for 8
+  states (al, ca, co, ma, nc, ny, sc, tn), TANF for us-co, us-ny, us-wa,
+  us/payroll/oasdi-wage-tax, us/medicaid-magi, us/ssi, and
+  uk/universal-credit fy-2026-27 (housing schedules wired in). The
+  monorepo `programs/` copy holds 18.
+- Two homes in *parallel* (not in sequence, as originally planned) means
+  drift is possible; axiom-compose resolves both layouts
+  (axiom-compose#16). Deciding which copy is authoritative is open.
 - `artifacts/` is a deliberate escape hatch, and a drift risk if a
   precomposed artifact outlives its spec — regenerate on spec change.
 

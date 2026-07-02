@@ -96,7 +96,9 @@ const SECTIONS: Section[] = [
   {
     kicker: "§ 4",
     title: "Compose specs — programs as data",
-    owner: "axiom-programs (consumed by axiom-compose)",
+    owner:
+      "axiom-programs + country-monorepo programs/ (dual-homed since the " +
+      "2026-06-12 consolidation; consumed by axiom-compose)",
     canonical: "axiom-programs/README.md",
     blocks: [
       {
@@ -112,7 +114,8 @@ const SECTIONS: Section[] = [
           "Spec shape: program identifier, period, declared outputs (the rules the engine must produce), scope arrays (federal + state atomic rule paths).",
           "Hard rule: no per-program code anywhere. Every synthesis decision is an atomic rule, a generic transformation pattern (applies to ≥2 program families), or a declarative spec parameter.",
           "Composition fails fast: dangling scope entries and orphaned eligibility outputs abort the compose rather than producing a silently-wrong program.",
-          "artifacts/ holds precomposed RuleSpec / precompiled engine artifacts for deployments that do not run axiom-compose.",
+          "artifacts/ holds precomposed RuleSpec / precompiled engine artifacts for deployments that do not run axiom-compose (today: UK Universal Credit).",
+          "Three copies exist in the wild: axiom-programs (staging home, 15 specs), rulespec-us programs/ (monorepo copy, 18 specs), and axiom-oracles programs/ (vendored for suite runs). Which copy is authoritative is an open decision — watch for drift.",
         ],
       },
     ],

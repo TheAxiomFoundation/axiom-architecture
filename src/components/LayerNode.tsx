@@ -8,14 +8,16 @@ const REPO_LABEL: Record<Repo, string> = {
   "axiom-oracles": "axiom-oracles",
   "axiom-compose": "axiom-compose",
   "axiom-programs": "axiom-programs",
+  "axiom-api": "axiom-api",
+  "axiom-mcp": "axiom-mcp",
   "axiom-foundation.org": "axiom-foundation.org",
   "axiom-demo-shell": "axiom-demo-shell",
   "axiom-scrapers": "axiom-scrapers",
   "axiom-bills": "axiom-bills",
   "axiom-microsim": "axiom-microsim",
   "rulespec-us": "rulespec-us",
-  "rulespec-us-state": "rulespec-us/us-{*}/",
   "rulespec-non-us": "rulespec-uk · rulespec-ca",
+  demos: "Demo repos",
   infrastructure: "Managed infra",
   external: "External source",
 };
@@ -27,6 +29,7 @@ const LAYER_GLYPH: Record<Layer, string> = {
   "storage-hot": "■",
   rules: "¶",
   consumer: "◇",
+  platform: "⧉",
 };
 
 export type LayerNodeData = {

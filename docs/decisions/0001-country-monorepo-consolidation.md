@@ -1,6 +1,8 @@
 # 0001 — One country monorepo per sovereign legal system
 
-**Status:** in-flight (rulespec-us#395 and rulespec-uk#43 both open as of 2026-06-11)
+**Status:** shipped (rulespec-us#395 merged 2026-06-12 08:34Z, merge commit
+`7937b278`; rulespec-uk#43 merged 2026-06-12 19:39Z — both history-preserving
+merge commits. The 18 standalone state repos were archived 2026-06-27.)
 
 ## Context
 
@@ -32,8 +34,18 @@ and UK program specs the same way. Durable rule ids stay byte-identical
   axiom-compose already loads monorepo checkouts alongside legacy
   standalone repos (axiom-compose#16).
 
+## Outcome (2026-07-02)
+
+- rulespec-us today: federal `us/` (~606 modules), **32** `us-{state}/` dirs
+  (the absorbed 18 plus new states encoded directly in the monorepo),
+  `programs/` (18 compose specs), ~3,040 encoded modules total.
+- rulespec-uk today: `uk/`, `uk-kingston-upon-thames/`, `programs/`,
+  `validation_baselines/` — 159 modules.
+- Stragglers outside the monorepo: rulespec-us-or (local-only Oregon
+  scaffold, no GitHub repo) and rulespec-us-ut (bare `policies/` dir).
+
 ## References
 
-- rulespec-us#395 (US consolidation, open)
-- rulespec-uk#43 (UK consolidation, open)
-- Viewer nodes: rulespec-us, rulespec-us-{state}, rulespec-uk · rulespec-ca
+- rulespec-us#395 (US consolidation, merged 2026-06-12)
+- rulespec-uk#43 (UK consolidation, merged 2026-06-12)
+- Viewer nodes: rulespec-us, rulespec-uk · rulespec-ca

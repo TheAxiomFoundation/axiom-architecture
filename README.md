@@ -1,11 +1,11 @@
 # axiom-architecture
 
 Interactive viewer for the Axiom Foundation ecosystem architecture. A React
-app that walks a reader through the system in five additive scenes —
+app that walks a reader through the system in six additive scenes —
 upstream sources, ingest, storage, encoding + execution, consumer
-apps — with a clickable detail panel on each node that flips between
-**External** (concepts + relationships) and **Internal** (mechanics,
-gotchas, file paths, commands) modes.
+apps, platform surface — with a clickable detail panel on each node that
+flips between **External** (concepts + relationships) and **Internal**
+(mechanics, gotchas, file paths, commands) modes.
 
 Designed for onboarding, design reviews, partner walkthroughs, and the
 public-facing story.
@@ -27,10 +27,11 @@ previous one and adds a new column to the right:
 | Step | Adds |
 |---|---|
 | § 01 · Sources | Upstream publishers (eCFR, USC, state codes, laws-lois, IRS bulk) |
-| § 02 · Ingest | Fetchers, parsers, source-first adapters, the JSONL artifact tree |
-| § 03 · Storage | R2 (cold) and Supabase (live) tables — provisions + derived |
-| § 04 · Encoding | axiom-encode, rulespec-* repos, axiom-rules-engine (Rust runtime), axiom-programs + axiom-compose (program assembly), axiom-oracles (validation) |
-| § 05 · Pipeline | axiom-foundation.org, finbot, dashboard-builder, axiom-demo-shell |
+| § 02 · Ingest | Fetchers, parsers, source-first adapters, the JSONL artifact tree, axiom-scrapers |
+| § 03 · Storage | R2 (cold) and Supabase (live) tables — provisions + derived — plus axiom-bills |
+| § 04 · Encoding | axiom-encode, the country monorepos (rulespec-us with federal + 32 states + programs/, rulespec-uk, rulespec-ca), axiom-rules-engine (Rust runtime), axiom-programs + axiom-compose (program assembly), axiom-oracles (validation + coverage dashboard) |
+| § 05 · Pipeline | axiom-foundation.org (incl. the /ops dashboard), finbot, dashboard-builder, axiom-microsim, axiom-demo-shell |
+| § 06 · Platform | axiom-api (HTTP API + SDKs on Vercel/Modal), axiom-mcp (MCP server for agents), the GA4 → Axiom CRM analytics loop |
 
 Three documentation tabs live below the scenes in the sidebar:
 

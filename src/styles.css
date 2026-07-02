@@ -423,7 +423,8 @@ body::before {
 .axiom-node--storage-cold::before,
 .axiom-node--storage-hot::before,
 .axiom-node--rules::before,
-.axiom-node--consumer::before {
+.axiom-node--consumer::before,
+.axiom-node--platform::before {
   content: "";
   position: absolute;
   top: -1px;
@@ -441,6 +442,9 @@ body::before {
 }
 .axiom-node--rules::before { background: var(--color-success); }
 .axiom-node--consumer::before { background: var(--color-ink); }
+.axiom-node--platform::before {
+  background: linear-gradient(to right, var(--color-success), var(--color-accent));
+}
 
 .axiom-node--selected {
   border-color: var(--color-accent);

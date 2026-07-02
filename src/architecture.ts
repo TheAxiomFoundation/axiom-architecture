@@ -11,7 +11,8 @@ export type Layer =
   | "storage-cold"
   | "storage-hot"
   | "rules"
-  | "consumer";
+  | "consumer"
+  | "platform";
 
 export type Repo =
   | "axiom-corpus"
@@ -20,14 +21,16 @@ export type Repo =
   | "axiom-oracles"
   | "axiom-compose"
   | "axiom-programs"
+  | "axiom-api"
+  | "axiom-mcp"
   | "axiom-foundation.org"
   | "axiom-demo-shell"
   | "axiom-scrapers"
   | "axiom-bills"
   | "axiom-microsim"
   | "rulespec-us"
-  | "rulespec-us-state"
   | "rulespec-non-us"
+  | "demos"
   | "infrastructure"
   | "external";
 
@@ -46,7 +49,9 @@ export const REPOS: RepoSpec[] = [
   {
     id: "axiom-encode",
     label: "axiom-encode",
-    description: "Encoder pipeline. Reads corpus, writes RuleSpec YAML.",
+    description:
+      "Encoder pipeline. Reads corpus, writes RuleSpec YAML. The axiom-encode-* " +
+      "directories on disk are git worktrees of this one repo, not separate components.",
   },
   {
     id: "axiom-rules-engine",
@@ -58,13 +63,15 @@ export const REPOS: RepoSpec[] = [
     id: "axiom-oracles",
     label: "axiom-oracles",
     description:
-      "Oracle comparison toolkit. Runs programs through Axiom + PolicyEngine + TAXSIM + ACCESS NYC for validation. Reusable comparisons registry; matrix-runs every entry on a weekly schedule.",
+      "Oracle comparison toolkit. Runs programs through Axiom + PolicyEngine + TAXSIM + " +
+      "ACCESS NYC + EUROMOD/UKMOD for validation. 20-entry comparisons registry, weekly " +
+      "unattended regeneration, and a public Next.js coverage dashboard on Vercel.",
   },
   {
     id: "axiom-compose",
     label: "axiom-compose",
     description:
-      "Deterministic program assembler: spec + atomic rulespec corpus → runnable program, no per-program code anywhere. Consumes specs from axiom-programs; replaces composition YAMLs in rulespec-* and precompiled artifacts in consumers.",
+      "Deterministic program assembler: spec + atomic rulespec corpus → runnable program, no per-program code anywhere. Consumes compose specs (axiom-programs / country-monorepo programs/); replaces checked-in composition YAMLs and precompiled artifacts in consumers.",
   },
   {
     id: "axiom-programs",
@@ -72,8 +79,23 @@ export const REPOS: RepoSpec[] = [
     description:
       "Declarative compose specs. One YAML per (jurisdiction, program, period), " +
       "plus precomposed artifacts under artifacts/ for deployments without " +
-      "axiom-compose. Destined for each country monorepo's programs/ directory " +
-      "once the consolidation PRs (rulespec-us#395, rulespec-uk#43) merge.",
+      "axiom-compose. Specs were copied into rulespec-us programs/ at the June 2026 " +
+      "consolidation; this repo remains the staging home and the two copies can drift.",
+  },
+  {
+    id: "axiom-api",
+    label: "axiom-api",
+    description:
+      "Rule-native HTTP platform (Hono on Vercel): search, retrieve, explain, and " +
+      "execute RuleSpecs behind API keys. Ships vendored TypeScript + Python SDKs; " +
+      "heavy compute runs on a Modal-hosted build of axiom-rules-engine.",
+  },
+  {
+    id: "axiom-mcp",
+    label: "axiom-mcp",
+    description:
+      "MCP server adapter over axiom-api (npm @axiom-foundation/mcp, v0.1.2). Runs " +
+      "on the client machine via stdio; every tool is a passthrough to the HTTP API.",
   },
   {
     id: "axiom-foundation.org",
@@ -84,53 +106,59 @@ export const REPOS: RepoSpec[] = [
     id: "axiom-demo-shell",
     label: "axiom-demo-shell",
     description:
-      "Landing page that embeds the three demos in iframes. Pure static HTML/CSS/JS.",
+      "Static landing page presenting ten demo surfaces in a guided Infrastructure → " +
+      "Validation → Application pipeline. Pure HTML/CSS/JS.",
   },
   {
     id: "axiom-scrapers",
     label: "axiom-scrapers",
-    description: "State statute scrapers; output feeds corpus ingest.",
+    description:
+      "State statute scrapers (19 states); output feeds corpus ingest. Dormant since " +
+      "May 2026 — recent state ingestion has gone through corpus-native scripts instead.",
   },
   {
     id: "axiom-bills",
     label: "axiom-bills",
     description:
-      "Live bill tracker (Congress.gov + ~20 state legislatures) feeding the encoding pipeline.",
+      "Live bill tracker (Congress.gov hourly + 21 state legislatures every 6h) that " +
+      "precomputes rule-patch variants for the encoding pipeline.",
   },
   {
     id: "axiom-microsim",
     label: "axiom-microsim",
     description:
-      "PE-free population microsimulation over the Enhanced CPS, executing on axiom-rules-engine.",
+      "PE-free population microsimulation over the Enhanced CPS, executing on " +
+      "axiom-rules-engine. Three programs: CO SNAP, federal income tax, federal CTC.",
   },
   {
     id: "rulespec-us",
     label: "rulespec-us",
     description:
-      "US federal RuleSpec corpus (statutes/, regulations/, policies/). The " +
-      "country-monorepo consolidation — absorbing the standalone state repos as " +
-      "us-al/…us-tx/ dirs plus programs/ — is in flight (rulespec-us#395, open).",
-  },
-  {
-    id: "rulespec-us-state",
-    label: "rulespec-us-{state}",
-    description:
-      "18 standalone state repos today (rulespec-us-co, rulespec-us-ca, …). " +
-      "Will be absorbed into rulespec-us as us-{state}/ dirs with full history " +
-      "when rulespec-us#395 merges.",
+      "US country monorepo since 2026-06-12 (PR #395, merged with history): federal " +
+      "us/, 32 us-{state}/ dirs, programs/ compose specs, tests/. ~3,040 encoded " +
+      "modules. The 18 standalone state repos are archived tombstones.",
   },
   {
     id: "rulespec-non-us",
     label: "rulespec-uk · rulespec-ca",
     description:
-      "Non-US corpora: rulespec-uk (national), rulespec-uk-kingston-upon-thames " +
-      "(council, separate repo today), rulespec-ca. UK consolidation into a " +
-      "country monorepo is in flight (rulespec-uk#43, open).",
+      "Non-US country monorepos: rulespec-uk consolidated uk/ + " +
+      "uk-kingston-upon-thames/ + programs/ on 2026-06-12 (PR #43); rulespec-ca " +
+      "is mid-sprint on Canada 2026 provincial tax + benefits.",
+  },
+  {
+    id: "demos",
+    label: "finbot-snap-demo · dashboard-builder",
+    description:
+      "Standalone demo repos deployed to Vercel; embedded by axiom-demo-shell, " +
+      "not by axiom-foundation.org.",
   },
   {
     id: "infrastructure",
     label: "Managed infrastructure",
-    description: "Cloudflare R2 bucket and Supabase project — not source code.",
+    description:
+      "Cloudflare R2, Supabase, Modal compute, and the GA4 → CRM analytics loop — " +
+      "not source code.",
   },
   {
     id: "external",
@@ -451,6 +479,10 @@ export const NODES: NodeSpec[] = [
       "Path conventions vary subtly by jurisdiction: us-co/regulation/ optionally has " +
         "@variant suffixes; US federal regulation drops -cfr from titles; Indiana uses " +
         "dashes within segments (1-2-3) rather than slashes.",
+      "June 2026 widened the funnel: Belgium came in via ELI ingestion (corpus #151-153, " +
+        "the first EU jurisdiction), and legacy Word (.doc/.docx) official documents " +
+        "became ingestible (#156). A large Medicaid/CHIP/Medicare + multi-state " +
+        "TANF/SSP source push landed the same month (#133-163).",
       "Each adapter is ~300-1500 lines depending on upstream complexity. They share " +
         "the CorpusArtifactStore + ProvisionRecord contract, not parsing logic.",
       "Inventory + provisions are both kept on disk so coverage can be diffed. " +
@@ -550,8 +582,10 @@ export const NODES: NodeSpec[] = [
     important: [
       "Diff is size-based, not hash-based. Changed content with identical byte count " +
         "won't retrigger upload unless --force.",
-      "Nothing in production serving reads from R2 today — it's audit/replay only. If " +
-        "no downstream consumer ever materialises, this is dead weight worth removing.",
+      "R2 gained its first production reader in June 2026: the axiom-foundation.org " +
+        "/ops dashboard reads analytics/*-current.json (state-statute completion, " +
+        "regulation completion, artifact report, validate-release) straight from the " +
+        "bucket. Provision serving still never touches R2.",
       "Credentials at ~/.config/axiom-foundation/r2-credentials.json. Missing creds → " +
         "RuntimeError mentioning both env-var and file paths.",
       "build_artifact_report_with_r2 produces a three-way health check: local files vs " +
@@ -576,8 +610,9 @@ export const NODES: NodeSpec[] = [
     summary: "Postgres + PostgREST",
     detail:
       "Managed Postgres + PostgREST hosted by Supabase. Live serving database for the " +
-      "whole ecosystem. Four schemas exposed: corpus (legal text + navigation), " +
-      "encodings (encoder run history), telemetry (observability), app (frontend state).",
+      "whole ecosystem. Five schemas in active use: corpus (legal text + navigation), " +
+      "encodings (encoder run history), telemetry (observability), app (frontend " +
+      "state), and bills (tracked legislation + precomputed rule patches).",
     mechanics:
       "Apps read via REST endpoints with `Accept-Profile: corpus` header to scope to " +
       "the corpus schema. Writes go through `Content-Profile: corpus` POST/DELETE with " +
@@ -603,8 +638,9 @@ export const NODES: NodeSpec[] = [
     repo: "infrastructure",
     summary: "Source of truth for legal text",
     detail:
-      "The primary table in the corpus schema. One row per provision. ~1.75M rows " +
-      "across all jurisdictions. Holds body text plus 20+ metadata columns.",
+      "The primary table in the corpus schema. One row per provision. Millions of rows " +
+      "(~1.75M at the May 2026 snapshot; growing with the Medicaid/TANF/Belgium " +
+      "ingestion waves). Holds body text plus 20+ metadata columns.",
     mechanics:
       "Loaded by load_provisions_to_supabase (supabase.py). The loader chunks records " +
       "(default 500/chunk), projects each through provision_to_supabase_row (which sets " +
@@ -748,87 +784,64 @@ export const NODES: NodeSpec[] = [
     commands: ["extract-references"],
   },
 
-  // ── Rules repos ───────────────────────────────────────────────────
+  // ── Rules repos (country monorepos since 2026-06-12) ─────────────
   {
     id: "rulespec-us",
     label: "rulespec-us",
     layer: "rules",
     repo: "rulespec-us",
-    summary: "US federal RuleSpec YAML",
+    summary: "US country monorepo — federal + 32 states + programs/",
     detail:
-      "RuleSpec YAML files encoding executable computation for US federal benefit " +
-      "and tax programs. Per-provision: one YAML per addressable section/subsection. " +
-      "~430 encoded modules today across statutes/ (Title 26 income tax, Title 7 " +
-      "SNAP, Title 42), regulations/ (7 CFR 273, 42 CFR Medicaid), and policies/.",
+      "The US RuleSpec country monorepo. Since PR #395 merged (2026-06-12, " +
+      "history-preserving merge commit) it holds federal law under us/ (~606 " +
+      "modules), 32 us-{state}/ dirs, programs/ compose specs (18 files), and " +
+      "tests/ — ~3,040 encoded modules total. Deepest states: NC (497), CA (378), " +
+      "SC (367), CO (364), MA (224), TN (176). One YAML per addressable " +
+      "section/subsection.",
     mechanics:
-      "Repository layout mirrors citation paths: statutes/26/3101/a.yaml ↔ " +
-      "us/statute/26/3101/a. Each YAML begins with format: rulespec/v1 plus a module " +
-      "block (summary, source citations, source verification). The rules array contains " +
-      "one or more rule definitions, each with a kind (parameter / derived / " +
-      "reiteration), dtype (Money, Rate, Judgment), entity scope (Household, TaxUnit, " +
-      "Person), period scope (Month, Year), and one or more versions keyed by " +
-      "effective_from date. Formulas are Python-like expressions (if/else, match, " +
-      "arithmetic, count_where(), table indexing) but not actual Python — they're " +
-      "parsed by the axiom-rules-engine Rust engine at compile time.",
+      "Layout mirrors citation paths: us/statutes/26/3101/a.yaml ↔ us/statute/26/3101/a; " +
+      "state law lives at us-{state}/… with durable ids carrying the jurisdiction " +
+      "prefix (us-ca:regulations/mpp/63-300/1#rule). Each YAML begins with format: " +
+      "rulespec/v1 plus a module block (summary, source citations, source " +
+      "verification). Rules have a kind (parameter / derived / reiteration), dtype " +
+      "(Money, Rate, Judgment), entity scope, period scope, and versions keyed by " +
+      "effective_from. Formulas are Python-like expressions parsed by the " +
+      "axiom-rules-engine Rust engine at compile time. State files import federal " +
+      "rules via canonical paths (us:statutes/7/2017/a) — now an intra-repo import, " +
+      "one atomic commit for cross-jurisdiction changes.",
     rationale:
-      "Encoding lives in separate repos so the corpus stays purely about source text. " +
-      "Encoding cadence and corpus cadence are independent — you can add a new rule " +
-      "without touching the corpus, and re-ingest the corpus without breaking rules. " +
-      "Per-section YAML keeps rules bundled with their source for fine-grained Git " +
-      "history.",
+      "Encoding lives apart from the corpus so encoding cadence and corpus cadence " +
+      "stay independent. One monorepo per sovereign legal system (ADR 0001) replaced " +
+      "the 18 standalone state repos — those are archived tombstones on GitHub since " +
+      "2026-06-27. Durable rule ids stayed byte-identical through the consolidation.",
     important: [
       "Coupling to corpus is by citation_path only — no foreign keys, no row references.",
-      "Path mapping mirrored in axiom-corpus/src/axiom_corpus/corpus/rulespec_paths.py " +
-        "and in axiom-foundation.org/src/lib/axiom/rulespec/repo-listing.ts. Keep them " +
-        "in sync.",
-      ".test.yaml and .meta.yaml files are skipped at navigation discovery time. " +
-        "Hidden dirs (.github, etc.) and tests/ subdirs are also skipped.",
-      "Discovered at nav rebuild by walking the local checkout — no GitHub API calls " +
-        "during corpus operations.",
-      "RuleSpec kind: parameter / derived / reiteration. Reiterations are " +
-        "coverage markers (state-level provisions that restate federal rules); they're " +
-        "no-ops at execution time.",
+      "The June–July 2026 encoding wave is multi-state TANF / state cash assistance " +
+        "(TX, MT, AL, AR, CT, MA TAFDC, AK ATAP, WA SSP…) plus Medicaid MAGI " +
+        "eligibility groups and community-engagement requirements — 91 commits in the " +
+        "last week of June alone.",
+      "programs/ holds compose specs (programs/us-{state}/{program}/fy-2026.yaml) " +
+        "copied in from axiom-programs at consolidation — the two homes can drift; " +
+        "axiom-oracles vendors its own copies as a third.",
+      "Content debt surfaced at consolidation is ratcheted in " +
+        "known-validation-gaps.yaml and known-dangling.yaml — the lists only shrink.",
+      "Reiteration-kind rules are coverage markers (state provisions restating " +
+        "federal rules); no-ops at execution time.",
       "Tests reference rules by durable id ('us:statutes/7/2017/a#snap_regular_" +
-        "month_allotment'), not by local name. Tests run against the compiled module " +
-        "(after imports are merged), not individual rules.",
-      "Imports use canonical paths ('us:statutes/7/2017/a') and resolve cross-repo " +
-        "(rulespec-us-co imports rulespec-us).",
+        "month_allotment') and run against the compiled module, not individual rules.",
+      "Path mapping mirrored in axiom-corpus rulespec_paths.py and " +
+        "axiom-foundation.org repo-listing.ts. Keep them in sync.",
+      "Stragglers outside the monorepo: rulespec-us-or (local-only Oregon SNAP " +
+        "scaffold, no GitHub repo, no us-or/ dir) and rulespec-us-ut (bare policies/ " +
+        "dir, not even a git repo). The rulespec-us-medicaid-* dirs on disk are " +
+        "feature-branch clones of this repo, not separate repos.",
     ],
     files: [
-      "rulespec-us/statutes/",
-      "rulespec-us/regulations/",
-      "rulespec-us/policies/",
+      "rulespec-us/us/",
+      "rulespec-us/us-{state}/",
+      "rulespec-us/programs/",
       "rulespec-us/tests/",
-    ],
-  },
-  {
-    id: "rules-state",
-    label: "rulespec-us-{state}",
-    layer: "rules",
-    repo: "rulespec-us-state",
-    summary: "Per-state RuleSpec repos",
-    detail:
-      "One standalone repo per state today — 18 of them (rulespec-us-al, -ar, -az, " +
-      "-ca, -co, -de, -fl, -ga, -id, -ma, -md, -nc, -nh, -ny, -ok, -sc, -tn, -tx). " +
-      "Same convention as rulespec-us; durable ids carry the state jurisdiction " +
-      "prefix (us-ca:regulations/mpp/63-300/1#rule).",
-    mechanics:
-      "California is the deepest jurisdiction (~360 modules under regulations/mpp/); " +
-      "Colorado holds the encoded SNAP-administration sections under " +
-      "regulations/10-ccr-2506-1/ plus Colorado Works TANF. State files import " +
-      "federal rules cross-repo via canonical paths (us:statutes/7/2017/a). " +
-      "The in-flight consolidation (rulespec-us#395) absorbs these repos into " +
-      "rulespec-us as us-{state}/ dirs with full history, making cross-jurisdiction " +
-      "changes one atomic commit — durable ids stay byte-identical.",
-    important: [
-      "Citation '10 CCR 2506-1' becomes '10-ccr-2506-1' in paths (dash-separated, " +
-        "lowercase).",
-      "Many state RuleSpec files use kind: reiteration to declare 'this section " +
-        "restates federal X'. Coverage marker, not executable.",
-      "rulespec-us#395 must merge with a MERGE COMMIT, never squash — squashing " +
-        "flattens the 1,112 commits of absorbed state history the PR preserves.",
-      "Pre-existing content debt surfaced at consolidation is ratcheted in " +
-        "known-validation-gaps.yaml (rulespec-us#394) — the list only shrinks.",
+      "rulespec-us/known-validation-gaps.yaml",
     ],
   },
   {
@@ -836,17 +849,22 @@ export const NODES: NodeSpec[] = [
     label: "rulespec-uk · rulespec-ca",
     layer: "rules",
     repo: "rulespec-non-us",
-    summary: "Non-US RuleSpec corpora",
+    summary: "Non-US country monorepos",
     detail:
-      "rulespec-uk (national UK law — Universal Credit regulations are the deepest " +
-      "slice), rulespec-uk-kingston-upon-thames (council-level, separate repo " +
-      "today), and rulespec-ca (Canada). Same convention as rulespec-us with each " +
-      "jurisdiction's citation scheme.",
+      "rulespec-uk consolidated on 2026-06-12 (PR #43, mirroring the US): uk/ national " +
+      "law, uk-kingston-upon-thames/ council law, programs/, data/, tests/, " +
+      "validation_baselines/ — 159 modules, Universal Credit the deepest slice, VAT " +
+      "landing July 2026. rulespec-ca (97 modules) is mid-sprint on the Canada 2026 " +
+      "tax year: T2203 provincial Part 3 credits for every province/territory, CWB, " +
+      "EI repayment, HBP/LLP under policies/{cra,esdc,revenu-quebec}.",
     important: [
-      "The UK consolidation (rulespec-uk#43, open) absorbs Kingston and the UK " +
-        "program specs into a country monorepo, mirroring rulespec-us#395.",
+      "rulespec-ca uses a ROOT layout (policies/ at repo root), unlike the " +
+        "bucket-per-jurisdiction monorepo layout — axiom-foundation.org needed " +
+        "explicit support (#95) before Canada encodings surfaced.",
       "rulespec-ca maps from canada/* corpus paths. The canada jurisdiction slug is " +
         "non-obvious — JURISDICTION_REPO_MAP['canada'] = 'rulespec-ca', not 'rulespec-canada'.",
+      "Local-checkout trap: ~/rulespec-uk is a stale empty placeholder with zero " +
+        "commits; the real UK monorepo clone is ~/rulespec-uk-official.",
     ],
   },
 
@@ -856,43 +874,53 @@ export const NODES: NodeSpec[] = [
     label: "axiom-foundation.org",
     layer: "consumer",
     repo: "axiom-foundation.org",
-    summary: "Main web app",
+    summary: "Main web app + ops dashboard",
     detail:
       "Public-facing browser of the corpus at axiom-foundation.org. Next.js app " +
-      "deployed to Vercel. URL pattern /axiom/* maps directly to citation_path.",
+      "deployed to Vercel. URL pattern /axiom/* maps directly to citation_path. " +
+      "June 2026 added a live ops dashboard (/ops), a unified ranked search " +
+      "(/axiom/search) with a search-first landing page, and a documentation map " +
+      "(/docs) + system overview (/stack).",
     mechanics:
       "Four Supabase clients in src/lib/supabase.ts, one per schema (corpus, encodings, " +
       "telemetry, plus the public auth client). Tree navigation queries " +
       "corpus.navigation_nodes by parent_path (the indexed btree query). Body text " +
       "comes from corpus.current_provisions — the release-filtered view of " +
-      "corpus.provisions. When an encoded rule exists in a rules-* repo but " +
+      "corpus.provisions. When an encoded rule exists in a rulespec repo but " +
       "encoding_runs hasn't been backfilled, the app falls back to GitHub raw fetch " +
-      "with a 1-hour cache. Path-mapping conventions (REPO_BUCKET_RENAMES, -cfr suffix " +
-      "handling) mirror axiom-corpus/rulespec_paths.py.",
+      "with a 1-hour cache. The /ops dashboard (src/lib/corpus-status.ts, " +
+      "force-dynamic, 300s revalidate) merges four sources: R2 analytics JSON " +
+      "(coverage + release validation + artifact sync), the corpus.get_corpus_stats " +
+      "RPC, encodings.encoding_runs telemetry (7-day lookback with explicit " +
+      "degraded/unavailable states), and GitHub repo activity. Live JSON at " +
+      "/api/ops/encoding (no-store).",
     rationale:
-      "Read-only consumer. Should never be the only place a citation lookup happens — " +
-      "the API surface is the source of truth. Multi-schema client isolation prevents " +
-      "heavy telemetry queries from competing with corpus reads.",
+      "Read-only consumer of the corpus. It also hosts its own public read API " +
+      "(app.axiom-foundation.org/api/axiom/*, schema 2026-04-25) backed directly by " +
+      "Supabase — deliberately separate from the standalone axiom-api platform, " +
+      "which it does not consume. Multi-schema client isolation prevents heavy " +
+      "telemetry queries from competing with corpus reads.",
     important: [
-      "src/lib/axiom/repo-map.ts is authoritative for jurisdiction → rules-* repo " +
-        "mapping. axiom-corpus mirrors it in rulespec_paths.py; keep in sync when new " +
-        "jurisdictions land.",
-      "src/lib/axiom/rulespec/repo-listing.ts handles repo path ↔ citation path " +
-        "conversion in both directions. Singular bucket names on the corpus side " +
-        "(statute, regulation, policy); plural on the rules-* side.",
-      "Parent-path candidate matching: when resolving an encoding for a citation the " +
-        "app walks up the path hierarchy and returns the most specific match.",
+      "Does NOT consume axiom-api. /api/axiom/* here is foundation.org's own " +
+        "Supabase-backed read API; axiom-api-eta.vercel.app is a different service.",
+      "Search logs queries + clicks to Supabase and uses a data-driven lexicon; " +
+        "encoded-rule search hits a Supabase index with GitHub fallback (#89, #93).",
+      "Canada encodings needed root-layout rulespec repo support (#95) — rulespec-ca " +
+        "has policies/ at the repo root, unlike the monorepo bucket layout (#86).",
+      "src/lib/axiom/repo-map.ts is authoritative for jurisdiction → rulespec repo " +
+        "mapping. axiom-corpus mirrors it in rulespec_paths.py; keep in sync.",
+      "Ops coverage table distinguishes counts_mode 'live' vs 'report' so the " +
+        "encoded column stays honest when a source is stale.",
       "Deep links use ?mark=term URL param to highlight search terms in the rendered " +
         "body.",
-      "Encoded-rule listings can come from corpus.encoding_runs OR from a live " +
-        "GitHub fetch of rules-* repo trees — useful during rolling backfills.",
-      "Never writes to Supabase. Read-only RLS policies suffice.",
+      "Never writes to Supabase corpus tables; search logging is the one write path.",
     ],
     files: [
       "axiom-foundation.org/src/lib/supabase.ts",
+      "axiom-foundation.org/src/lib/corpus-status.ts",
+      "axiom-foundation.org/src/app/ops/page.tsx",
       "axiom-foundation.org/src/lib/axiom/repo-map.ts",
       "axiom-foundation.org/src/lib/axiom/rulespec/repo-listing.ts",
-      "axiom-foundation.org/src/lib/axiom/navigation-index/read.ts",
       "axiom-foundation.org/src/app/axiom/[[...segments]]/page.tsx",
     ],
   },
@@ -900,12 +928,13 @@ export const NODES: NodeSpec[] = [
     id: "finbot",
     label: "finbot",
     layer: "consumer",
-    repo: "axiom-foundation.org",
+    repo: "demos",
     summary: "Financial advice demo",
     detail:
       "Demo that combines corpus citations with RuleSpec computation to answer " +
-      "benefit / tax questions in natural language. Local repo, embedded inside " +
-      "axiom-foundation.org.",
+      "benefit / tax questions in natural language. Standalone repo " +
+      "(finbot-snap-demo, deployed at finbot-snap-demo.vercel.app) — one of the ten " +
+      "surfaces in axiom-demo-shell's Application tier.",
     mechanics:
       "Calls Supabase REST + a RuleSpec runtime to compute eligibility / benefit " +
       "amounts, then surfaces the actual source provisions that drove the answer. " +
@@ -915,10 +944,13 @@ export const NODES: NodeSpec[] = [
     id: "dashboard-builder",
     label: "dashboard-builder",
     layer: "consumer",
-    repo: "axiom-foundation.org",
+    repo: "demos",
     summary: "Dashboard demo",
     detail:
-      "Demo for assembling policy dashboards on top of the corpus. Local repo.",
+      "Demo for assembling policy dashboards on top of the corpus. Standalone repo " +
+      "deployed at dashboard-builder-flax.vercel.app. rulespec-graph-viewer — the " +
+      "interactive RuleSpec computation-DAG viewer — was extracted from this repo " +
+      "and now ships as its own demo surface.",
   },
   {
     id: "axiom-encode",
@@ -959,33 +991,43 @@ export const NODES: NodeSpec[] = [
       "One-way dependency on corpus. The encoder NEVER writes to corpus.provisions.",
       "Closes the feedback loop indirectly — the next navigation rebuild observes " +
         "newly-authored YAML and sets has_rulespec=true.",
-      "Canonical-concept registry (src/axiom_encode/concepts/) locks each legal " +
-        "concept to one approved variable name; 27 SNAP entries today. Apply-time " +
-        "validator refuses drift; prompt-time injection prevents drift.",
+      "Canonical-concept registry (src/axiom_encode/concepts/data/snap.yaml) locks " +
+        "each legal concept to one approved variable name; 27 SNAP entries today, " +
+        "loaded data-driven via concepts/registry.py. Apply-time validator refuses " +
+        "drift; prompt-time injection prevents drift.",
       "Output paths split dotted leaves (CDSS-style `63-503.132` → " +
         "`regulations/mpp/63-503/132.yaml`) and derive from the requested citation, " +
         "not the resolver-returned path. Apply-time collision guard prevents silent " +
         "overwrites of sibling encodes.",
-      "25 `repair-*` subcommands handle deterministic post-encode fixups so most " +
-        "former CI failures become local one-liners.",
+      "41 `repair-*` subcommands handle deterministic post-encode fixups so most " +
+        "former CI failures become local one-liners — new families cover Medicaid " +
+        "(community-engagement dates, category composition), state-specific SNAP " +
+        "surfaces, nonnegative floors, and oracle parameter tests.",
+      "Lower-authority source gate (#909/#931): modules grounded below " +
+        "statute/regulation authority need module.source_verification." +
+        "upstream_source_check; `check-source-staleness` exits 1 on source_sha256 " +
+        "mismatch.",
       "`eval-suite` runs benchmark manifests (16 suites under benchmarks/) with " +
         "readiness gates — min success / compile / CI / zero-ungrounded / oracle " +
         "pass rates, max mean cost — resumable via a suite-results.jsonl ledger.",
       "Per-program oracle comparators live in axiom-encode, called by axiom-oracles " +
-        "comparison runners: `snap-ecps-compare` (8 states), `tax-ecps-compare` for " +
-        "federal tax with section-by-section PolicyEngine mappings (§1 rates, §21 " +
-        "CDCC, §24 CTC, §25A AOTC, §26 nonrefundable credits, §32 EITC, " +
-        "§1401–§3121 payroll, and growing), and `efrs-uk` for UK Universal Credit / " +
-        "Pension Credit against the Enhanced FRS. `concepts-audit` walks the corpus for " +
-        "name-drift between producer rules and the canonical-concept registry " +
-        "(src/axiom_encode/concepts/), which gates `encode --apply`: any generated " +
-        "RuleSpec using a blocked synonym or claiming a canonical at the wrong " +
-        "anchor is rejected before it lands in a rulespec-* repo.",
-      "Apply requires versioned encoder provenance (≥ 0.2.87) — dirty/unversioned " +
-        "checkouts are rejected so every applied manifest is reproducible.",
+        "comparison runners: `snap-ecps-compare`, `tax-ecps-compare` (section-by-" +
+        "section PolicyEngine mappings, growing), `efrs-uk` for UK Universal Credit / " +
+        "Pension Credit, plus the June–July wave: TANF/SSP comparators (NY, WA, MA " +
+        "TAFDC, AK ATAP, MN MFIP, CT/AL/IL SSP…), Medicaid MAGI + Populace parity, " +
+        "direct-variable Populace comparators for SNAP and federal tax, AOTC parity, " +
+        "and UK VAT. `concepts-audit` walks the corpus for name-drift against the " +
+        "canonical-concept registry, which gates `encode --apply`.",
+      "Apply provenance gate changed shape: instead of a numeric version floor, " +
+        "`--apply` now refuses to run unless a committed encoder version bump is in " +
+        "the diff (_require_axiom_encode_version_provenance) and " +
+        "AXIOM_ENCODE_APPLY_SIGNING_KEY is set. Current version: 0.2.1053.",
       "Telemetry lands in encodings.encoding_runs (run id, iterations, scores, " +
-        "agent_model, session_id, file_path). telemetry.agent_transcripts holds the " +
-        "per-tool-use detail.",
+        "agent_model, session_id, file_path) plus a linked SDK-style session " +
+        "(session_id=encode-<run_id>). Missing Supabase creds → runs are silently " +
+        "NOT synced (stderr warning); `sync-applied-runs` backfills idempotently " +
+        "from signed apply manifests, which are the durable record " +
+        "(.axiom/encoding-manifests/ in each rulespec repo).",
     ],
   },
   {
@@ -1034,7 +1076,15 @@ export const NODES: NodeSpec[] = [
       "Temporal queries specify Period (Month, BenefitWeek, TaxYear, Custom). Inputs " +
         "and relations must overlap the query period.",
       "Python client wraps the Rust binary as a subprocess for stdin/stdout JSON; " +
-        "dense-extension binding is direct (numpy in, numpy out).",
+        "dense-extension binding is direct (numpy in, numpy out). Python bindings " +
+        "require exactly Python 3.14 (requires-python == 3.14.*), the " +
+        "ecosystem-wide toolchain pin.",
+      "Derived relations over FILTERED entities landed in PR #41 (2026-05-20) — " +
+        "filtered-entity scope metadata plus dense-path execution. PR #43 " +
+        "(imported relation aliases in filtered aggregations) is still an unmerged " +
+        "branch; main has not moved since 2026-05-23.",
+      "The Modal-hosted build behind axiom-api pins the engine at a specific SHA " +
+        "in modal_runtime.py — bumping the engine requires a Modal redeploy.",
     ],
     files: [
       "axiom-rules-engine/src/main.rs",
@@ -1053,35 +1103,37 @@ export const NODES: NodeSpec[] = [
     label: "axiom-oracles",
     layer: "consumer",
     repo: "axiom-oracles",
-    summary: "Oracle-comparison toolkit + reusable comparisons registry",
+    summary: "Oracle-comparison toolkit + coverage dashboard",
     detail:
       "Validation toolkit that pits Axiom's RuleSpec implementations against external " +
       "'oracles' (reference implementations): PolicyEngine, TAXSIM, Atlanta Fed PRD, " +
-      "ACCESS NYC. Each comparison is declared as one YAML file in comparisons/; a " +
-      "matrix workflow runs every entry weekly. Adding a new program comparison is a " +
-      "single YAML PR.",
+      "ACCESS NYC, and EUROMOD/UKMOD. Each comparison is declared as one YAML file in " +
+      "comparisons/; a weekly unattended regeneration script reruns everything and " +
+      "redeploys a public Next.js coverage dashboard on Vercel. Adding a new program " +
+      "comparison is a single YAML PR.",
     mechanics:
       "Five layers. (1) Comparisons registry (comparisons/*.yaml): declarative spec " +
-      "per comparison — name, runner type, scope, parameters, schedule. 13 entries " +
-      "today: SNAP ECPS comparisons for 8 states (al, ca, co, ma, nc, ny, sc, tn), " +
-      "co-state-income-tax-ecps, fiit-ecps (~99.6% agreement), and two UK EFRS " +
-      "comparisons (uk-universal-credit-efrs, uk-tax-benefits-efrs). " +
+      "per comparison — name, runner type, scope, parameters, schedule. 20 entries " +
+      "today: SNAP ECPS comparisons for 12 states (al, az, ca, co, fl, ma, nc, ny, " +
+      "or, sc, tn, ut), co-state-income-tax-ecps, fiit-ecps (99.94% agreement — " +
+      "299,821/299,993 matched, remaining mismatches are EITC amounts), " +
+      "medicaid-magi-co-ecps, ssi-ecps, ny-tanf-ecps, wa-tanf-ecps, and two UK EFRS " +
+      "comparisons — plus parameter-oracles.yaml for config-driven parameter suites " +
+      "(SSA, GA health, Pell, Lifeline). " +
       "(2) Orchestrator (scripts/run_comparison.py): dispatches by runner type, " +
       "produces a JSON report. (3) Thin case schema (core/case.py): Case has facts, " +
       "entities (concept-keyed), and requested outputs — no universal household " +
-      "ontology. (4) Engine adapters (adapters/): one per oracle implementing " +
-      "EngineAdapter with run_cases() / run_households(). PolicyEngineRunner imports " +
-      "policyengine_us; AccessNycApiRunner hits the REST screening API; " +
-      "AccessNycPythonRunner calls the Drools replatform; TaxsimPackageRunner wraps " +
-      "policyengine_taxsim; PrdPackageRunner wraps Atlanta Fed PRD; AxiomRulesRunner " +
-      "executes via a precompiled artifact (today for CO SNAP) or directly through " +
-      "axiom-encode's per-surface harness (today for FIIT). " +
+      "ontology. (4) Engine adapters (adapters/): accessnyc, axiom, euromod, " +
+      "policyengine, prd, taxsim — each implementing EngineAdapter with run_cases() / " +
+      "run_households(). EuromodPlatformRunner drives the .NET EM_Executable.dll; " +
+      "UKMOD (UK) is live and EUROMOD Belgium is wired. AxiomRulesRunner executes " +
+      "composed programs via axiom-compose against rsync'd rulespec roots. " +
       "(5) Mappings + Comparator (comparison/): concept_mappings.yaml maps canonical " +
-      "Axiom concept ids to per-engine targets (e.g. SNAP → policyengine: snap, " +
-      "accessnyc: S2R007, axiom: us:policies/usda/snap/…). The comparator aligns " +
-      "results by household_id and emits typed mismatches (amount_difference, " +
-      "eligibility_left_only, …). Matrix CI workflow (.github/workflows/comparisons.yml) " +
-      "runs every registered comparison and uploads JSON artifacts.",
+      "Axiom concept ids to per-engine targets. The comparator aligns results by " +
+      "household_id and emits typed mismatches (amount_difference, " +
+      "eligibility_left_only, …). Weekly cron runs dashboard/scripts/regenerate_all.sh: " +
+      "sync roots → run all suites → sync coverage → pytest → commit + push + " +
+      "`vercel --prod` if dashboard data changed.",
     rationale:
       "Validation is hard without ground truth. Comparing Axiom's output against " +
       "established calculators across many synthetic + real households gives a coverage " +
@@ -1099,18 +1151,28 @@ export const NODES: NodeSpec[] = [
         "available too.",
       "AxiomRulesRunner works end-to-end: federal tax via live-compile of rulespec-us " +
         "surfaces, state SNAP via precompiled artifacts, and UK Universal Credit " +
-        "through an axiom-compose composed program (#61) — the first runner on the " +
-        "compose path; collapsing the rest is tracked in axiom-oracles#19.",
+        "through an axiom-compose composed program — the compose path is the " +
+        "convergence target (axiom-oracles#19).",
+      "Compose roots are COPIES: scripts/sync_rulespec_roots.sh git-pulls and rsyncs " +
+        "rulespec-us slices into ~/.axiom-oracles/roots/. Run it before any suite or " +
+        "you compare against stale law — local checkouts drift hundreds of commits " +
+        "behind origin/main.",
+      "The dashboard (dashboard/, Next.js 16 static export, Vercel project " +
+        "axiom-oracles) is a living regression monitor: 'verified' = engines agree " +
+        "on 90%+ of checks; programs.json tracks 21 programs with encoding_status " +
+        "live/present/missing. Data is committed JSON — stale data ships unless " +
+        "regenerate_all.sh runs.",
+      "EUROMOD adapter needs a separate EUROMOD_PYTHON execution env (x86_64 venv " +
+        "on Linux/CI; special handling on Apple Silicon).",
+      "Populace oracle carries no county/place geography yet — geographic programs " +
+        "see no coverage until imputation lands upstream.",
       "Report schema is versioned: COMPARISON_REPORT_SCHEMA_VERSION = " +
         "'axiom.comparison_report.v1'.",
       "Locale/scope filters in mappings handle geographic restrictions (ACCESS NYC is " +
         "NYC-only; PolicyEngine and Axiom are US-wide).",
-      "Reports are gitignored by convention; CI uploads them as workflow artifacts. " +
-        "Dashboard wiring of FIIT alongside CO SNAP is a known follow-up (shape adapter " +
-        "needed because tax-ecps-compare is surface-aggregated while the existing " +
-        "dashboard report is per-case).",
       "Does NOT integrate with axiom-corpus (no imports, no direct data flow); reads " +
-        "rules-* / rulespec-* repos only as engine inputs.",
+        "rulespec-* repos only as engine inputs, and vendors program compose specs " +
+        "under programs/ (a third copy beside axiom-programs and the monorepo).",
     ],
     files: [
       "axiom-oracles/comparisons/fiit-ecps.yaml",
@@ -1122,17 +1184,18 @@ export const NODES: NodeSpec[] = [
       "axiom-oracles/axiom_oracles/adapters/policyengine/runner.py",
       "axiom-oracles/axiom_oracles/adapters/accessnyc/",
       "axiom-oracles/axiom_oracles/adapters/taxsim/runner.py",
-      "axiom-oracles/axiom_oracles/adapters/prd/runner.py",
+      "axiom-oracles/axiom_oracles/adapters/euromod/",
       "axiom-oracles/axiom_oracles/comparison/comparator.py",
-      "axiom-oracles/axiom_oracles/comparison/mappings.py",
-      "axiom-oracles/axiom_oracles/populations/enhanced_cps.py",
       "axiom-oracles/axiom_oracles/config/concept_mappings.yaml",
+      "axiom-oracles/dashboard/",
+      "axiom-oracles/dashboard/scripts/regenerate_all.sh",
+      "axiom-oracles/scripts/sync_rulespec_roots.sh",
     ],
     commands: [
       "scripts/run_comparison.py --list",
       "scripts/run_comparison.py <name> --summary",
-      "axiom-oracles compare",
-      "axiom-oracles accessnyc audit",
+      "scripts/sync_rulespec_roots.sh",
+      "dashboard/scripts/regenerate_all.sh",
     ],
   },
   {
@@ -1153,11 +1216,13 @@ export const NODES: NodeSpec[] = [
       "transformation pattern that applies to ≥2 program families, or (c) a " +
       "declarative parameter in the spec. The composer's core does dependency " +
       "closure from declared outputs, applies the generic transformation registry — " +
-      "conditional value, any_of, formula + data-relation rewrites, derived_relation, " +
-      "concept-registry aliasing — AND-gates eligibility via auto_gate_outputs " +
+      "nine patterns today: all_of, any_of, any_related, conditional_value, " +
+      "data_relation, derived_formula, derived_relation, sum_terms, " +
+      "table_lookup_with_extension — AND-gates eligibility via auto_gate_outputs " +
       "(program-token match + minimal cover), and emits a program for the engine " +
       "to compile. Each program is a tiny YAML spec (program, outputs, period, " +
-      "scope anchors) — data, not code.",
+      "scope anchors) — data, not code. Compose is a pure function: no env, clock, " +
+      "network, or filesystem reads; same inputs → byte-identical output.",
     rationale:
       "Checked-in composition files (e.g. rulespec-us-co/policies/cdhs/snap/fy-2026-" +
       "benefit-calculation.yaml) mix encoded law with software glue and drift " +
@@ -1169,13 +1234,17 @@ export const NODES: NodeSpec[] = [
         "refuses to compose when declared eligibility outputs would leave rules " +
         "orphaned (#9) — broken specs die loudly, not silently.",
       "Loads country-monorepo checkouts alongside legacy standalone jurisdiction " +
-        "repos (#16), so it works on both sides of the rulespec-us#395 migration.",
-      "Consumes specs from axiom-programs (one YAML per jurisdiction, program, " +
-        "period); specs move into each country monorepo's programs/ when the " +
-        "consolidations merge.",
+        "repos (#16) — needed through the June 2026 consolidation, still useful for " +
+        "straggler repos (rulespec-us-or).",
+      "Consumes compose specs from axiom-programs AND from the country monorepo's " +
+        "programs/ dir (copies of each other since the consolidation; watch for " +
+        "drift). CI (pytest, Python 3.14 via uv) checks out rulespec-us + " +
+        "axiom-rules-engine and composes real programs on every push.",
       "Convergence point for axiom-oracles: UK UC already runs via a composed " +
         "program (axiom-oracles#61); collapsing the remaining precompiled-artifact " +
-        "runners is tracked at axiom-oracles#19.",
+        "runners is tracked at axiom-oracles#19. Downstream consumers: " +
+        "axiom-microsim (compiled programs), axiom-oracles, and the compiled " +
+        "packages served by axiom-api.",
     ],
     files: [
       "axiom-compose/src/axiom_compose/core.py",
@@ -1192,7 +1261,7 @@ export const NODES: NodeSpec[] = [
     summary: "Declarative compose specs (one YAML per program × jurisdiction × period)",
     detail:
       "Home for the program compose specs that axiom-compose consumes. A program — " +
-      "us-co/snap for FY 2026, us-ca/snap, us/fiit — is an assembly of atomic rules " +
+      "us-co/snap for FY 2026, us-ca/snap, us/ssi — is an assembly of atomic rules " +
       "drawn from one or more rulespec-* corpora. The assembly itself is NOT law: the " +
       "law is the source statute/regulation encoded into atomic RuleSpec files. This " +
       "repo holds the declarative spec describing how those atomic rules combine for " +
@@ -1207,28 +1276,34 @@ export const NODES: NodeSpec[] = [
       "precomposed RuleSpec / precompiled engine artifacts for deployments that " +
       "don't run axiom-compose.",
     rationale:
-      "Specs are not law (so they don't belong in rulespec-* corpora — that's the " +
-      "bucket-E violation being eliminated from rulespec-us-co). Specs are not the " +
-      "composer (so they don't belong inside axiom-compose, which is the tool). " +
-      "Long-term home is each country monorepo's programs/ directory so specs " +
-      "version with the law they compose — that move ships with rulespec-us#395 / " +
-      "rulespec-uk#43.",
+      "Specs are not law (so they don't belong in rulespec-* corpora as encoded " +
+      "modules). Specs are not the composer (so they don't belong inside " +
+      "axiom-compose, which is the tool). The June 2026 consolidation copied the US " +
+      "specs into rulespec-us programs/ so they version with the law they compose; " +
+      "this repo remains the staging home — the two homes are copies and can drift.",
     important: [
-      "Current inventory: SNAP compose specs for 8 states (al, ca, co, ma, nc, ny, " +
-        "sc, tn), us-co/tanf (Colorado Works), us/payroll/oasdi-wage-tax, and " +
-        "uk/universal-credit fy-2026-27 (with housing schedules wired in).",
-      "Migration backlog tracked in README: rulespec-us-co/policies/cdhs/snap/" +
-        "fy-2026-benefit-calculation.yaml (bucket-E composition) and " +
-        "axiom-microsim/axiom_microsim/project/{co_snap,federal_ctc,federal_income_" +
-        "tax}.py (per-program Python adapters) both need to move here as declarative " +
-        "specs.",
+      "Current inventory (15 specs): SNAP for 8 states (al, ca, co, ma, nc, ny, sc, " +
+        "tn), TANF for us-co, us-ny, us-wa, federal us/payroll/oasdi-wage-tax, " +
+        "us/medicaid-magi, us/ssi, and uk/universal-credit fy-2026-27 (housing " +
+        "schedules wired in). The monorepo programs/ copy holds 18.",
+      "artifacts/ currently holds only UK Universal Credit precomposed output " +
+        "(.compiled.json + .manifest.json + .rulespec.yaml) for deployments that " +
+        "don't run axiom-compose.",
+      "Migration backlog reversed direction: the README now pulls composition INTO " +
+        "this repo — the legacy rulespec-us-co bucket-E composition YAML and " +
+        "axiom-microsim's per-program Python adapters should become declarative " +
+        "specs here.",
+      "Naming trap: axiom-programs.legacy on disk is an UNRELATED older project " +
+        "(the oracle-comparison tool that preceded axiom-oracles) which used to own " +
+        "the repo name.",
       "Not US-specific. Layout accommodates uk/, ca/, etc.; no -us suffix on the " +
-        "repo name.",
+        "repo name. No CI on this repo.",
     ],
     files: [
       "axiom-programs/us-ca/snap/fy-2026.yaml",
       "axiom-programs/uk/universal-credit/fy-2026-27.yaml",
-      "axiom-programs/artifacts/",
+      "axiom-programs/artifacts/uk/universal-credit/",
+      "rulespec-us/programs/ (the monorepo copy)",
     ],
     commands: ["(declarative YAML — consumed by axiom-compose)"],
   },
@@ -1237,30 +1312,30 @@ export const NODES: NodeSpec[] = [
     label: "axiom-demo-shell",
     layer: "consumer",
     repo: "axiom-demo-shell",
-    summary: "Landing page embedding the demos",
+    summary: "Landing page for ten demo surfaces",
     detail:
-      "Lightweight static landing page that unifies the three demo surfaces — Axiom " +
-      "App, FinBot, Dashboard Builder — under a single narrative. Embeds each demo " +
-      "in an iframe with a fallback link.",
+      "Lightweight static landing page that presents the ecosystem's demo surfaces — " +
+      "ten of them now — in a guided three-tier pipeline: Infrastructure " +
+      "(architecture viewer, law app, rulespec-graph-viewer), Validation (oracles " +
+      "dashboard, guidance-impact-visualizer, bills tracker), Application (finbot, " +
+      "dashboard-builder, CO SNAP demo, microsim).",
     mechanics:
-      "Four static files: index.html, app.js (13 lines), styles.css (160 lines), and " +
-      "logos/. The JS populates CTA href attributes from a hardcoded `destinations` map: " +
-      "law → https://app.axiom-foundation.org/, finbot → finbot-snap-demo.vercel.app, " +
-      "builder → dashboard-builder-flax.vercel.app. No dependencies, no build step. " +
-      "`npm start` serves via Python's http.server on port 4173; production deploys " +
-      "to Vercel.",
+      "Static index.html + app.js + styles.css + analytics.js. app.js holds a " +
+      "hardcoded `destinations` map of the ten demo URLs; `?local` switches every " +
+      "destination to 127.0.0.1 dev ports. No dependencies, no build step. " +
+      "`npm start` serves via Python's http.server; production deploys to Vercel. " +
+      "analytics.js reports GA4 events (scroll_depth, time_on_tool, outbound_click) " +
+      "to property G-2YHG89FY0N with tool_name=axiom-demo-shell.",
     rationale:
-      "Pure static + zero deps is maximally auditable. The shell is explicitly " +
-      "temporary — meant to frame the ecosystem while shared APIs and product " +
-      "boundaries are still being defined. It orchestrates without merging code, so " +
-      "each demo retains autonomy.",
+      "Pure static + zero deps is maximally auditable. The shell frames the ecosystem " +
+      "while shared APIs and product boundaries firm up. It orchestrates without " +
+      "merging code, so each demo retains autonomy.",
     important: [
-      "Iframe embeds can fail silently if a target sets X-Frame-Options: DENY. The " +
-        "shell provides no error handling; the fallback link still works.",
-      "URLs are hardcoded in both index.html and app.js — if a demo moves, both files " +
-        "need updating. No env-var system.",
-      "No shared auth — each embedded demo has its own session.",
-      "No tests, no analytics. `npm check` is JS syntax validation only.",
+      "The three-tier restructure (June 2026) replaced the old three-iframe layout; " +
+        "opening a demo is now the primary GA4-tracked action (outbound_click).",
+      "URLs are hardcoded in app.js — if a demo moves, update the destinations map. " +
+        "No env-var system.",
+      "No shared auth — each linked demo has its own session.",
       "Non-goals are real constraints (per README): no duplicate law, no second " +
         "interpretation layer, no hidden provenance.",
     ],
@@ -1278,15 +1353,19 @@ export const NODES: NodeSpec[] = [
     label: "axiom-scrapers",
     layer: "ingest",
     repo: "axiom-scrapers",
-    summary: "State statute scrapers",
+    summary: "State statute scrapers (dormant)",
     detail:
       "Per-state scrapers (19 states) producing paired section text + metadata " +
       "files (axiom-source-section/v1) that corpus ingest consumes. Offline-first " +
-      "tests against saved HTML fixtures; soft-fail per section.",
+      "tests against saved HTML fixtures; soft-fail per section. Dormant since May " +
+      "2026 — the June state-ingestion wave went through corpus-native " +
+      "scripts/ingest_*.py instead, bypassing this repo.",
     important: [
       "Output is local scratch — the corpus artifact store is the source of " +
         "truth, not scraper output.",
-      "No scheduled runs yet; upstream site drift is discovered manually.",
+      "No scheduled runs; upstream site drift is discovered manually.",
+      "Live on GitHub (not archived), but last substantive commit was 2026-05-23. " +
+        "Decide whether to fold its adapters into corpus or revive scheduled runs.",
     ],
     files: ["axiom-scrapers/src/axiom_scrapers/"],
   },
@@ -1295,17 +1374,44 @@ export const NODES: NodeSpec[] = [
     label: "axiom-bills",
     layer: "ingest",
     repo: "axiom-bills",
-    summary: "Live bill tracker",
+    summary: "Live bill tracker → rule patches",
     detail:
-      "Tracks bills across Congress.gov and ~20 state legislatures with " +
-      "append-only status actions and normalized vocabularies. An enacted bill " +
-      "is the forward-looking 'law changed — encode it' signal into the " +
-      "encoding pipeline.",
+      "Tracks bills across Congress.gov and 21 state legislatures with append-only " +
+      "status actions and normalized vocabularies, then goes further than tracking: " +
+      "for enacted text it precomputes diffs and drafts patched RuleSpec YAML " +
+      "('rule variants') so the encoding pipeline receives ready-made patches, not " +
+      "just a signal.",
+    mechanics:
+      "Pipeline: RateLimitedClient → Congress.gov / state JSON → typed Bill / " +
+      "BillAction / BillVersion models → SQLite locally, Supabase bills schema in " +
+      "prod (upserts, append-only actions by fingerprint, monotonic STATUS_ORDER " +
+      "roll-up) → index-encodings (checks out rulespec-us) → fetch-texts / " +
+      "precompute-diffs → precompute-variants (ops × encodings) → " +
+      "propose-llm-variants (Claude) → sync-supabase → export-variants. The " +
+      "bills.current_rule_patches view (latest patched YAML per bill/file with " +
+      "status) is the downstream contract axiom-encode consumes. A Vite/React " +
+      "frontend reads Supabase directly.",
     important: [
-      "Own scrapers per legislature (deliberately not OpenStates).",
-      "Scheduled refresh workflows run daily; SQLite locally, Supabase in prod.",
+      "Own scrapers per legislature (deliberately not OpenStates/LegiScan).",
+      "Refresh cadence: federal HOURLY (cron 7 * * * *, running the whole encode " +
+        "chain), states every 6 hours. Congress.gov's 5,000 req/hour budget is " +
+        "enforced (#83).",
+      "Variant idempotency: source_ops_fingerprint + source_text_sha256 — unchanged " +
+        "re-runs are no-ops and LLM proposals survive; changed engrossed/enrolled " +
+        "text recomputes ops, clears the stale proposal with a note, and re-drafts.",
+      "Citations are canonicalized at the ingestion choke point (#87/#88) so '20 " +
+        "U.S.C. 1070a' ≡ '20 USC 1070a'; new forms warn.",
+      "June–July hardening: patient retries + targeted backfill (#82), PDF texts + " +
+        "statutory effective dates + needs-new-encoding signal (#84), monorepo " +
+        "layout adaptation that fails loudly on a zero-index (#85), companion-test " +
+        "execution against patched YAML (#86).",
+      "Local-dir trap: ~/axion-legislative-tracker (note the typo) wraps a clone of " +
+        "this same repo.",
     ],
-    files: ["axiom-bills/src/axiom_bills/jurisdictions/"],
+    files: [
+      "axiom-bills/packages/scrapers/src/axiom_bills/jurisdictions/",
+      "axiom-bills/packages/web/",
+    ],
   },
   {
     id: "microsim",
@@ -1317,14 +1423,163 @@ export const NODES: NodeSpec[] = [
       "PolicyEngine-free microsimulation over the Enhanced CPS: loads microdata " +
       "via h5py, projects households into RuleSpec inputs, executes compiled " +
       "programs on axiom-rules-engine, and aggregates weighted costs, decile " +
-      "distributions, and reform deltas. FastAPI service locally and on Modal.",
+      "distributions, and reform deltas. Three programs: CO SNAP, federal income " +
+      "tax, federal CTC. FastAPI on Modal + a Next.js web UI on Vercel with reform " +
+      "sliders and decile / winners-losers charts.",
     important: [
       "Federal income tax agrees with PolicyEngine at 99.8% on a 1,000-unit " +
-        "Enhanced CPS sample — independence proven, not claimed.",
-      "Per-program projections are hand-coded; reforms patch parameter YAML " +
-        "in memory and recompile (~70 ms).",
+        "Enhanced CPS sample — independence proven, not claimed. /compare is the " +
+        "only path that imports policyengine_us.",
+      "Per-program projections are hand-coded Python (project/{co_snap," +
+        "federal_income_tax,federal_ctc}.py); reforms patch parameter YAML in " +
+        "memory and recompile (~70 ms). Converting these to declarative compose " +
+        "specs is on axiom-programs' backlog.",
+      "CLI trap: the CLI still hard-rejects anything but --program co-snap; the " +
+        "multi-program surface lives in server.py / Modal / web only.",
+      "ECPS microdata (enhanced_cps_2024.h5) comes from HuggingFace " +
+        "policyengine/policyengine-us-data into a Modal Volume.",
     ],
-    files: ["axiom-microsim/axiom_microsim/"],
+    files: [
+      "axiom-microsim/axiom_microsim/project/",
+      "axiom-microsim/axiom_microsim/server.py",
+      "axiom-microsim/web/",
+    ],
+  },
+
+  // ── Platform (API + agents + analytics) ──────────────────────────
+  {
+    id: "axiom-api",
+    label: "axiom-api",
+    layer: "platform",
+    repo: "axiom-api",
+    summary: "Rule-native HTTP API + SDKs",
+    detail:
+      "The canonical HTTP contract layer between the RuleSpec repos + Rust engine " +
+      "and downstream consumers: search, retrieve, explain, and execute RuleSpecs " +
+      "over a typed { status, data, meta } envelope. Hono app on Vercel " +
+      "(axiom-api-eta.vercel.app), OpenAPI 3.1 contract-first, API-key auth with " +
+      "scoped keys and rate limits. Vendors hand-written TypeScript " +
+      "(@axiom-foundation/sdk) and Python (axiom-api) SDK clients with " +
+      "tag-triggered npm/PyPI release workflows.",
+    mechanics:
+      "Endpoints: /v1/{search, rules/{id}[/sources|/dependencies], programs, " +
+      "capabilities, runtime/packages, parity/*, calculate, calculate/batch, " +
+      "jobs/calculate} plus /docs and /docs/mcp (public). Rule index comes from " +
+      "AXIOM_RULE_INDEX_SOURCE: 'static' in production (checked-in " +
+      "data/rulespec-index.current.json regenerated by a scheduled " +
+      "refresh-rulespec-index workflow) or 'github' (live GitHub trees/contents " +
+      "reads of rulespec-*). Calculation with AXIOM_RUNTIME_SOURCE=compiled " +
+      "forwards to a Modal-hosted FastAPI service (modal_runtime.py) that " +
+      "cargo-builds axiom-rules-engine at a pinned SHA; 9 compiled packages " +
+      "admitted today (co-snap, uk/universal-credit, SNAP for 7 more states). " +
+      "Optional Upstash-style Redis REST backs cross-instance rate limits, " +
+      "revocations, and analytics.",
+    rationale:
+      "One platform surface for agents, SDKs, and partners — instead of every " +
+      "consumer re-implementing Supabase queries and engine invocation. " +
+      "Contract-first with drift detectors: OpenAPI, MCP docs, and the compiled " +
+      "registry are regenerated and checked in CI.",
+    important: [
+      "Fixture-by-default: a fresh deploy without AXIOM_RUNTIME_SOURCE=compiled + " +
+        "a runtime URL returns canned calculation results, not engine output.",
+      "Without Redis, rate limits / revocations / analytics are per-Vercel-instance " +
+        "and reset on deploy; ?scope=global needs the shared store.",
+      "Supabase is declared in env examples and the architecture doc but NOT wired " +
+        "— the corpus adapter is a planned edge. Rule data comes from GitHub / the " +
+        "static index.",
+      "Engine SHA is pinned in modal_runtime.py; bumping axiom-rules-engine " +
+        "requires a Modal redeploy.",
+      "as_of is a reserved parameter (temporal retrieval design exists, not yet " +
+        "functional). co-snap is a legacy program_id kept for demo compatibility.",
+      "Production is smoke-tested by a scheduled GitHub Action every 15 minutes, " +
+        "not an always-on probe. Auth is fail-closed in staging/production.",
+      "Prototype-pollution hardening in the runtime adapter: null-prototype maps, " +
+        "__proto__/constructor/prototype deny-list, 1,000-entity request cap.",
+    ],
+    files: [
+      "axiom-api/src/app.ts",
+      "axiom-api/src/runtime-compiled.ts",
+      "axiom-api/src/rulespec-index.ts",
+      "axiom-api/modal_runtime.py",
+      "axiom-api/data/rulespec-index.current.json",
+      "axiom-api/clients/typescript/",
+      "axiom-api/clients/python/",
+    ],
+    commands: [
+      "npm run dev",
+      "npm run check",
+      "npm run index:generate",
+      "npm run compiled:generate",
+      "modal deploy modal_runtime.py",
+    ],
+  },
+  {
+    id: "axiom-mcp",
+    label: "axiom-mcp",
+    layer: "platform",
+    repo: "axiom-mcp",
+    summary: "MCP server for agents (npm, v0.1.2)",
+    detail:
+      "Thin Model Context Protocol adapter over axiom-api — the surface Claude and " +
+      "other MCP clients use to search law, read rules and sources, discover " +
+      "runtime packages, run parity cases, and calculate households. Published to " +
+      "npm as @axiom-foundation/mcp (v0.1.2, MIT); runs on the client's machine " +
+      "via stdio (npx -y @axiom-foundation/mcp), never deployed server-side.",
+    mechanics:
+      "14 tools mapping 1:1 onto API endpoints (get_capabilities, list_programs, " +
+      "search_rules, get_rule[_sources|_dependencies], list/get_runtime_packages, " +
+      "list/run_parity_cases, calculate_household, calculate_batch, " +
+      "submit_calculation_job, get_calculation_job), four axiom:// resources, and " +
+      "three prompts (explain_rule_for_caseworker, trace_household_result, " +
+      "find_missing_household_inputs). Forwards AXIOM_API_KEY as a Bearer token; " +
+      "auto-retries a 429 once when retry-after ≤ 10s, otherwise surfaces a " +
+      "structured tool error with http_status and the API error body.",
+    rationale:
+      "Zero server-side state, no shell, no arbitrary fetch — the MCP server can " +
+      "only reach the one configured base URL with the one key. All rule/data " +
+      "logic stays in the API.",
+    important: [
+      "Endpoint paths are hardcoded in axiom-client.ts, so tool coverage must move " +
+        "in lockstep with the API — axiom-api runs an API-coverage drift detector " +
+        "for exactly this.",
+      "Published via npm Trusted Publishing (OIDC provenance); a live-smoke " +
+        "workflow exercises the 0.1.2 surface against production.",
+      "Default base URL is production (axiom-api-eta.vercel.app); local dev " +
+        "requires overriding AXIOM_API_BASE_URL.",
+    ],
+    files: [
+      "axiom-mcp/src/server.ts",
+      "axiom-mcp/src/tool-handlers.ts",
+      "axiom-mcp/src/axiom-client.ts",
+      "axiom-mcp/docs/quickstart.md",
+    ],
+    commands: ["npx -y @axiom-foundation/mcp", "npm run smoke:live"],
+  },
+  {
+    id: "analytics",
+    label: "GA4 → Axiom CRM",
+    layer: "platform",
+    repo: "infrastructure",
+    summary: "Product-analytics loop",
+    detail:
+      "Shared product-analytics loop across the public surfaces: " +
+      "axiom-foundation.org, axiom-demo-shell, axiom-microsim's web UI, the oracles " +
+      "dashboard, and this architecture viewer all emit GA4 events to property " +
+      "G-2YHG89FY0N with a tool_name dimension. The PolicyEngine CRM (Teamverse) " +
+      "reads that property via the GA4 Data API and renders per-tool page views, " +
+      "engagement, and a tools leaderboard for ops.",
+    mechanics:
+      "Each tool ships a small analytics.js (or layout hook) reporting scroll_depth, " +
+      "time_on_tool, and outbound_click with tool_name. The CRM's " +
+      "google-analytics.service.ts calls runReport against per-org configured " +
+      "property ids; the tools leaderboard groups by tool_name.",
+    important: [
+      "G-2YHG89FY0N superseded G-5PB7KEWV38 (June 2026) — it's the property the " +
+        "CRM already reads. Both ids appear in commit history; only the former is " +
+        "current.",
+      "The CRM is an internal ops consumer only — it never reads the corpus, " +
+        "rulespec repos, or axiom-api.",
+    ],
   },
 ];
 
@@ -1346,60 +1601,70 @@ export const EDGES: EdgeSpec[] = [
   { from: "provisions", to: "counts", kind: "derived", label: "RPC refresh" },
   { from: "provisions", to: "references", kind: "derived", label: "extract-references" },
 
-  // Three rules-* edges into navigation share the has_rulespec verb;
+  // Both rules edges into navigation share the has_rulespec verb;
   // label only one to keep the canvas readable.
   { from: "rulespec-us", to: "navigation", kind: "derived", label: "has_rulespec" },
-  { from: "rules-state", to: "navigation", kind: "derived" },
   { from: "rules-other", to: "navigation", kind: "derived" },
 
   { from: "provisions", to: "axiom-encode", kind: "read" },
   { from: "axiom-encode", to: "rulespec-us", kind: "solid", label: "writes YAML" },
-  { from: "axiom-encode", to: "rules-state", kind: "solid" },
   { from: "axiom-encode", to: "rules-other", kind: "solid" },
 
   // Cross-column reads (storage → apps) — drop the "REST" label so it
-  // doesn't land inside Col 5/6 nodes at the geometric midpoint of the
-  // long edge. Edge style already signals the relationship.
+  // doesn't land inside intermediate nodes at the geometric midpoint of
+  // the long edge. Edge style already signals the relationship.
   { from: "navigation", to: "axiom-foundation", kind: "read" },
   { from: "provisions", to: "axiom-foundation", kind: "read" },
   { from: "provisions", to: "finbot", kind: "read" },
   { from: "provisions", to: "dashboard-builder", kind: "read" },
+  // The /ops dashboard reads analytics JSON straight from the bucket —
+  // R2's first production reader.
+  { from: "r2", to: "axiom-foundation", kind: "read", label: "ops analytics" },
 
-  // axiom-rules-engine compiles + executes the RuleSpec YAML. Single labeled edge
-  // (rulespec-us) carries the verb; the others are visually identical so we
-  // skip the duplicate labels.
-  { from: "rulespec-us", to: "axiom-rules-engine", kind: "read", label: "compiles" },
-  { from: "rules-state", to: "axiom-rules-engine", kind: "read" },
-  { from: "rules-other", to: "axiom-rules-engine", kind: "read" },
-  { from: "axiom-rules-engine", to: "finbot", kind: "solid", label: "executes" },
-  { from: "axiom-rules-engine", to: "dashboard-builder", kind: "solid" },
-
-  // axiom-oracles validates against external oracles
-  { from: "rulespec-us", to: "axiom-oracles", kind: "read", label: "compares" },
-  { from: "rules-state", to: "axiom-oracles", kind: "read" },
-  { from: "axiom-rules-engine", to: "axiom-oracles", kind: "read" },
-  // axiom-programs holds declarative compose specs; axiom-compose resolves
-  // their `scope` arrays against the atomic rulespec corpora, then emits
-  // runnable programs for the engine.
+  // Program assembly: rulespec corpora feed compose specs (axiom-programs)
+  // and the composer; the composer emits runnable programs for the engine.
   { from: "rulespec-us", to: "axiom-programs", kind: "read", label: "atomic only" },
-  { from: "rules-state", to: "axiom-programs", kind: "read" },
   { from: "rulespec-us", to: "axiom-compose", kind: "read" },
-  { from: "rules-state", to: "axiom-compose", kind: "read" },
+  { from: "rules-other", to: "axiom-compose", kind: "read" },
   { from: "axiom-programs", to: "axiom-compose", kind: "read", label: "specs" },
   { from: "axiom-compose", to: "axiom-rules-engine", kind: "derived", label: "runnable program" },
 
-  // axiom-demo-shell embeds the front-end demos (three short edges; one label
-  // is enough — repeating it three times is just noise).
-  { from: "axiom-foundation", to: "axiom-demo-shell", kind: "read", label: "iframe" },
+  // axiom-rules-engine compiles + executes the RuleSpec YAML. Single labeled
+  // edge (rulespec-us) carries the verb; the other is visually identical.
+  { from: "rulespec-us", to: "axiom-rules-engine", kind: "read", label: "compiles" },
+  { from: "rules-other", to: "axiom-rules-engine", kind: "read" },
+  { from: "axiom-rules-engine", to: "finbot", kind: "solid", label: "executes" },
+  { from: "axiom-rules-engine", to: "dashboard-builder", kind: "solid" },
+  { from: "axiom-rules-engine", to: "microsim", kind: "solid" },
+  { from: "axiom-compose", to: "microsim", kind: "derived", label: "compiled programs" },
+
+  // axiom-oracles validates against external oracles.
+  { from: "rulespec-us", to: "axiom-oracles", kind: "read", label: "compares" },
+  { from: "axiom-compose", to: "axiom-oracles", kind: "derived" },
+  { from: "axiom-rules-engine", to: "axiom-oracles", kind: "read" },
+
+  // axiom-demo-shell links out to the demo surfaces (one label is enough).
+  { from: "axiom-foundation", to: "axiom-demo-shell", kind: "read", label: "links" },
   { from: "finbot", to: "axiom-demo-shell", kind: "read" },
   { from: "dashboard-builder", to: "axiom-demo-shell", kind: "read" },
+  { from: "microsim", to: "axiom-demo-shell", kind: "read" },
 
-  // Parallel ingest + simulation.
+  // Parallel ingest.
   { from: "state-sources", to: "scrapers", kind: "solid", label: "scrapes" },
   { from: "scrapers", to: "adapters", kind: "solid", label: "section files" },
-  { from: "bills", to: "axiom-encode", kind: "read", label: "enacted bills" },
-  { from: "axiom-compose", to: "microsim", kind: "derived", label: "compiled programs" },
-  { from: "axiom-rules-engine", to: "microsim", kind: "solid", label: "executes" },
+  { from: "bills", to: "supabase", kind: "solid", label: "sync-supabase" },
+  { from: "bills", to: "axiom-encode", kind: "read", label: "rule patches" },
+
+  // Platform surface: the API indexes the rulespec corpora, executes on a
+  // Modal-hosted engine build, and fronts the MCP server for agents.
+  { from: "rulespec-us", to: "axiom-api", kind: "read", label: "GitHub index" },
+  { from: "axiom-rules-engine", to: "axiom-api", kind: "solid", label: "Modal runtime" },
+  { from: "axiom-api", to: "axiom-mcp", kind: "solid", label: "HTTP · API key" },
+
+  // Product-analytics loop (GA4 property G-2YHG89FY0N → CRM).
+  { from: "axiom-foundation", to: "analytics", kind: "read", label: "GA4 events" },
+  { from: "microsim", to: "analytics", kind: "read" },
+  { from: "axiom-demo-shell", to: "analytics", kind: "read" },
 ];
 
 export type Layout = {
@@ -1420,17 +1685,25 @@ const edgesAmong = (ids: Set<string>) =>
 // previous one and adds a new column to the right. Column x-positions are
 // consistent across scenes so the architecture visibly grows rightward as
 // the reader progresses — the same node lands at the same coordinate
-// whether you're in §01 or §05.
+// whether you're in §01 or §06.
 //
-// Column layout (left → right):
+// Column layout (left → right), pitch 420, card max-width 230 — no
+// half-pitch columns (a 210px offset physically overlaps neighbouring
+// cards; that was the §04 collision bug):
 //   x=40    Col 1 — Upstream publishers
-//   x=460   Col 2 — Ingest layer (fetchers, parsers, adapters)
-//   x=880   Col 3 — Local JSONL artifact tree
+//   x=460   Col 2 — Ingest layer (fetchers, parsers, adapters, scrapers)
+//   x=880   Col 3 — Local JSONL artifact tree + bill tracker
 //   x=1300  Col 4 — Storage tier (R2 + Supabase tables)
-//   x=1720  Col 5 — Encoder + rules-* repos
-//   x=2140  Col 6 — Execution + validation
-//   x=2560  Col 7 — Consumer apps
-//   x=2980  Col 8 — Demo shell
+//   x=1720  Col 5 — Encoder + country monorepos
+//   x=2140  Col 6 — Program assembly (specs + composer) + API platform
+//   x=2560  Col 7 — Execution engine + oracle validation + MCP
+//   x=2980  Col 8 — Consumer apps
+//   x=3400  Col 9 — Demo shell + analytics loop
+//
+// Vertical spacing: cards run ~100-130px tall, so same-column pitches stay
+// ≥160. Long cross-column edges are chosen to travel through inter-column
+// gaps (midpoint verticals at ~2045/2465/2885) or under cards — never
+// through a card at its own row.
 
 // Canonical positions, used by every scene below.
 const POS: Record<string, [number, number]> = {
@@ -1445,33 +1718,36 @@ const POS: Record<string, [number, number]> = {
   parsers: [460, 420],
   adapters: [460, 640],
   scrapers: [460, 860],
-  bills: [880, 760],
   // Col 3
   artifacts: [880, 420],
+  bills: [880, 800],
   // Col 4 — storage tier
-  r2: [1300, 80],
+  r2: [1300, 40],
   provisions: [1300, 240],
-  navigation: [1300, 400],
-  counts: [1300, 560],
-  references: [1300, 720],
-  // Col 5 — encoder + rules
+  navigation: [1300, 420],
+  counts: [1300, 600],
+  references: [1300, 760],
+  supabase: [1300, 920],
+  // Col 5 — encoder + country monorepos
   "axiom-encode": [1720, 80],
   "rulespec-us": [1720, 320],
-  "rules-state": [1720, 480],
-  "rules-other": [1720, 640],
-  // Col 5.5 — compose specs (declarative, between law and execution)
-  "axiom-programs": [1930, 480],
-  // Col 6 — execution + validation
-  "axiom-rules-engine": [2140, 320],
-  "axiom-compose": [2140, 460],
-  "axiom-oracles": [2140, 640],
-  // Col 7 — consumer apps
-  "axiom-foundation": [2560, 240],
-  finbot: [2560, 400],
-  "dashboard-builder": [2560, 560],
-  microsim: [2560, 720],
-  // Col 8 — demo shell
-  "axiom-demo-shell": [2980, 400],
+  "rules-other": [1720, 560],
+  // Col 6 — program assembly + API platform
+  "axiom-programs": [2140, 160],
+  "axiom-compose": [2140, 420],
+  "axiom-api": [2140, 880],
+  // Col 7 — execution + validation + MCP
+  "axiom-rules-engine": [2560, 320],
+  "axiom-oracles": [2560, 640],
+  "axiom-mcp": [2560, 940],
+  // Col 8 — consumer apps
+  "axiom-foundation": [2980, 80],
+  finbot: [2980, 280],
+  "dashboard-builder": [2980, 460],
+  microsim: [2980, 640],
+  // Col 9 — demo shell + analytics
+  "axiom-demo-shell": [3400, 380],
+  analytics: [3400, 700],
 };
 
 const pos = (id: string) => N(id, POS[id][0], POS[id][1]);
@@ -1480,14 +1756,23 @@ const placeAll = (ids: string[]) => ids.map(pos);
 // Each scene's "visible nodes" is cumulative: scene N = scene N-1 + new ones.
 const SOURCES_IDS = ["ecfr", "usc", "state-sources", "canada-source", "irs-bulk"];
 
-const INGEST_NEW_IDS = ["fetchers", "parsers", "adapters", "artifacts", "scrapers", "bills"];
+const INGEST_NEW_IDS = ["fetchers", "parsers", "adapters", "artifacts", "scrapers"];
 
-const STORAGE_NEW_IDS = ["r2", "provisions", "navigation", "counts", "references"];
+// bills joins with the storage tier — its first visible edge writes the
+// bills schema in Supabase (introducing it earlier left an orphan card).
+const STORAGE_NEW_IDS = [
+  "r2",
+  "provisions",
+  "navigation",
+  "counts",
+  "references",
+  "supabase",
+  "bills",
+];
 
 const ENCODING_NEW_IDS = [
   "axiom-encode",
   "rulespec-us",
-  "rules-state",
   "rules-other",
   "axiom-programs",
   "axiom-rules-engine",
@@ -1499,15 +1784,18 @@ const CONSUMER_NEW_IDS = [
   "axiom-foundation",
   "finbot",
   "dashboard-builder",
-  "axiom-demo-shell",
   "microsim",
+  "axiom-demo-shell",
 ];
+
+const PLATFORM_NEW_IDS = ["axiom-api", "axiom-mcp", "analytics"];
 
 const SOURCES_VISIBLE = SOURCES_IDS;
 const INGEST_VISIBLE = [...SOURCES_VISIBLE, ...INGEST_NEW_IDS];
 const STORAGE_VISIBLE = [...INGEST_VISIBLE, ...STORAGE_NEW_IDS];
 const ENCODING_VISIBLE = [...STORAGE_VISIBLE, ...ENCODING_NEW_IDS];
 const PIPELINE_VISIBLE = [...ENCODING_VISIBLE, ...CONSUMER_NEW_IDS];
+const PLATFORM_VISIBLE = [...PIPELINE_VISIBLE, ...PLATFORM_NEW_IDS];
 
 export const LAYOUTS: Layout[] = [
   // ═══════════════════════════════════════════════════════════════
@@ -1539,7 +1827,7 @@ export const LAYOUTS: Layout[] = [
   },
 
   // ═══════════════════════════════════════════════════════════════
-  // § 03 — add: storage tier. R2 (cold) + Supabase (live).
+  // § 03 — add: storage tier. R2 (cold) + Supabase (live) + bills.
   // ═══════════════════════════════════════════════════════════════
   {
     id: "storage",
@@ -1549,43 +1837,64 @@ export const LAYOUTS: Layout[] = [
       "The same JSONL produces a durable R2 mirror and a live Supabase snapshot. " +
       "corpus.provisions is the source of truth for legal text; navigation_nodes, " +
       "provision_counts, and provision_references are derived from it and " +
-      "rebuildable in minutes.",
+      "rebuildable in minutes. axiom-bills tracks live legislation into its own " +
+      "Supabase schema — federal hourly, states every six hours.",
     nodes: placeAll(STORAGE_VISIBLE),
     edges: edgesAmong(new Set(STORAGE_VISIBLE)),
   },
 
   // ═══════════════════════════════════════════════════════════════
-  // § 04 — add: encoder + rules + execution + validation.
+  // § 04 — add: encoder + country monorepos + execution + validation.
   // ═══════════════════════════════════════════════════════════════
   {
     id: "encoding",
     title: "Add encoding + execution",
     eyebrow: "§ 04 · Encoding",
     description:
-      "axiom-encode reads the corpus and writes RuleSpec YAML into the rulespec-* " +
-      "repos. axiom-rules-engine (Rust) compiles + executes that YAML. axiom-compose " +
-      "assembles runnable programs from atomic encoded law + declarative specs. " +
-      "axiom-oracles validates outputs against external oracles (PolicyEngine, " +
-      "TAXSIM, ACCESS NYC) via a 13-entry comparisons registry. The next nav " +
-      "rebuild closes the loop via has_rulespec.",
+      "axiom-encode reads the corpus and writes RuleSpec YAML into the country " +
+      "monorepos — rulespec-us (federal + 32 states + programs/, ~3,040 modules " +
+      "since the June 2026 consolidation), rulespec-uk, rulespec-ca. axiom-compose " +
+      "assembles runnable programs from atomic encoded law + declarative specs; " +
+      "axiom-rules-engine (Rust) compiles + executes them. axiom-oracles validates " +
+      "outputs against PolicyEngine, TAXSIM, ACCESS NYC, and EUROMOD/UKMOD via a " +
+      "20-entry comparisons registry with a weekly-regenerated public dashboard.",
     nodes: placeAll(ENCODING_VISIBLE),
     edges: edgesAmong(new Set(ENCODING_VISIBLE)),
   },
 
   // ═══════════════════════════════════════════════════════════════
-  // § 05 — add: consumer apps + demo shell. Pipeline assembled.
+  // § 05 — add: consumer apps + demo shell.
   // ═══════════════════════════════════════════════════════════════
   {
     id: "end-to-end",
     title: "Add the consumers",
     eyebrow: "§ 05 · Pipeline",
     description:
-      "axiom-foundation.org, finbot, and dashboard-builder all read from Supabase " +
-      "and call into axiom-rules-engine for execution. axiom-demo-shell unifies the three " +
-      "demo surfaces in a static landing page. Every block carries its repo on the " +
-      "eyebrow so you can see who owns what at a glance.",
+      "axiom-foundation.org (corpus browser, search, and the /ops dashboard), " +
+      "finbot, dashboard-builder, and axiom-microsim read from Supabase and call " +
+      "into axiom-rules-engine for execution. axiom-demo-shell presents ten demo " +
+      "surfaces in a guided Infrastructure → Validation → Application pipeline. " +
+      "Every block carries its repo on the eyebrow so you can see who owns what " +
+      "at a glance.",
     nodes: placeAll(PIPELINE_VISIBLE),
     edges: edgesAmong(new Set(PIPELINE_VISIBLE)),
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // § 06 — add: the platform surface. API, SDKs, agents, analytics.
+  // ═══════════════════════════════════════════════════════════════
+  {
+    id: "platform",
+    title: "Add the platform surface",
+    eyebrow: "§ 06 · Platform",
+    description:
+      "axiom-api is the rule-native HTTP contract layer: search, retrieval, and " +
+      "household calculation over API keys, with vendored TypeScript + Python SDKs " +
+      "and heavy compute on a Modal-hosted engine build. axiom-mcp (npm, v0.1.2) " +
+      "exposes that surface to Claude and other agents over MCP. A shared GA4 " +
+      "property feeds product analytics from every public tool into the Axiom CRM.",
+    nodes: placeAll(PLATFORM_VISIBLE),
+    edges: edgesAmong(new Set(PLATFORM_VISIBLE)),
   },
 ];
 

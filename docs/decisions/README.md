@@ -11,11 +11,11 @@ or migration incomplete) · **shipped** · **superseded**.
 
 | # | Decision | Status |
 |---|---|---|
-| [0001](0001-country-monorepo-consolidation.md) | One country monorepo per sovereign legal system | in-flight |
+| [0001](0001-country-monorepo-consolidation.md) | One country monorepo per sovereign legal system | shipped (2026-06-12) |
 | [0002](0002-compose-replaces-checked-in-compositions.md) | axiom-compose replaces checked-in composition YAMLs | in-flight |
 | [0003](0003-signed-apply-manifests.md) | Every encoder apply writes a signed manifest | shipped |
 | [0004](0004-concepts-registry-as-apply-gate.md) | Canonical concepts registry gates encoder applies | shipped |
-| [0005](0005-program-specs-home.md) | Program compose specs live in axiom-programs, then move into country monorepos | in-flight |
+| [0005](0005-program-specs-home.md) | Program compose specs live in axiom-programs, then move into country monorepos | shipped, with a twist (dual-homed) |
 
 Adding a record: copy the section shape of an existing one, take the
 next number, add a row here. When a decision ships or is superseded,

@@ -13,7 +13,7 @@ import { useMemo } from "react";
 const SOURCES = [
   { label: "eCFR", sub: "federal regulations", y: 83 },
   { label: "US Code", sub: "54 titles", y: 188, seed: true },
-  { label: "State codes", sub: "50 states + DC", y: 293 },
+  { label: "State codes", sub: "50 states + DC", y: 293, stack: true },
   { label: "UK legislation", sub: "legislation.gov.uk", y: 398 },
   { label: "Canada", sub: "laws-lois · LIMS", y: 503 },
 ];
@@ -41,6 +41,26 @@ const OUTPUTS = [
     y: 492,
   },
 ];
+
+// Scope band: the scale of the system, in figures a first-time reader can
+// check. Order mirrors the flow — corpus scope first, then rules, then proof.
+const STATS = [
+  { num: "4", label: "countries covered" },
+  { num: "50 + DC", label: "state codes ingested" },
+  { num: "1.7M+", label: "provisions preserved" },
+  { num: "3,000+", label: "executable rule modules" },
+  { num: "99.9%", label: "oracle agreement" },
+];
+
+// Process markers: the real sequence, placed where each step happens in the
+// diagram (validate sits inside its loop, not on the left-to-right line).
+const STEPS = [
+  { n: 1, verb: "capture", x: 30, y: 40, anchor: "start" },
+  { n: 2, verb: "preserve", x: 350, y: 205, anchor: "start" },
+  { n: 3, verb: "encode", x: 625, y: 205, anchor: "start" },
+  { n: 4, verb: "validate", x: 722, y: 462, anchor: "middle" },
+  { n: 5, verb: "serve", x: 986, y: 66, anchor: "start" },
+] as const;
 
 const sourcePath = (sy: number, ty: number) =>
   `M 205 ${sy} C 285 ${sy}, 265 ${ty}, 348 ${ty}`;
@@ -102,6 +122,15 @@ export function LaunchGraphic() {
           </p>
         </header>
 
+        <div className="launch__stats">
+          {STATS.map((s) => (
+            <div className="launch-stat" key={s.label}>
+              <span className="launch-stat__num">{s.num}</span>
+              <span className="launch-stat__label">{s.label}</span>
+            </div>
+          ))}
+        </div>
+
         <div className="launch__diagram">
           <svg
             className="launch-svg"
@@ -123,13 +152,21 @@ export function LaunchGraphic() {
               </marker>
             </defs>
 
-            {/* ── column labels ─────────────────────────────── */}
-            <text className="lg-col-label" x="30" y="42">
-              official publishers
-            </text>
-            <text className="lg-col-label" x="986" y="66">
-              surfaces
-            </text>
+            {/* ── process markers (the real sequence, in place) ── */}
+            {STEPS.map((s) => {
+              const startX = s.anchor === "middle" ? s.x - 46 : s.x;
+              return (
+                <g className="lg-step" key={s.n}>
+                  <circle cx={startX + 9} cy={s.y - 4} r="8.5" />
+                  <text className="lg-step__n" x={startX + 9} y={s.y - 0.5} textAnchor="middle">
+                    {s.n}
+                  </text>
+                  <text className="lg-step__verb" x={startX + 25} y={s.y}>
+                    {s.verb}
+                  </text>
+                </g>
+              );
+            })}
 
             {/* ── edges ─────────────────────────────────────── */}
             {SOURCES.map((s, i) => (
@@ -154,22 +191,17 @@ export function LaunchGraphic() {
             ))}
             <path className="lg-loop" d={LOOP_PATH} />
 
-            {/* ── edge verbs ────────────────────────────────── */}
-            <text className="lg-verb" x="245" y="290">
-              snapshot + parse
-            </text>
-            <text className="lg-verb" x="583" y="299" textAnchor="middle">
-              encode
-            </text>
-            <text className="lg-verb" x="890" y="299" textAnchor="middle">
-              execute
-            </text>
-
             {/* ── sources ───────────────────────────────────── */}
             {SOURCES.map((s) => (
               <g key={s.label} className="lg-source">
                 <title>{`${s.label} — ${s.sub}`}</title>
-                {/* document glyph */}
+                {/* document glyph; state codes get a stack — 51 of them */}
+                {s.stack && (
+                  <>
+                    <rect className="lg-doc lg-doc--ghost" x="38" y={s.y - 24} width="22" height="30" rx="2" />
+                    <rect className="lg-doc lg-doc--ghost" x="34" y={s.y - 20} width="22" height="30" rx="2" />
+                  </>
+                )}
                 <rect
                   className="lg-doc"
                   x="30"
@@ -319,6 +351,12 @@ export function LaunchGraphic() {
             )}
           </svg>
         </div>
+
+        <p className="launch__coverage">
+          <span className="launch__coverage-lead">Encoded and validated today</span>
+          federal income tax · SNAP · TANF · Medicaid · SSI · UK Universal
+          Credit · Canada tax credits
+        </p>
 
         <footer className="launch__footer">
           <span className="glyph-axiom">∀</span>

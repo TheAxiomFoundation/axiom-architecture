@@ -164,9 +164,6 @@ export function LaunchGraphic() {
             <text className="lg-verb" x="890" y="299" textAnchor="middle">
               execute
             </text>
-            <text className="lg-verb" x="628" y="468" textAnchor="end">
-              validate
-            </text>
 
             {/* ── sources ───────────────────────────────────── */}
             {SOURCES.map((s) => (
@@ -249,7 +246,7 @@ export function LaunchGraphic() {
 
             {/* ── validation ────────────────────────────────── */}
             <text className="lg-agree" x="722" y="560" textAnchor="middle">
-              ✓ 99.9% agreement
+              ✓ validated · 99.9% agreement
             </text>
             <text className="lg-oracles" x="722" y="578" textAnchor="middle">
               PolicyEngine · TAXSIM · EUROMOD
@@ -290,25 +287,25 @@ export function LaunchGraphic() {
                   <FlowDots
                     key={s.label}
                     path={sourcePath(s.y, SOURCE_TARGET_Y[i])}
-                    dur={5}
+                    dur={6}
                     fill="#78716c"
-                    begins={[-i * 0.9, -2.5 - i * 0.9]}
+                    begins={[-i * 1.2]}
                   />
                 ))}
                 <FlowDots
                   path="M 547 310 L 620 310"
-                  dur={2.2}
+                  dur={2.6}
                   fill="#57534e"
-                  begins={[0, -1.1]}
+                  begins={[0]}
                 />
                 {OUTPUTS.map((o, i) => (
                   <FlowDots
                     key={o.title}
                     path={outputPath(o.y)}
-                    dur={3.2}
+                    dur={4}
                     fill="#92400e"
                     r={3}
-                    begins={[-i * 1.05, -1.6 - i * 1.05]}
+                    begins={[-i * 1.3]}
                   />
                 ))}
                 <FlowDots

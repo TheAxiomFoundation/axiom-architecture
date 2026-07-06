@@ -1424,6 +1424,8 @@ body::before {
 
 @media (max-width: 940px) {
   .launch {
+    /* flex-start: centering clips the top when content overflows */
+    align-items: flex-start;
     padding: 76px 20px 48px 20px;
   }
 

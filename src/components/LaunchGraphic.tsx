@@ -1,11 +1,11 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
-// External launch narrative. One real provision — 7 U.S.C. § 2017(a), the
-// SNAP allotment — travels top to bottom through five beats: published →
-// captured → encoded → verified → delivered. Each beat shows the SAME law
-// as that stage's real material, so the architecture reads as the machinery
-// of a journey rather than a box diagram. "Clear" is earned in beats 1–2,
-// "accurate" in beats 3–4; beat 5 is the payoff.
+// External launch graphic: the journey of one provision, compressed into a
+// single viewport — one modern diagram, no scrolling. Three columns read
+// left to right: THE SOURCE (published mess → addressed record), THE
+// TRANSFORMATION (statute ↔ executable rule, linked on hover), THE PROOF &
+// THE PRODUCT (oracle agreement → cited surfaces). Numbered chips 01–05
+// carry the sequence; arrows carry the flow.
 
 type Concept = "allotment" | "tfp" | "minus" | "pct" | "income";
 
@@ -36,66 +36,34 @@ const FORMULA: Array<Array<{ text: string; concept?: Concept }>> = [
   ],
 ];
 
-const LEDGER = [
-  { household: "Family of 3 · $1,240/mo earnings", axiom: "$291", oracle: "$291" },
-  { household: "Single adult · $980/mo earnings", axiom: "$176", oracle: "$176" },
-  { household: "Couple · income above the limit", axiom: "not eligible", oracle: "not eligible" },
-];
-
-// Scroll-reveal: adds .beat--in when the band enters the viewport.
-function Beat({
+function CardHead({
   n,
   title,
   machinery,
-  lede,
-  children,
 }: {
   n: string;
   title: string;
   machinery: string;
-  lede: ReactNode;
-  children: ReactNode;
 }) {
-  const ref = useRef<HTMLElement | null>(null);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      el.classList.add("beat--in");
-      return;
-    }
-    const obs = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) {
-            el.classList.add("beat--in");
-            obs.disconnect();
-          }
-        }
-      },
-      { threshold: 0.25 },
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, []);
-
   return (
-    <section className="beat" ref={ref}>
-      <div className="beat__rail" aria-hidden="true">
-        <span className="beat__node">{n}</span>
-        <span className="beat__line" />
-      </div>
-      <div className="beat__body">
-        <div className="beat__titlerow">
-          <h2 className="beat__title">{title}</h2>
-          <span className="beat__machinery">{machinery}</span>
-        </div>
-        <p className="beat__lede">{lede}</p>
-        <div className="beat__artifact">{children}</div>
-      </div>
-    </section>
+    <div className="lgc__head">
+      <span className="lgc__n">{n}</span>
+      <span className="lgc__title">{title}</span>
+      <span className="lgc__machinery">{machinery}</span>
+    </div>
   );
+}
+
+function DownArrow() {
+  return (
+    <div className="ldiag__down" aria-hidden="true">
+      ↓
+    </div>
+  );
+}
+
+function Card({ children, dark }: { children: ReactNode; dark?: boolean }) {
+  return <div className={`lgc ${dark ? "lgc--dark" : ""}`}>{children}</div>;
 }
 
 export function LaunchGraphic() {
@@ -120,229 +88,176 @@ export function LaunchGraphic() {
           </h1>
           <p className="launch__sub">
             How public law becomes a clear and accurate digital representation
-            — follow one sentence of the U.S. Code the whole way down.
+            — one provision, the whole way through.
           </p>
         </header>
 
-        <div className="launch__beats">
-          <Beat
-            n="01"
-            title="The law as published"
-            machinery="official publishers"
-            lede="Statutes, regulations, and guidance are scattered across hundreds of sources — every publisher with its own format."
-          >
-            <div className="frag-pile">
-              <div className="frag frag--xml">
-                <div className="frag__tag">uscode.house.gov · XML</div>
+        <div className="ldiag">
+          {/* ── column 1: the source ─────────────────────────── */}
+          <div className="ldiag__col">
+            <div className="ldiag__colhead">the source</div>
+            <Card>
+              <CardHead n="01" title="Published" machinery="everywhere" />
+              <div className="frag-mini frag-mini--xml">
+                <div className="frag-mini__tag">uscode.house.gov · XML</div>
                 <code>
-                  {'<subsection identifier="/us/usc/t7/s2017/a">'}
+                  {'<subsection identifier='}
                   <br />
-                  {"  …cost of the thrifty food plan, reduced"}
+                  {'"/us/usc/t7/s2017/a">…30'}
                   <br />
-                  {"  by an amount equal to 30 per centum…"}
+                  {"per centum…"}
                 </code>
               </div>
-              <div className="frag frag--pdf">
-                <div className="frag__tag">state agency · PDF</div>
-                <p>
-                  …the value of the allotment shall be equal to the cost of
-                  the thrifty food plan reduced by…
-                </p>
-                <div className="frag__page">— p. 214 —</div>
+              <div className="frag-mini frag-mini--pdf">
+                <div className="frag-mini__tag">state agency · PDF, p. 214</div>
+                <p>…value of the allotment shall be equal to the cost of…</p>
               </div>
-              <div className="frag frag--html">
-                <div className="frag__tag">ecfr.gov · HTML</div>
-                <code>
-                  {'<p class="statute">…30 per centum of'}
-                  <br />
-                  {"the household’s income…</p>"}
-                </code>
+              <div className="lgc__caption">
+                eCFR · US Code · 50 states · UK · Canada
               </div>
-            </div>
-            <div className="beat__caption">
-              eCFR · US Code · 50 state codes · UK · Canada
-            </div>
-          </Beat>
-
-          <Beat
-            n="02"
-            title="Captured, one address each"
-            machinery="the corpus"
-            lede={
-              <>
-                We snapshot every source and give every provision a permanent,
-                citable address. This is where <strong>clear</strong> begins.
-              </>
-            }
-          >
-            <div className="record">
-              <div className="record__path">us/statute/7/2017/a</div>
-              <div className="record__title">§ 2017(a) · Value of allotment</div>
-              <p className="record__text">
-                …the value of the allotment shall be equal to the cost of the
-                thrifty food plan, reduced by an amount equal to 30 per centum
-                of the household’s income…
-              </p>
-              <div className="record__meta">
-                sha256 ✓ · snapshot kept · source: uscode.house.gov
-              </div>
-            </div>
-            <div className="beat__caption">
-              one of 1.7M+ provisions, each with a stable address
-            </div>
-          </Beat>
-
-          <Beat
-            n="03"
-            title="Encoded, word by word"
-            machinery="the encoder · RuleSpec"
-            lede={
-              <>
-                Each provision becomes an executable rule, and every number and
-                condition is pinned to the exact words it came from —{" "}
-                <strong>hover either side</strong>.
-              </>
-            }
-          >
-            <figure className="launch-law">
-              <figcaption className="launch-law__cite">
-                7 U.S.C. § 2017(a) · Food and Nutrition Act
-              </figcaption>
-              <blockquote className="launch-law__text">
-                {STATUTE.map((part, i) =>
-                  part.concept ? (
-                    <mark
-                      key={i}
-                      className="launch-law__phrase"
-                      {...conceptProps(part.concept)}
-                    >
-                      {part.text}
-                    </mark>
-                  ) : (
-                    <span key={i}>{part.text}</span>
-                  ),
-                )}
-              </blockquote>
-            </figure>
-
-            <div className="launch-hero__joint" aria-hidden="true">
-              <span className="launch-hero__stem" />
-              <span className="launch-hero__verb">becomes</span>
-              <span className="launch-hero__stem" />
-            </div>
-
-            <div className="launch-rule">
-              <div className="launch-rule__code">
-                {FORMULA.map((line, li) => (
-                  <div className="launch-rule__line" key={li}>
-                    {line.map((tok, ti) =>
-                      tok.concept ? (
-                        <span
-                          key={ti}
-                          className="launch-rule__token"
-                          {...conceptProps(tok.concept)}
-                        >
-                          {tok.text}
-                        </span>
-                      ) : (
-                        <span key={ti} className="launch-rule__plain">
-                          {tok.text}
-                        </span>
-                      ),
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="beat__caption">
-              open RuleSpec format · 3,000+ encoded modules
-            </div>
-          </Beat>
-
-          <Beat
-            n="04"
-            title="Verified independently"
-            machinery="the oracles"
-            lede={
-              <>
-                We run every rule against independent calculators across
-                hundreds of thousands of test households. Disagreements are
-                investigated, not ignored. This is where{" "}
-                <strong>accurate</strong> is earned.
-              </>
-            }
-          >
-            <div className="ledger">
-              <div className="ledger__head">
-                <span>test household</span>
-                <span>Axiom</span>
-                <span>independent oracle</span>
-                <span />
-              </div>
-              {LEDGER.map((row) => (
-                <div className="ledger__row" key={row.household}>
-                  <span>{row.household}</span>
-                  <span className="ledger__num">{row.axiom}</span>
-                  <span className="ledger__num">{row.oracle}</span>
-                  <span className="ledger__check">✓</span>
+            </Card>
+            <DownArrow />
+            <Card>
+              <CardHead n="02" title="Captured" machinery="the corpus" />
+              <div className="record-mini">
+                <div className="record-mini__path">us/statute/7/2017/a</div>
+                <div className="record-mini__meta">
+                  § 2017(a) · sha256 ✓ · snapshot kept
                 </div>
-              ))}
-              <div className="ledger__sum">
-                299,821 of 299,993 checks agree — 99.9%
               </div>
-            </div>
-            <div className="beat__caption">
-              PolicyEngine · TAXSIM · EUROMOD · illustrative households
-            </div>
-          </Beat>
+              <div className="lgc__caption">
+                one address for each of 1.7M+ provisions —{" "}
+                <strong>clear</strong> begins here
+              </div>
+            </Card>
+          </div>
 
-          <Beat
-            n="05"
-            title="The digital representation"
-            machinery="web · API · agents"
-            lede={
-              <>
-                The result: the legal code, clear and accurate, wherever it’s
-                needed — and every answer cited back to the law. When the law
-                changes, the rules change with it; we track every bill, hourly.
-              </>
-            }
-          >
-            <div className="surfaces">
-              <div className="surface">
-                <div className="surface__label">browse</div>
-                <p className="surface__body surface__body--serif">
-                  …reduced by <mark>30 per centum</mark> of the household’s
-                  income…
-                </p>
+          <div className="ldiag__arrow" aria-hidden="true">
+            →
+          </div>
+
+          {/* ── column 2: the transformation ─────────────────── */}
+          <div className="ldiag__col ldiag__col--center">
+            <div className="ldiag__colhead">the transformation</div>
+            <Card>
+              <CardHead
+                n="03"
+                title="Encoded, word by word"
+                machinery="RuleSpec"
+              />
+              <figure className="launch-law">
+                <figcaption className="launch-law__cite">
+                  7 U.S.C. § 2017(a) · Food and Nutrition Act
+                </figcaption>
+                <blockquote className="launch-law__text">
+                  {STATUTE.map((part, i) =>
+                    part.concept ? (
+                      <mark
+                        key={i}
+                        className="launch-law__phrase"
+                        {...conceptProps(part.concept)}
+                      >
+                        {part.text}
+                      </mark>
+                    ) : (
+                      <span key={i}>{part.text}</span>
+                    ),
+                  )}
+                </blockquote>
+              </figure>
+
+              <div className="launch-hero__joint" aria-hidden="true">
+                <span className="launch-hero__stem" />
+                <span className="launch-hero__verb">becomes</span>
+                <span className="launch-hero__stem" />
               </div>
-              <div className="surface surface--dark">
-                <div className="surface__label">API</div>
-                <code className="surface__code">
-                  {'"snap_allotment": 291,'}
-                  <br />
-                  {'"cites": "7 U.S.C. § 2017(a)"'}
+
+              <div className="launch-rule">
+                <div className="launch-rule__code">
+                  {FORMULA.map((line, li) => (
+                    <div className="launch-rule__line" key={li}>
+                      {line.map((tok, ti) =>
+                        tok.concept ? (
+                          <span
+                            key={ti}
+                            className="launch-rule__token"
+                            {...conceptProps(tok.concept)}
+                          >
+                            {tok.text}
+                          </span>
+                        ) : (
+                          <span key={ti} className="launch-rule__plain">
+                            {tok.text}
+                          </span>
+                        ),
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="lgc__caption">
+                every token pinned to its source words —{" "}
+                <strong>hover either side</strong>
+              </div>
+            </Card>
+          </div>
+
+          <div className="ldiag__arrow" aria-hidden="true">
+            →
+          </div>
+
+          {/* ── column 3: the proof, the product ─────────────── */}
+          <div className="ldiag__col">
+            <div className="ldiag__colhead">the proof · the product</div>
+            <Card>
+              <CardHead n="04" title="Verified" machinery="the oracles" />
+              <div className="check-mini">
+                <div className="check-mini__row">
+                  <span>Family of 3 · $1,240/mo</span>
+                  <span className="check-mini__num">$291 = $291</span>
+                  <span className="check-mini__ok">✓</span>
+                </div>
+                <div className="check-mini__row">
+                  <span>Couple over the limit</span>
+                  <span className="check-mini__num">ineligible, both</span>
+                  <span className="check-mini__ok">✓</span>
+                </div>
+                <div className="check-mini__sum">
+                  ✓ 99.9% agreement · 299,993 checks
+                </div>
+              </div>
+              <div className="lgc__caption">
+                PolicyEngine · TAXSIM · EUROMOD — <strong>accurate</strong>,
+                independently
+              </div>
+            </Card>
+            <DownArrow />
+            <Card>
+              <CardHead n="05" title="Delivered" machinery="web · API · agents" />
+              <div className="surface-mini surface-mini--dark">
+                <code>
+                  {'"snap_allotment": 291, "cites": "§ 2017(a)"'}
                 </code>
               </div>
-              <div className="surface">
-                <div className="surface__label">AI agents</div>
-                <p className="surface__body">
-                  “This household qualifies for <strong>$291/month</strong>.”
-                </p>
-                <span className="surface__cite">7 U.S.C. § 2017(a)</span>
+              <div className="surface-mini">
+                “This household qualifies for <strong>$291/month</strong>.”
+                <span className="surface-mini__cite">7 U.S.C. § 2017(a)</span>
               </div>
-            </div>
-          </Beat>
+              <div className="lgc__caption">
+                every answer cited · bills tracked hourly
+              </div>
+            </Card>
+          </div>
         </div>
 
-        <p className="launch__scope">
-          4 countries · 50 states + DC · 1.7M+ provisions · 3,000+ executable
-          rules
-        </p>
-
-        <footer className="launch__footer">
-          <span className="glyph-axiom">∀</span>
-          <span>axiom-foundation.org</span>
+        <footer className="launch__footline">
+          <span>
+            4 countries · 50 states + DC · 1.7M+ provisions · 3,000+
+            executable rules
+          </span>
+          <span className="launch__footbrand">
+            <span className="glyph-axiom">∀</span> axiom-foundation.org
+          </span>
         </footer>
       </div>
     </div>

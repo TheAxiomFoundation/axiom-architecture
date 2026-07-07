@@ -1166,7 +1166,7 @@ body::before {
 }
 
 /* ────────────────────────────────────────────────────────────
-   Launch graphic (external tab) — the transformation, linked
+   Launch graphic (external tab) — the journey of one provision
    ──────────────────────────────────────────────────────────── */
 
 .canvas--launch {
@@ -1175,15 +1175,16 @@ body::before {
 
 .launch {
   min-height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 48px 40px 56px 40px;
+  padding: 56px 40px 64px 40px;
 }
 
 .launch__poster {
   width: 100%;
-  max-width: 840px;
+  max-width: 780px;
+  margin: 0 auto;
+}
+
+.launch__header {
   text-align: center;
 }
 
@@ -1213,27 +1214,242 @@ body::before {
 
 .launch__sub {
   margin: 0 auto;
-  max-width: 520px;
+  max-width: 540px;
   font-size: 15px;
   line-height: 1.55;
   color: var(--color-ink-secondary);
 }
 
-/* ── the hero: law → rule, linked ──────────────────────────── */
+/* ── beats: the journey ────────────────────────────────────── */
 
-.launch-hero {
-  margin: 44px auto 0 auto;
-  max-width: 680px;
+.launch__beats {
+  margin-top: 56px;
 }
+
+.beat {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 0.6s var(--ease-out), transform 0.6s var(--ease-out);
+}
+
+.beat--in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.beat__rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.beat__node {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1.5px solid var(--color-accent);
+  background: var(--color-paper-elevated);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--f-mono);
+  font-size: 11px;
+  color: var(--color-accent);
+}
+
+.beat__line {
+  width: 1.5px;
+  flex: 1;
+  background: linear-gradient(
+    to bottom,
+    rgba(146, 64, 14, 0.5),
+    rgba(146, 64, 14, 0.15)
+  );
+}
+
+.beat:last-child .beat__line {
+  display: none;
+}
+
+.beat__body {
+  padding: 0 0 64px 8px;
+  min-width: 0;
+}
+
+.beat__titlerow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.beat__title {
+  margin: 0;
+  font-family: var(--f-serif);
+  font-weight: 400;
+  font-size: 26px;
+  line-height: 1.15;
+  color: var(--color-ink);
+}
+
+.beat__machinery {
+  font-family: var(--f-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted);
+  white-space: nowrap;
+}
+
+.beat__lede {
+  margin: 10px 0 0 0;
+  max-width: 560px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--color-ink-secondary);
+}
+
+.beat__lede strong {
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
+.beat__artifact {
+  margin-top: 22px;
+}
+
+.beat__caption {
+  margin-top: 14px;
+  font-family: var(--f-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted);
+}
+
+/* ── beat 1: the mess ──────────────────────────────────────── */
+
+.frag-pile {
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+}
+
+.frag {
+  background: var(--color-paper-elevated);
+  border: 1px solid var(--color-rule);
+  border-radius: 4px;
+  padding: 12px 14px;
+  flex: 1;
+  min-width: 0;
+  box-shadow: 0 4px 14px -10px rgba(28, 25, 23, 0.35);
+}
+
+.frag--xml {
+  transform: rotate(-1.4deg);
+}
+
+.frag--pdf {
+  transform: rotate(0.9deg) translateY(10px);
+}
+
+.frag--html {
+  transform: rotate(-0.6deg) translateY(-4px);
+}
+
+.frag__tag {
+  font-family: var(--f-mono);
+  font-size: 8.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted);
+  margin-bottom: 8px;
+}
+
+.frag code {
+  display: block;
+  font-family: var(--f-mono);
+  font-size: 9.5px;
+  line-height: 1.55;
+  color: var(--color-ink-secondary);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.frag p {
+  margin: 0;
+  font-family: var(--f-serif);
+  font-size: 10.5px;
+  line-height: 1.5;
+  color: var(--color-ink-secondary);
+  text-align: justify;
+}
+
+.frag__page {
+  margin-top: 8px;
+  text-align: center;
+  font-family: var(--f-serif);
+  font-size: 9px;
+  color: var(--color-ink-muted);
+}
+
+/* ── beat 2: the record ────────────────────────────────────── */
+
+.record {
+  background: var(--color-paper-elevated);
+  border: 1px solid var(--color-rule);
+  border-left: 3px solid var(--color-accent);
+  border-radius: 4px;
+  padding: 18px 22px;
+  max-width: 560px;
+}
+
+.record__path {
+  font-family: var(--f-mono);
+  font-size: 12px;
+  color: var(--color-accent);
+}
+
+.record__title {
+  margin-top: 8px;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--color-ink);
+}
+
+.record__text {
+  margin: 8px 0 0 0;
+  font-family: var(--f-serif);
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--color-ink-secondary);
+}
+
+.record__meta {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--color-rule);
+  font-family: var(--f-mono);
+  font-size: 9px;
+  letter-spacing: 0.05em;
+  color: var(--color-ink-muted);
+}
+
+/* ── beat 3: law ↔ rule (linked) ───────────────────────────── */
 
 .launch-law {
   margin: 0;
   background: var(--color-paper-elevated);
   border: 1px solid var(--color-rule);
   border-radius: 8px;
-  padding: 24px 32px 26px 32px;
-  text-align: left;
-  animation: launch-rise 0.6s var(--ease-out) both;
+  padding: 20px 26px 22px 26px;
+  max-width: 620px;
 }
 
 .launch-law__cite {
@@ -1242,13 +1458,13 @@ body::before {
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--color-ink-muted);
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 .launch-law__text {
   margin: 0;
   font-family: var(--f-serif);
-  font-size: clamp(16px, 2vw, 20px);
+  font-size: 17px;
   line-height: 1.65;
   color: var(--color-ink);
 }
@@ -1269,46 +1485,40 @@ body::before {
   border-bottom-color: transparent;
 }
 
-/* the joint between law and rule */
-
 .launch-hero__joint {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  padding: 10px 0;
-  animation: launch-rise 0.6s var(--ease-out) 0.25s both;
+  align-items: flex-start;
+  gap: 5px;
+  padding: 8px 0 8px 40px;
 }
 
 .launch-hero__stem {
   width: 1.5px;
-  height: 16px;
+  height: 12px;
   background: var(--color-accent);
   opacity: 0.7;
+  margin-left: 26px;
 }
 
 .launch-hero__verb {
   font-family: var(--f-mono);
-  font-size: 10px;
+  font-size: 9.5px;
   letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--color-accent);
 }
 
-/* the rule card */
-
 .launch-rule {
   background: var(--color-ink);
   border-radius: 8px;
-  padding: 26px 32px 0 32px;
-  text-align: left;
-  overflow: hidden;
-  animation: launch-rise 0.6s var(--ease-out) 0.5s both;
+  padding: 22px 26px;
+  max-width: 620px;
 }
 
 .launch-rule__code {
   font-family: var(--f-mono);
-  font-size: clamp(15px, 2.2vw, 21px);
+  font-size: 17px;
   line-height: 1.7;
 }
 
@@ -1335,32 +1545,141 @@ body::before {
   border-bottom-color: transparent;
 }
 
-.launch-rule__badge {
-  margin: 20px -32px 0 -32px;
-  padding: 12px 32px;
-  border-top: 1px solid rgba(250, 249, 246, 0.14);
+/* ── beat 4: the ledger ────────────────────────────────────── */
+
+.ledger {
+  max-width: 620px;
+  background: var(--color-paper-elevated);
+  border: 1px solid var(--color-rule);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.ledger__head,
+.ledger__row {
+  display: grid;
+  grid-template-columns: 1fr 110px 150px 30px;
+  gap: 10px;
+  padding: 10px 18px;
+  align-items: baseline;
+}
+
+.ledger__head {
+  font-family: var(--f-mono);
+  font-size: 8.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted);
+  border-bottom: 1px solid var(--color-rule);
+}
+
+.ledger__row {
+  font-size: 12.5px;
+  color: var(--color-ink-secondary);
+  border-bottom: 1px solid var(--color-rule-subtle);
+}
+
+.ledger__num {
+  font-family: var(--f-mono);
+  font-size: 12px;
+  color: var(--color-ink);
+}
+
+.ledger__check {
+  color: var(--color-success);
+  font-size: 12px;
+}
+
+.ledger__sum {
+  padding: 12px 18px;
+  font-family: var(--f-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--color-success);
+  background: rgba(22, 101, 52, 0.05);
+}
+
+/* ── beat 5: the surfaces ──────────────────────────────────── */
+
+.surfaces {
+  display: flex;
+  gap: 16px;
+  align-items: stretch;
+}
+
+.surface {
+  flex: 1;
+  min-width: 0;
+  background: var(--color-paper-elevated);
+  border: 1px solid var(--color-rule);
+  border-radius: 6px;
+  padding: 14px 16px;
+}
+
+.surface--dark {
+  background: var(--color-ink);
+  border-color: var(--color-ink);
+}
+
+.surface__label {
+  font-family: var(--f-mono);
+  font-size: 8.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted);
+  margin-bottom: 9px;
+}
+
+.surface--dark .surface__label {
+  color: #a8a29e;
+}
+
+.surface__body {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--color-ink);
+}
+
+.surface__body--serif {
+  font-family: var(--f-serif);
+  font-size: 12.5px;
+}
+
+.surface__body mark {
+  background: rgba(146, 64, 14, 0.12);
+  color: var(--color-accent);
+  padding: 0 2px;
+  border-radius: 2px;
+}
+
+.surface__code {
+  display: block;
   font-family: var(--f-mono);
   font-size: 10.5px;
-  letter-spacing: 0.05em;
-  color: #7fb694;
-  animation: launch-fade 0.5s var(--ease-out) 1s both;
+  line-height: 1.6;
+  color: #faf9f6;
 }
 
-.launch-hero__hint {
-  margin: 14px 0 0 0;
+.surface__cite {
+  display: inline-block;
+  margin-top: 9px;
   font-family: var(--f-mono);
-  font-size: 9.5px;
-  letter-spacing: 0.1em;
-  color: var(--color-ink-muted);
-  animation: launch-fade 0.5s var(--ease-out) 1.4s both;
+  font-size: 9px;
+  color: var(--color-accent);
+  border: 1px solid rgba(146, 64, 14, 0.35);
+  background: var(--color-accent-light);
+  border-radius: 3px;
+  padding: 2px 7px;
 }
 
-/* ── supporting lines ──────────────────────────────────────── */
+/* ── closing ───────────────────────────────────────────────── */
 
 .launch__scope {
-  margin: 36px 0 0 0;
-  padding-top: 18px;
+  margin: 8px 0 0 0;
+  padding-top: 20px;
   border-top: 1px solid var(--color-rule);
+  text-align: center;
   font-family: var(--f-mono);
   font-size: 11px;
   letter-spacing: 0.1em;
@@ -1368,16 +1687,8 @@ body::before {
   color: var(--color-ink-secondary);
 }
 
-.launch__payoff {
-  margin: 10px auto 0 auto;
-  max-width: 480px;
-  font-size: 13.5px;
-  line-height: 1.55;
-  color: var(--color-ink-muted);
-}
-
 .launch__footer {
-  margin-top: 34px;
+  margin-top: 22px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1392,55 +1703,55 @@ body::before {
   color: var(--color-accent);
 }
 
-@keyframes launch-rise {
-  from {
-    opacity: 0;
-    transform: translateY(14px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes launch-fade {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .launch-law,
-  .launch-hero__joint,
-  .launch-rule,
-  .launch-rule__badge,
-  .launch-hero__hint {
-    animation: none;
+  .beat {
+    opacity: 1;
+    transform: none;
+    transition: none;
   }
 }
 
 @media (max-width: 940px) {
   .launch {
-    /* flex-start: centering clips the top when content overflows */
-    align-items: flex-start;
-    padding: 76px 20px 48px 20px;
+    padding: 76px 18px 48px 18px;
   }
 
-  .launch-law,
-  .launch-rule {
-    padding-left: 20px;
-    padding-right: 20px;
+  .beat {
+    grid-template-columns: 44px 1fr;
   }
 
-  .launch-rule {
-    padding-bottom: 0;
+  .beat__node {
+    width: 28px;
+    height: 28px;
+    font-size: 9.5px;
   }
 
-  .launch-rule__badge {
-    margin: 16px -20px 0 -20px;
-    padding: 11px 20px;
+  .beat__body {
+    padding-bottom: 48px;
+  }
+
+  .frag-pile {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .frag--xml,
+  .frag--pdf,
+  .frag--html {
+    transform: none;
+  }
+
+  .launch-hero__joint {
+    padding-left: 12px;
+  }
+
+  .surfaces {
+    flex-direction: column;
+  }
+
+  .ledger__head,
+  .ledger__row {
+    grid-template-columns: 1fr 70px 90px 20px;
+    padding: 10px 12px;
   }
 }

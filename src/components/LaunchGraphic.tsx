@@ -55,6 +55,39 @@ const RULES_TOP = 255;
 const CYCLE = 13;
 const SLOTS = 6;
 
+const REDUCED_MOTION =
+  typeof window !== "undefined" &&
+  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+// Spotlight: a section holds full opacity during its slot; the rest of the
+// time it rests slightly dimmed, so the highlight travels with the pulse.
+// Without motion preferences everything stays fully lit.
+const DIM = 0.55;
+
+function Pulse({ slot }: { slot: number }) {
+  if (REDUCED_MOTION) return null;
+  const r = 0.02;
+  const s0 = slot / SLOTS;
+  const s1 = (slot + 1) / SLOTS;
+  const values =
+    s0 <= 0
+      ? `1;1;${DIM};${DIM};1`
+      : `${DIM};${DIM};1;1;${DIM};${DIM}`;
+  const keyTimes =
+    s0 <= 0
+      ? `0;${s1 - r};${s1};${1 - r};1`
+      : `0;${s0};${s0 + r};${s1 - r};${s1};1`;
+  return (
+    <animate
+      attributeName="opacity"
+      dur={`${CYCLE}s`}
+      repeatCount="indefinite"
+      values={values}
+      keyTimes={keyTimes}
+    />
+  );
+}
+
 function RelayDot({
   path,
   slot,
@@ -66,6 +99,7 @@ function RelayDot({
   cls: string;
   r?: number;
 }) {
+  if (REDUCED_MOTION) return null;
   const s0 = Math.max(slot / SLOTS, 0.001);
   const s1 = (slot + 1) / SLOTS;
   return (
@@ -183,7 +217,9 @@ export function LaunchGraphic() {
                   key={s.label}
                   className={`lsk-ribbon lsk-ribbon--raw lsk-ribbon--raw${i % 2}`}
                   d={s.d}
-                />
+                >
+                  <Pulse slot={0} />
+                </path>
               ))}
             </g>
 
@@ -210,7 +246,9 @@ export function LaunchGraphic() {
               <path
                 className="lsk-ribbon lsk-ribbon--draft"
                 d={link(412, 262, 342, 650, 240, 340)}
-              />
+              >
+                <Pulse slot={1} />
+              </path>
               <rect className="lsk-bar lsk-bar--encode" x="650" y="240" width="12" height="100" rx="3" />
               <text className="lsk-name" x="656" y="207" textAnchor="middle">
                 Encoding
@@ -225,7 +263,9 @@ export function LaunchGraphic() {
               <path
                 className="lsk-ribbon lsk-ribbon--encoded"
                 d={link(662, 240, 340, 880, 245, 335)}
-              />
+              >
+                <Pulse slot={2} />
+              </path>
               <rect className="lsk-bar lsk-bar--gates" x="880" y="245" width="12" height="90" rx="3" />
               <text className="lsk-name" x="870" y="207" textAnchor="middle">
                 Four gates
@@ -239,7 +279,9 @@ export function LaunchGraphic() {
                 className="lsk-loop"
                 d="M 886 338 C 886 402, 656 402, 656 348"
                 markerEnd="url(#lsk-loop-arr)"
-              />
+              >
+                <Pulse slot={3} />
+              </path>
               <text className="lsk-loop-label" x="771" y="411" textAnchor="middle">
                 ↺ any failure — redrafted
               </text>
@@ -250,7 +292,9 @@ export function LaunchGraphic() {
               <path
                 className="lsk-ribbon lsk-ribbon--verified"
                 d={link(892, 250, 320, 1120, 255, 325)}
-              />
+              >
+                <Pulse slot={4} />
+              </path>
               <rect className="lsk-bar lsk-bar--rules" x="1120" y="255" width="12" height="70" rx="3" />
               <text className="lsk-name" x="1072" y="359" textAnchor="middle">
                 The rulebook
@@ -273,7 +317,9 @@ export function LaunchGraphic() {
               </text>
               {SURFACE_LINKS.map((s) => (
                 <g key={s.label}>
-                  <path className="lsk-ribbon lsk-ribbon--surface" d={s.d} />
+                  <path className="lsk-ribbon lsk-ribbon--surface" d={s.d}>
+                    <Pulse slot={5} />
+                  </path>
                   <rect
                     className="lsk-stub"
                     x={SURFACE_X}

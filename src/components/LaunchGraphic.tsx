@@ -1,3 +1,5 @@
+import { useEffect, useMemo, useState } from "react";
+
 // External process graphic as a real chart: a hand-drawn Sankey flow.
 // Ribbon widths carry the story — hundreds of official sources merge into
 // the corpus (1.7M+ provisions), a narrower stream is drafted, forced
@@ -88,20 +90,58 @@ function Pulse({ slot }: { slot: number }) {
   );
 }
 
+const LOOP_PATH = "M 886 338 C 886 402, 656 402, 656 348";
+
+// One cohort per cycle: a random batch of "provisions" that enters together,
+// travels every stage in its own lanes, sometimes loses one to the redraft
+// loop, and redistributes across the application branches at the end.
+type WaveDot = {
+  src: number;
+  lane: number; // -1..1 across the ribbon's thickness
+  jit: number; // small per-dot start offset within each slot
+  surface: number;
+};
+
+function makeWave(): { dots: WaveDot[]; loopIdx: number } {
+  const n = 5 + Math.floor(Math.random() * 4);
+  const totalH = SOURCES.reduce((sum, s) => sum + s.h, 0);
+  const dots: WaveDot[] = Array.from({ length: n }, (_, i) => {
+    // weight source choice by stream size so State codes carries more
+    let pick = Math.random() * totalH;
+    let src = 0;
+    for (let j = 0; j < SOURCES.length; j++) {
+      pick -= SOURCES[j].h;
+      if (pick <= 0) {
+        src = j;
+        break;
+      }
+    }
+    return {
+      src,
+      lane: (i / Math.max(n - 1, 1) - 0.5) * 1.6 + (Math.random() - 0.5) * 0.3,
+      jit: Math.random() * 0.03,
+      surface: Math.floor(Math.random() * 3),
+    };
+  });
+  return { dots, loopIdx: Math.random() < 0.6 ? Math.floor(Math.random() * n) : -1 };
+}
+
 function RelayDot({
   path,
   slot,
   cls,
   r = 3.5,
+  jitter = 0,
 }: {
   path: string;
   slot: number;
   cls: string;
   r?: number;
+  jitter?: number;
 }) {
   if (REDUCED_MOTION) return null;
-  const s0 = Math.max(slot / SLOTS, 0.001);
-  const s1 = (slot + 1) / SLOTS;
+  const s0 = Math.min(Math.max(slot / SLOTS + jitter, 0.001), 0.96);
+  const s1 = Math.min(Math.max((slot + 1) / SLOTS + jitter, s0 + 0.02), 0.999);
   return (
     <circle className={cls} r={r} opacity="0">
       <animateMotion
@@ -145,11 +185,33 @@ const SOURCE_LINKS = SOURCES.map((s) => {
     ...s,
     d: link(SRC_X, s.c - s.h / 2, s.c + s.h / 2, CORPUS_X, t1, t1 + s.h),
     cd: center(SRC_X, s.c, CORPUS_X, t1 + s.h / 2),
+    segC: t1 + s.h / 2,
   };
 });
-const CORPUS_BOTTOM = acc; // 448
+const CORPUS_BOTTOM = acc; // 472
 
 export function LaunchGraphic() {
+  const [wave, setWave] = useState(0);
+  const plan = useMemo(makeWave, [wave]);
+
+  // Re-roll the cohort at each cycle boundary. SMIL runs on the document
+  // clock, so we align the swap to just after phase zero — the new batch
+  // appears exactly as a fresh wave enters the sources.
+  useEffect(() => {
+    if (REDUCED_MOTION) return;
+    let interval: number | undefined;
+    const docTime = Number(document.timeline?.currentTime ?? 0);
+    const toBoundary = CYCLE * 1000 - (docTime % (CYCLE * 1000)) + 80;
+    const timeout = window.setTimeout(() => {
+      setWave((w) => w + 1);
+      interval = window.setInterval(() => setWave((w) => w + 1), CYCLE * 1000);
+    }, toBoundary);
+    return () => {
+      window.clearTimeout(timeout);
+      if (interval !== undefined) window.clearInterval(interval);
+    };
+  }, []);
+
   return (
     <div className="launch">
       <div className="launch__poster">
@@ -338,25 +400,70 @@ export function LaunchGraphic() {
               ))}
             </g>
 
-            {/* ── the relay pulse: one wave, section by section ──
-                 sources → corpus → encoding → (redraft loop) →
-                 gates pass → out to the surfaces ────────────────── */}
-            <g className="lsk__stage lsk__stage--5">
-              <RelayDot path={SOURCE_LINKS[1].cd} slot={0} cls="lsk-dot lsk-dot--raw" r={3} />
-              <RelayDot path={SOURCE_LINKS[3].cd} slot={0} cls="lsk-dot lsk-dot--raw" r={3} />
-              <RelayDot path={SOURCE_LINKS[5].cd} slot={0} cls="lsk-dot lsk-dot--raw" r={3} />
-              <RelayDot path={center(412, 302, 650, 290)} slot={1} cls="lsk-dot lsk-dot--raw" r={3} />
-              <RelayDot path={center(662, 290, 880, 290)} slot={2} cls="lsk-dot lsk-dot--amber" />
-              <RelayDot
-                path="M 886 338 C 886 402, 656 402, 656 348"
-                slot={3}
-                cls="lsk-dot lsk-dot--amber"
-                r={2.5}
-              />
-              <RelayDot path={center(892, 285, 1120, 290)} slot={4} cls="lsk-dot lsk-dot--green" />
-              <RelayDot path={SURFACE_LINKS[0].cd} slot={5} cls="lsk-dot lsk-dot--green" r={2.5} />
-              <RelayDot path={SURFACE_LINKS[1].cd} slot={5} cls="lsk-dot lsk-dot--green" r={2.5} />
-              <RelayDot path={SURFACE_LINKS[2].cd} slot={5} cls="lsk-dot lsk-dot--green" r={2.5} />
+            {/* ── the cohort: a random batch enters together, travels
+                 every stage in its own lanes, sometimes loses one to
+                 the redraft loop, and redistributes across the
+                 application branches at the end ─────────────────── */}
+            <g className="lsk__stage lsk__stage--5" key={wave}>
+              {plan.dots.map((d, i) => {
+                const s = SOURCE_LINKS[d.src];
+                const srcOff = d.lane * (s.h / 2 - 7);
+                const surf = SURFACE_LINKS[d.surface];
+                const surfMid = RULES_TOP + (70 / 3) * (d.surface + 0.5);
+                return (
+                  <g key={i}>
+                    <RelayDot
+                      path={center(SRC_X, s.c + srcOff, CORPUS_X, s.segC + srcOff)}
+                      slot={0}
+                      jitter={d.jit}
+                      cls="lsk-dot lsk-dot--raw"
+                      r={3}
+                    />
+                    <RelayDot
+                      path={center(412, 302 + d.lane * 30, 650, 290 + d.lane * 38)}
+                      slot={1}
+                      jitter={d.jit}
+                      cls="lsk-dot lsk-dot--raw"
+                      r={3}
+                    />
+                    <RelayDot
+                      path={center(662, 290 + d.lane * 40, 880, 290 + d.lane * 36)}
+                      slot={2}
+                      jitter={d.jit}
+                      cls="lsk-dot lsk-dot--amber"
+                      r={3}
+                    />
+                    {plan.loopIdx === i && (
+                      <RelayDot
+                        path={LOOP_PATH}
+                        slot={3}
+                        jitter={d.jit * 0.5}
+                        cls="lsk-dot lsk-dot--amber"
+                        r={2.5}
+                      />
+                    )}
+                    <RelayDot
+                      path={center(892, 285 + d.lane * 28, 1120, 290 + d.lane * 28)}
+                      slot={4}
+                      jitter={d.jit}
+                      cls="lsk-dot lsk-dot--green"
+                      r={3}
+                    />
+                    <RelayDot
+                      path={center(
+                        RULES_X,
+                        surfMid + d.lane * 8,
+                        SURFACE_X,
+                        surf.c + d.lane * 6,
+                      )}
+                      slot={5}
+                      jitter={d.jit}
+                      cls="lsk-dot lsk-dot--green"
+                      r={2.5}
+                    />
+                  </g>
+                );
+              })}
             </g>
           </svg>
         </div>

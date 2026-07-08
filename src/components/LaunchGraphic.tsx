@@ -49,6 +49,45 @@ const SURFACES = [
 const RULES_X = 1132;
 const SURFACE_X = 1300;
 const RULES_TOP = 255;
+
+// Relay pulse: one wave travels the chart section by section. Each dot
+// moves only during its slot of the shared cycle and is hidden otherwise.
+const CYCLE = 13;
+const SLOTS = 6;
+
+function RelayDot({
+  path,
+  slot,
+  cls,
+  r = 3.5,
+}: {
+  path: string;
+  slot: number;
+  cls: string;
+  r?: number;
+}) {
+  const s0 = Math.max(slot / SLOTS, 0.001);
+  const s1 = (slot + 1) / SLOTS;
+  return (
+    <circle className={cls} r={r} opacity="0">
+      <animateMotion
+        dur={`${CYCLE}s`}
+        repeatCount="indefinite"
+        path={path}
+        calcMode="linear"
+        keyPoints={`0;0;1;1`}
+        keyTimes={`0;${s0};${s1};1`}
+      />
+      <animate
+        attributeName="opacity"
+        dur={`${CYCLE}s`}
+        repeatCount="indefinite"
+        values="0;0;1;1;0;0"
+        keyTimes={`0;${s0};${Math.min(s0 + 0.015, 1)};${Math.max(s1 - 0.015, 0)};${s1};1`}
+      />
+    </circle>
+  );
+}
 const SURFACE_LINKS = SURFACES.map((s, i) => {
   const t0 = RULES_TOP + (70 / 3) * i;
   const b0 = RULES_TOP + (70 / 3) * (i + 1);
@@ -158,11 +197,11 @@ export function LaunchGraphic() {
                 height={CORPUS_BOTTOM - CORPUS_TOP}
                 rx="3"
               />
-              <text className="lsk-name" x="406" y="124" textAnchor="middle">
+              <text className="lsk-name" x="424" y="128">
                 The corpus
               </text>
-              <text className="lsk-eyebrow" x="406" y="141" textAnchor="middle">
-                1.7M+ provisions · fingerprinted · addressed
+              <text className="lsk-eyebrow" x="424" y="145">
+                1.7M+ provisions, preserved exactly
               </text>
             </g>
 
@@ -177,7 +216,7 @@ export function LaunchGraphic() {
                 Encoding
               </text>
               <text className="lsk-eyebrow" x="656" y="224" textAnchor="middle">
-                pinned to source words
+                tied to the source text
               </text>
             </g>
 
@@ -192,7 +231,7 @@ export function LaunchGraphic() {
                 Four gates
               </text>
               <text className="lsk-eyebrow" x="870" y="224" textAnchor="middle">
-                compile · checks · oracles · review
+                run · 50+ checks · compare · review
               </text>
 
               {/* the redraft loop — failures flow back into encoding */}
@@ -219,14 +258,11 @@ export function LaunchGraphic() {
               <text className="lsk-eyebrow" x="1072" y="376" textAnchor="middle">
                 3,000+ rules · signed &amp; citable
               </text>
-              <text className="lsk-agree" x="1030" y="242" textAnchor="middle">
-                ✓ 99.9% oracle agreement
-              </text>
-              <text className="lsk-retest" x="1072" y="393" textAnchor="middle">
-                re-tested weekly · watched hourly
+              <text className="lsk-agree" x="1072" y="393" textAnchor="middle">
+                ✓ 99.9% agreement with independent calculators
               </text>
               <text className="lsk-retest" x="1072" y="410" textAnchor="middle">
-                programs: income tax · SNAP · TANF · Medicaid · SSI · UC
+                re-tested weekly · law watched hourly
               </text>
             </g>
 
@@ -256,57 +292,25 @@ export function LaunchGraphic() {
               ))}
             </g>
 
-            {/* ── particles: the pipeline is alive ───────────── */}
+            {/* ── the relay pulse: one wave, section by section ──
+                 sources → corpus → encoding → (redraft loop) →
+                 gates pass → out to the surfaces ────────────────── */}
             <g className="lsk__stage lsk__stage--5">
-              {[1, 2].map((i) => (
-                <circle key={i} className="lsk-dot lsk-dot--raw" r="3">
-                  <animateMotion
-                    dur="6s"
-                    begin={`${-i * 2.4}s`}
-                    repeatCount="indefinite"
-                    path={SOURCE_LINKS[i === 1 ? 1 : 2].cd}
-                  />
-                </circle>
-              ))}
-              <circle className="lsk-dot lsk-dot--raw" r="3">
-                <animateMotion
-                  dur="5s"
-                  begin="-1s"
-                  repeatCount="indefinite"
-                  path={center(412, 302, 650, 290)}
-                />
-              </circle>
-              <circle className="lsk-dot lsk-dot--amber" r="3.5">
-                <animateMotion
-                  dur="4.5s"
-                  repeatCount="indefinite"
-                  path={center(662, 290, 880, 290)}
-                />
-              </circle>
-              <circle className="lsk-dot lsk-dot--green" r="3.5">
-                <animateMotion
-                  dur="5s"
-                  begin="-2s"
-                  repeatCount="indefinite"
-                  path={center(892, 285, 1120, 290)}
-                />
-              </circle>
-              <circle className="lsk-dot lsk-dot--amber" r="2.5">
-                <animateMotion
-                  dur="6s"
-                  begin="-3s"
-                  repeatCount="indefinite"
-                  path="M 886 338 C 886 402, 656 402, 656 348"
-                />
-              </circle>
-              <circle className="lsk-dot lsk-dot--green" r="2.5">
-                <animateMotion
-                  dur="4s"
-                  begin="-1.5s"
-                  repeatCount="indefinite"
-                  path={SURFACE_LINKS[1].cd}
-                />
-              </circle>
+              <RelayDot path={SOURCE_LINKS[1].cd} slot={0} cls="lsk-dot lsk-dot--raw" r={3} />
+              <RelayDot path={SOURCE_LINKS[3].cd} slot={0} cls="lsk-dot lsk-dot--raw" r={3} />
+              <RelayDot path={SOURCE_LINKS[5].cd} slot={0} cls="lsk-dot lsk-dot--raw" r={3} />
+              <RelayDot path={center(412, 302, 650, 290)} slot={1} cls="lsk-dot lsk-dot--raw" r={3} />
+              <RelayDot path={center(662, 290, 880, 290)} slot={2} cls="lsk-dot lsk-dot--amber" />
+              <RelayDot
+                path="M 886 338 C 886 402, 656 402, 656 348"
+                slot={3}
+                cls="lsk-dot lsk-dot--amber"
+                r={2.5}
+              />
+              <RelayDot path={center(892, 285, 1120, 290)} slot={4} cls="lsk-dot lsk-dot--green" />
+              <RelayDot path={SURFACE_LINKS[0].cd} slot={5} cls="lsk-dot lsk-dot--green" r={2.5} />
+              <RelayDot path={SURFACE_LINKS[1].cd} slot={5} cls="lsk-dot lsk-dot--green" r={2.5} />
+              <RelayDot path={SURFACE_LINKS[2].cd} slot={5} cls="lsk-dot lsk-dot--green" r={2.5} />
             </g>
           </svg>
         </div>

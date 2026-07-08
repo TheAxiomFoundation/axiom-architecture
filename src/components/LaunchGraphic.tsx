@@ -52,40 +52,38 @@ const RULES_X = 1132;
 const SURFACE_X = 1300;
 const RULES_TOP = 255;
 
-// Relay pulse: one wave travels the chart section by section. Each dot
-// moves only during its slot of the shared cycle and is hidden otherwise.
+// One wave per cycle; dots move at constant velocity within it.
 const CYCLE = 13;
-const SLOTS = 6;
 
 const REDUCED_MOTION =
   typeof window !== "undefined" &&
   window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-// Spotlight: a section holds full opacity during its slot; the rest of the
-// time it rests slightly dimmed, so the highlight travels with the pulse.
-// Without motion preferences everything stays fully lit.
+// Spotlight: a section holds full opacity while the cohort is passing
+// through it (windows derived from the constant-speed timings); the rest
+// of the time it rests slightly dimmed. Reduced motion: fully lit, still.
 const DIM = 0.55;
 
-function Pulse({ slot }: { slot: number }) {
+const WIN = {
+  sources: [0.01, 0.16],
+  draft: [0.15, 0.28],
+  encoded: [0.27, 0.4],
+  loop: [0.39, 0.61],
+  verified: [0.37, 0.51],
+  surfaces: [0.49, 0.62],
+} as const;
+
+function Pulse({ w }: { w: readonly [number, number] }) {
   if (REDUCED_MOTION) return null;
-  const r = 0.02;
-  const s0 = slot / SLOTS;
-  const s1 = (slot + 1) / SLOTS;
-  const values =
-    s0 <= 0
-      ? `1;1;${DIM};${DIM};1`
-      : `${DIM};${DIM};1;1;${DIM};${DIM}`;
-  const keyTimes =
-    s0 <= 0
-      ? `0;${s1 - r};${s1};${1 - r};1`
-      : `0;${s0};${s0 + r};${s1 - r};${s1};1`;
+  const r = 0.015;
+  const [a, b] = w;
   return (
     <animate
       attributeName="opacity"
       dur={`${CYCLE}s`}
       repeatCount="indefinite"
-      values={values}
-      keyTimes={keyTimes}
+      values={`${DIM};${DIM};1;1;${DIM};${DIM}`}
+      keyTimes={`0;${a};${a + r};${b - r};${b};1`}
     />
   );
 }
@@ -131,7 +129,13 @@ function makeWave(): { dots: WaveDot[]; loopIdx: number } {
 // cohort continues through verification.
 type Anchor = { x: number; y: number; mode?: "C" | "L" | "loop" };
 
-function buildJourney(anchors: Anchor[], schedule: number[], jit: number) {
+// Constant velocity: every dot covers path-distance at the same shared
+// speed (SVG units per second). keyTimes are derived from cumulative
+// distance, so time ∝ distance for every segment of every dot — a
+// redrafted dot's longer journey honestly takes longer.
+const SPEED = 175;
+
+function buildJourney(anchors: Anchor[], jit: number) {
   let path = `M ${anchors[0].x} ${anchors[0].y}`;
   const dists = [0];
   for (let i = 1; i < anchors.length; i++) {
@@ -150,22 +154,22 @@ function buildJourney(anchors: Anchor[], schedule: number[], jit: number) {
     }
   }
   const total = dists.reduce((a, b) => a + b, 0);
+  const start = 0.01 + jit;
   let cum = 0;
-  const fractions = dists.map((d) => {
+  const fractions: number[] = [];
+  const times: number[] = [];
+  for (const d of dists) {
     cum += d;
-    return cum / total;
-  });
-  // keyTimes: parked at start until jit, then the schedule (+jit), then hold.
-  const keyTimes = [0, ...schedule.map((t) => Math.min(t + jit, 0.995)), 1];
-  const keyPoints = [0, ...fractions, 1];
-  return { path, keyTimes: keyTimes.join(";"), keyPoints: keyPoints.join(";") };
+    fractions.push(cum / total);
+    times.push(Math.min(start + cum / SPEED / CYCLE, 0.99));
+  }
+  return {
+    path,
+    keyTimes: [0, ...times, 1].join(";"),
+    keyPoints: [0, ...fractions, 1].join(";"),
+    times,
+  };
 }
-
-const NORMAL_SCHEDULE = [0.02, 0.165, 0.2, 0.33, 0.35, 0.5, 0.53, 0.8, 0.84, 0.96];
-const LOOP_SCHEDULE = [
-  0.02, 0.165, 0.2, 0.33, 0.35, 0.5, 0.53, 0.645, 0.665, 0.78, 0.8, 0.9, 0.92,
-  0.96,
-];
 
 function JourneyDot({ d, loops }: { d: WaveDot; loops: boolean }) {
   if (REDUCED_MOTION) return null;
@@ -195,14 +199,12 @@ function JourneyDot({ d, loops }: { d: WaveDot; loops: boolean }) {
     { x: SURFACE_X, y: surf.c + d.lane * 6, mode: "C" },
   ];
 
-  const { path, keyTimes, keyPoints } = buildJourney(
-    anchors,
-    loops ? LOOP_SCHEDULE : NORMAL_SCHEDULE,
-    d.jit,
-  );
+  const { path, keyTimes, keyPoints, times } = buildJourney(anchors, d.jit);
 
-  // grey while raw text, amber once encoded, green once past the gates
-  const greenAt = (loops ? 0.8 : 0.53) + d.jit;
+  // grey while raw text, amber once past the encode bar, green once past
+  // the gates — for loop dots, past the SECOND gates crossing.
+  const amberAt = times[4];
+  const greenAt = times[loops ? 10 : 6];
 
   return (
     <circle className="lsk-dot" r="3" fill="#78716c" opacity="0">
@@ -227,7 +229,7 @@ function JourneyDot({ d, loops }: { d: WaveDot; loops: boolean }) {
         repeatCount="indefinite"
         calcMode="discrete"
         values="#78716c;#92400e;#166534"
-        keyTimes={`0;${0.35 + d.jit};${greenAt}`}
+        keyTimes={`0;${amberAt};${greenAt}`}
       />
     </circle>
   );
@@ -350,7 +352,7 @@ export function LaunchGraphic() {
                   className={`lsk-ribbon lsk-ribbon--raw lsk-ribbon--raw${i % 2}`}
                   d={s.d}
                 >
-                  <Pulse slot={0} />
+                  <Pulse w={WIN.sources} />
                 </path>
               ))}
             </g>
@@ -379,7 +381,7 @@ export function LaunchGraphic() {
                 className="lsk-ribbon lsk-ribbon--draft"
                 d={link(412, 262, 342, 650, 240, 340)}
               >
-                <Pulse slot={1} />
+                <Pulse w={WIN.draft} />
               </path>
               <rect className="lsk-bar lsk-bar--encode" x="650" y="240" width="12" height="100" rx="3" />
               <text className="lsk-name" x="656" y="207" textAnchor="middle">
@@ -396,7 +398,7 @@ export function LaunchGraphic() {
                 className="lsk-ribbon lsk-ribbon--encoded"
                 d={link(662, 240, 340, 880, 245, 335)}
               >
-                <Pulse slot={2} />
+                <Pulse w={WIN.encoded} />
               </path>
               <rect className="lsk-bar lsk-bar--gates" x="880" y="245" width="12" height="90" rx="3" />
               <text className="lsk-name" x="870" y="207" textAnchor="middle">
@@ -412,7 +414,7 @@ export function LaunchGraphic() {
                 d="M 886 338 C 886 402, 656 402, 656 348"
                 markerEnd="url(#lsk-loop-arr)"
               >
-                <Pulse slot={3} />
+                <Pulse w={WIN.loop} />
               </path>
               <text className="lsk-loop-label" x="771" y="411" textAnchor="middle">
                 ↺ any failure — redrafted
@@ -425,7 +427,7 @@ export function LaunchGraphic() {
                 className="lsk-ribbon lsk-ribbon--verified"
                 d={link(892, 250, 320, 1120, 255, 325)}
               >
-                <Pulse slot={4} />
+                <Pulse w={WIN.verified} />
               </path>
               <rect className="lsk-bar lsk-bar--rules" x="1120" y="255" width="12" height="70" rx="3" />
               <text className="lsk-name" x="1072" y="359" textAnchor="middle">
@@ -450,7 +452,7 @@ export function LaunchGraphic() {
               {SURFACE_LINKS.map((s) => (
                 <g key={s.label}>
                   <path className="lsk-ribbon lsk-ribbon--surface" d={s.d}>
-                    <Pulse slot={5} />
+                    <Pulse w={WIN.surfaces} />
                   </path>
                   <rect
                     className="lsk-stub"

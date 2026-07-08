@@ -1,40 +1,15 @@
-import { useState, type ReactNode } from "react";
+import type { ReactNode } from "react";
 
-// External launch graphic: the journey of one provision, compressed into a
-// single viewport — one modern diagram, no scrolling. Three columns read
-// left to right: THE SOURCE (published mess → addressed record), THE
-// TRANSFORMATION (statute ↔ executable rule, linked on hover), THE PROOF &
-// THE PRODUCT (oracle agreement → cited surfaces). Numbered chips 01–05
-// carry the sequence; arrows carry the flow.
-
-type Concept = "allotment" | "tfp" | "minus" | "pct" | "income";
-
-const STATUTE: Array<{ text: string; concept?: Concept }> = [
-  { text: "…the " },
-  { text: "value of the allotment", concept: "allotment" },
-  { text: " shall be equal to the " },
-  { text: "cost of the thrifty food plan", concept: "tfp" },
-  { text: ", " },
-  { text: "reduced by", concept: "minus" },
-  { text: " an amount equal to " },
-  { text: "30 per centum", concept: "pct" },
-  { text: " of the " },
-  { text: "household’s income", concept: "income" },
-  { text: "…" },
-];
-
-const FORMULA: Array<Array<{ text: string; concept?: Concept }>> = [
-  [{ text: "snap_allotment", concept: "allotment" }],
-  [{ text: "  = " }, { text: "thrifty_food_plan", concept: "tfp" }],
-  [
-    { text: "  " },
-    { text: "−", concept: "minus" },
-    { text: " " },
-    { text: "0.30 ×", concept: "pct" },
-    { text: " " },
-    { text: "net_income", concept: "income" },
-  ],
-];
+// External process graphic: how ONE encoding is made, for readers who know
+// nothing about the pipeline. Three columns, one viewport:
+//
+//   THE DOCUMENT   a law is published → we capture and fingerprint it
+//   THE GAUNTLET   AI drafts a rule with every number pinned to source
+//                  words → four gates; ANY failure loops back to redraft
+//   THE ENCODING   accepted, signed, citable → and re-verified forever
+//
+// The visible failure loop is the point: confidence comes from what gets
+// rejected, not just what passes.
 
 function CardHead({
   n,
@@ -54,197 +29,159 @@ function CardHead({
   );
 }
 
-function DownArrow() {
-  return (
-    <div className="ldiag__down" aria-hidden="true">
-      ↓
-    </div>
-  );
+function Card({ children }: { children: ReactNode }) {
+  return <div className="lgc">{children}</div>;
 }
 
-function Card({ children, dark }: { children: ReactNode; dark?: boolean }) {
-  return <div className={`lgc ${dark ? "lgc--dark" : ""}`}>{children}</div>;
-}
+const GATES = [
+  { name: "compiles & runs", detail: "the rules engine accepts it" },
+  { name: "50+ automated checks", detail: "no number without a source" },
+  { name: "matches reference calculators", detail: "same answers, independently" },
+  { name: "independent review", detail: "separate reviewers sign off" },
+];
 
 export function LaunchGraphic() {
-  const [active, setActive] = useState<Concept | null>(null);
-
-  const conceptProps = (concept?: Concept) =>
-    concept
-      ? {
-          "data-active": active === concept || undefined,
-          onMouseEnter: () => setActive(concept),
-          onMouseLeave: () => setActive(null),
-        }
-      : {};
-
   return (
     <div className="launch">
       <div className="launch__poster">
         <header className="launch__header">
           <div className="launch__eyebrow">The Axiom Foundation</div>
           <h1 className="launch__headline">
-            The world’s rules, <em>encoded.</em>
+            From published law to a rule you can <em>trust.</em>
           </h1>
           <p className="launch__sub">
-            How public law becomes a clear and accurate digital representation
-            — one provision, the whole way through.
+            How an Axiom encoding is made — every step between “a document
+            exists” and “this rule is accurate,” shown once, plainly.
           </p>
         </header>
 
         <div className="ldiag">
-          {/* ── column 1: the source ─────────────────────────── */}
+          {/* ── column 1: the document ───────────────────────── */}
           <div className="ldiag__col">
-            <div className="ldiag__colhead">the source</div>
+            <div className="ldiag__colhead">the document</div>
             <Card>
-              <CardHead n="01" title="Published" machinery="everywhere" />
+              <CardHead n="01" title="A law is published" machinery="official publishers" />
+              <p className="lgc__lede">
+                A statute, regulation, or agency memo appears on one of
+                hundreds of official sites — each in its own format.
+              </p>
               <div className="frag-mini frag-mini--xml">
                 <div className="frag-mini__tag">uscode.house.gov · XML</div>
                 <code>
-                  {'<subsection identifier='}
+                  {'<subsection id="/us/usc/t7/'}
                   <br />
-                  {'"/us/usc/t7/s2017/a">…30'}
-                  <br />
-                  {"per centum…"}
+                  {'s2017/a">…30 per centum…'}
                 </code>
               </div>
               <div className="frag-mini frag-mini--pdf">
                 <div className="frag-mini__tag">state agency · PDF, p. 214</div>
-                <p>…value of the allotment shall be equal to the cost of…</p>
-              </div>
-              <div className="lgc__caption">
-                eCFR · US Code · 50 states · UK · Canada
+                <p>…value of the allotment shall be equal to…</p>
               </div>
             </Card>
-            <DownArrow />
+            <div className="ldiag__down" aria-hidden="true">
+              ↓
+            </div>
             <Card>
-              <CardHead n="02" title="Captured" machinery="the corpus" />
+              <CardHead n="02" title="Captured & fingerprinted" machinery="ingestion" />
+              <p className="lgc__lede">
+                We download it, checksum it, and give every provision a
+                permanent address. The exact text we read is preserved — if
+                the publisher changes the page tomorrow, we can prove what it
+                said today.
+              </p>
               <div className="record-mini">
                 <div className="record-mini__path">us/statute/7/2017/a</div>
                 <div className="record-mini__meta">
-                  § 2017(a) · sha256 ✓ · snapshot kept
+                  sha256 ✓ · snapshot kept · 1 of 1.7M+ provisions
                 </div>
-              </div>
-              <div className="lgc__caption">
-                one address for each of 1.7M+ provisions —{" "}
-                <strong>clear</strong> begins here
               </div>
             </Card>
           </div>
 
           <div className="ldiag__arrow" aria-hidden="true">
-            →
+            <span className="ldiag__arrow-glyph">→</span>
           </div>
 
-          {/* ── column 2: the transformation ─────────────────── */}
-          <div className="ldiag__col ldiag__col--center">
-            <div className="ldiag__colhead">the transformation</div>
-            <Card>
-              <CardHead
-                n="03"
-                title="Encoded, word by word"
-                machinery="RuleSpec"
-              />
-              <figure className="launch-law">
-                <figcaption className="launch-law__cite">
-                  7 U.S.C. § 2017(a) · Food and Nutrition Act
-                </figcaption>
-                <blockquote className="launch-law__text">
-                  {STATUTE.map((part, i) =>
-                    part.concept ? (
-                      <mark
-                        key={i}
-                        className="launch-law__phrase"
-                        {...conceptProps(part.concept)}
-                      >
-                        {part.text}
-                      </mark>
-                    ) : (
-                      <span key={i}>{part.text}</span>
-                    ),
-                  )}
-                </blockquote>
-              </figure>
-
-              <div className="launch-hero__joint" aria-hidden="true">
-                <span className="launch-hero__stem" />
-                <span className="launch-hero__verb">becomes</span>
-                <span className="launch-hero__stem" />
-              </div>
-
-              <div className="launch-rule">
-                <div className="launch-rule__code">
-                  {FORMULA.map((line, li) => (
-                    <div className="launch-rule__line" key={li}>
-                      {line.map((tok, ti) =>
-                        tok.concept ? (
-                          <span
-                            key={ti}
-                            className="launch-rule__token"
-                            {...conceptProps(tok.concept)}
-                          >
-                            {tok.text}
-                          </span>
-                        ) : (
-                          <span key={ti} className="launch-rule__plain">
-                            {tok.text}
-                          </span>
-                        ),
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="lgc__caption">
-                every token pinned to its source words —{" "}
-                <strong>hover either side</strong>
-              </div>
-            </Card>
-          </div>
-
-          <div className="ldiag__arrow" aria-hidden="true">
-            →
-          </div>
-
-          {/* ── column 3: the proof, the product ─────────────── */}
+          {/* ── column 2: the gauntlet ───────────────────────── */}
           <div className="ldiag__col">
-            <div className="ldiag__colhead">the proof · the product</div>
+            <div className="ldiag__colhead">the gauntlet</div>
             <Card>
-              <CardHead n="04" title="Verified" machinery="the oracles" />
-              <div className="check-mini">
-                <div className="check-mini__row">
-                  <span>Family of 3 · $1,240/mo</span>
-                  <span className="check-mini__num">$291 = $291</span>
-                  <span className="check-mini__ok">✓</span>
-                </div>
-                <div className="check-mini__row">
-                  <span>Couple over the limit</span>
-                  <span className="check-mini__num">ineligible, both</span>
-                  <span className="check-mini__ok">✓</span>
-                </div>
-                <div className="check-mini__sum">
-                  ✓ 99.9% agreement · 299,993 checks
-                </div>
-              </div>
-              <div className="lgc__caption">
-                PolicyEngine · TAXSIM · EUROMOD — <strong>accurate</strong>,
-                independently
-              </div>
-            </Card>
-            <DownArrow />
-            <Card>
-              <CardHead n="05" title="Delivered" machinery="web · API · agents" />
-              <div className="surface-mini surface-mini--dark">
+              <CardHead n="03" title="A rule is drafted" machinery="the encoder" />
+              <p className="lgc__lede">
+                AI drafts an executable rule — but every number and condition
+                must point at the exact words in the source.{" "}
+                <strong>No citation, no rule.</strong>
+              </p>
+              <div className="rule-mini">
                 <code>
-                  {'"snap_allotment": 291, "cites": "§ 2017(a)"'}
+                  snap_allotment =<br />
+                  {"  thrifty_food_plan − 0.30 × net_income"}
                 </code>
               </div>
-              <div className="surface-mini">
-                “This household qualifies for <strong>$291/month</strong>.”
-                <span className="surface-mini__cite">7 U.S.C. § 2017(a)</span>
+              <div className="proof-mini">
+                <span className="proof-mini__token">0.30</span>
+                <span className="proof-mini__link">←</span>
+                <span className="proof-mini__quote">“30 per centum”</span>
+                <span className="proof-mini__cite">§ 2017(a)</span>
               </div>
-              <div className="lgc__caption">
-                every answer cited · bills tracked hourly
+            </Card>
+
+            <div className="gloop" aria-hidden="true">
+              <span className="gloop__down">↓ submitted</span>
+              <span className="gloop__back">↺ any failure — redrafted</span>
+            </div>
+
+            <Card>
+              <CardHead n="04" title="Four gates" machinery="validation" />
+              <div className="gates">
+                {GATES.map((gate, i) => (
+                  <div className="gate" key={gate.name}>
+                    <span className="gate__n">{i + 1}</span>
+                    <span className="gate__name">{gate.name}</span>
+                    <span className="gate__detail">{gate.detail}</span>
+                    <span className="gate__ok">✓</span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </div>
+
+          <div className="ldiag__arrow" aria-hidden="true">
+            <span className="ldiag__arrow-glyph">→</span>
+            <span className="ldiag__arrow-caption">all four pass</span>
+          </div>
+
+          {/* ── column 3: the encoding ───────────────────────── */}
+          <div className="ldiag__col">
+            <div className="ldiag__colhead">the encoding</div>
+            <Card>
+              <CardHead n="05" title="Accepted & signed" machinery="RuleSpec" />
+              <p className="lgc__lede">
+                The rule lands in the open rulebook — signed, versioned, and
+                citable back to the law it encodes. Anyone can read it, run
+                it, or challenge it.
+              </p>
+              <div className="manifest-mini">
+                <span className="manifest-mini__chip">signed ✓</span>
+                <span className="manifest-mini__chip">versioned</span>
+                <span className="manifest-mini__chip manifest-mini__chip--cite">
+                  cites 7 U.S.C. § 2017(a)
+                </span>
+              </div>
+            </Card>
+            <div className="ldiag__down" aria-hidden="true">
+              ↓
+            </div>
+            <Card>
+              <CardHead n="06" title="Kept accurate" machinery="the oracles" />
+              <p className="lgc__lede">
+                Not one-and-done: every rule is re-tested weekly against
+                independent calculators across hundreds of thousands of model
+                households — and we watch every legislature, hourly, for
+                changes to the law.
+              </p>
+              <div className="check-mini__sum">
+                ✓ 99.9% agreement · PolicyEngine · TAXSIM · EUROMOD
               </div>
             </Card>
           </div>
@@ -253,7 +190,7 @@ export function LaunchGraphic() {
         <footer className="launch__footline">
           <span>
             4 countries · 50 states + DC · 1.7M+ provisions · 3,000+
-            executable rules
+            encoded rules
           </span>
           <span className="launch__footbrand">
             <span className="glyph-axiom">∀</span> axiom-foundation.org

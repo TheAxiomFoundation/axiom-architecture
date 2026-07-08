@@ -31,12 +31,33 @@ function center(x0: number, y0: number, x1: number, y1: number) {
 }
 
 const SOURCES = [
-  { label: "eCFR", sub: "federal regulations", c: 100, h: 48 },
-  { label: "US Code", sub: "54 titles", c: 185, h: 56 },
-  { label: "State codes", sub: "50 states + DC", c: 290, h: 104 },
-  { label: "UK", sub: "legislation.gov.uk", c: 395, h: 44 },
-  { label: "Canada", sub: "laws-lois", c: 470, h: 44 },
+  { label: "eCFR", sub: "federal regulations", c: 88, h: 40 },
+  { label: "US Code", sub: "54 titles", c: 158, h: 46 },
+  { label: "Agency guidance", sub: "IRS · policy manuals", c: 228, h: 40 },
+  { label: "State codes", sub: "50 states + DC", c: 312, h: 92 },
+  { label: "UK", sub: "legislation.gov.uk", c: 396, h: 36 },
+  { label: "Canada", sub: "laws-lois", c: 458, h: 36 },
+  { label: "Belgium", sub: "ELI · federal acts", c: 514, h: 30 },
 ];
+
+// The application layer: where verified rules are used.
+const SURFACES = [
+  { label: "Web", sub: "browse & trace", c: 210 },
+  { label: "API + SDKs", sub: "calculate at scale", c: 290 },
+  { label: "AI agents", sub: "cited answers", c: 370 },
+];
+const RULES_X = 1132;
+const SURFACE_X = 1300;
+const RULES_TOP = 255;
+const SURFACE_LINKS = SURFACES.map((s, i) => {
+  const t0 = RULES_TOP + (70 / 3) * i;
+  const b0 = RULES_TOP + (70 / 3) * (i + 1);
+  return {
+    ...s,
+    d: link(RULES_X, t0, b0, SURFACE_X, s.c - 10, s.c + 10),
+    cd: center(RULES_X, (t0 + b0) / 2, SURFACE_X, s.c),
+  };
+});
 
 // Corpus bar segments stack in source order.
 const CORPUS_TOP = 152;
@@ -66,17 +87,17 @@ export function LaunchGraphic() {
           </h1>
           <p className="launch__sub">
             The whole process in one flow: what we capture, what we encode,
-            what survives the gates. Widths are illustrative — the counts are
-            real.
+            what survives the gates — and where it goes. Widths are
+            illustrative; the counts are real.
           </p>
         </header>
 
         <div className="lsk__wrap">
           <svg
             className="lsk"
-            viewBox="0 0 1200 540"
+            viewBox="0 0 1420 560"
             role="img"
-            aria-label="Flow chart: hundreds of official legal sources merge into a corpus of 1.7M+ provisions; a narrower stream is drafted into rules, passes four verification gates (failures loop back for redrafting), and emerges as 3,000+ verified, signed rules, re-tested weekly."
+            aria-label="Flow chart: hundreds of official legal sources — federal, state, agency guidance, UK, Canada, Belgium — merge into a corpus of 1.7M+ provisions; a narrower stream is drafted into rules, passes four verification gates (failures loop back for redrafting), emerges as 3,000+ verified signed rules re-tested weekly, and fans out to the web, APIs, and AI agents."
           >
             <defs>
               <marker
@@ -204,6 +225,35 @@ export function LaunchGraphic() {
               <text className="lsk-retest" x="1072" y="393" textAnchor="middle">
                 re-tested weekly · watched hourly
               </text>
+              <text className="lsk-retest" x="1072" y="410" textAnchor="middle">
+                programs: income tax · SNAP · TANF · Medicaid · SSI · UC
+              </text>
+            </g>
+
+            {/* ── stage: the application layer ───────────────── */}
+            <g className="lsk__stage lsk__stage--6">
+              <text className="lsk-eyebrow" x="1300" y="172">
+                where it&apos;s used
+              </text>
+              {SURFACE_LINKS.map((s) => (
+                <g key={s.label}>
+                  <path className="lsk-ribbon lsk-ribbon--surface" d={s.d} />
+                  <rect
+                    className="lsk-stub"
+                    x={SURFACE_X}
+                    y={s.c - 10}
+                    width="8"
+                    height="20"
+                    rx="2"
+                  />
+                  <text className="lsk-srclabel" x={SURFACE_X + 16} y={s.c - 1}>
+                    {s.label}
+                  </text>
+                  <text className="lsk-srcsub" x={SURFACE_X + 16} y={s.c + 12}>
+                    {s.sub}
+                  </text>
+                </g>
+              ))}
             </g>
 
             {/* ── particles: the pipeline is alive ───────────── */}
@@ -247,6 +297,14 @@ export function LaunchGraphic() {
                   begin="-3s"
                   repeatCount="indefinite"
                   path="M 886 338 C 886 402, 656 402, 656 348"
+                />
+              </circle>
+              <circle className="lsk-dot lsk-dot--green" r="2.5">
+                <animateMotion
+                  dur="4s"
+                  begin="-1.5s"
+                  repeatCount="indefinite"
+                  path={SURFACE_LINKS[1].cd}
                 />
               </circle>
             </g>

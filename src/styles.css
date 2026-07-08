@@ -1388,3 +1388,8 @@ body::before {
     padding: 72px 14px 42px 14px;
   }
 }
+
+/* stage 6: the application layer */
+.lsk__stage--6 { animation-delay: 1.3s; }
+
+.lsk-ribbon--surface { fill: rgba(22, 101, 52, 0.18); }

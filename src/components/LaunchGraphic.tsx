@@ -78,6 +78,19 @@ export function LaunchGraphic() {
             role="img"
             aria-label="Flow chart: hundreds of official legal sources merge into a corpus of 1.7M+ provisions; a narrower stream is drafted into rules, passes four verification gates (failures loop back for redrafting), and emerges as 3,000+ verified, signed rules, re-tested weekly."
           >
+            <defs>
+              <marker
+                id="lsk-loop-arr"
+                viewBox="0 0 8 8"
+                refX="6"
+                refY="4"
+                markerWidth="6.5"
+                markerHeight="6.5"
+                orient="auto"
+              >
+                <path d="M0,0 L8,4 L0,8 z" fill="rgba(146, 64, 14, 0.75)" />
+              </marker>
+            </defs>
             {/* ── stage: sources ─────────────────────────────── */}
             <g className="lsk__stage lsk__stage--1">
               <text className="lsk-eyebrow" x="30" y="52">
@@ -161,12 +174,13 @@ export function LaunchGraphic() {
                 compile · checks · oracles · review
               </text>
 
-              {/* the redraft loop — failures flow back */}
+              {/* the redraft loop — failures flow back into encoding */}
               <path
                 className="lsk-loop"
-                d="M 884 335 C 884 452, 660 452, 658 342"
+                d="M 886 338 C 886 402, 656 402, 656 348"
+                markerEnd="url(#lsk-loop-arr)"
               />
-              <text className="lsk-loop-label" x="771" y="466" textAnchor="middle">
+              <text className="lsk-loop-label" x="771" y="411" textAnchor="middle">
                 ↺ any failure — redrafted
               </text>
             </g>
@@ -232,7 +246,7 @@ export function LaunchGraphic() {
                   dur="6s"
                   begin="-3s"
                   repeatCount="indefinite"
-                  path="M 884 335 C 884 452, 660 452, 658 342"
+                  path="M 886 338 C 886 402, 656 402, 656 348"
                 />
               </circle>
             </g>

@@ -90,8 +90,6 @@ function Pulse({ slot }: { slot: number }) {
   );
 }
 
-const LOOP_PATH = "M 886 338 C 886 402, 656 402, 656 348";
-
 // One cohort per cycle: a random batch of "provisions" that enters together,
 // travels every stage in its own lanes, sometimes loses one to the redraft
 // loop, and redistributes across the application branches at the end.
@@ -126,38 +124,110 @@ function makeWave(): { dots: WaveDot[]; loopIdx: number } {
   return { dots, loopIdx: Math.random() < 0.6 ? Math.floor(Math.random() * n) : -1 };
 }
 
-function RelayDot({
-  path,
-  slot,
-  cls,
-  r = 3.5,
-  jitter = 0,
-}: {
-  path: string;
-  slot: number;
-  cls: string;
-  r?: number;
-  jitter?: number;
-}) {
+// One dot = one circle riding ONE continuous path for its whole journey —
+// never hidden mid-flight. It slides along each bar as it transits it, and
+// its fill flips grey → amber → green as the material transforms. Failing
+// dots detour through the redraft loop and catch up while the rest of the
+// cohort continues through verification.
+type Anchor = { x: number; y: number; mode?: "C" | "L" | "loop" };
+
+function buildJourney(anchors: Anchor[], schedule: number[], jit: number) {
+  let path = `M ${anchors[0].x} ${anchors[0].y}`;
+  const dists = [0];
+  for (let i = 1; i < anchors.length; i++) {
+    const p = anchors[i - 1];
+    const q = anchors[i];
+    if (q.mode === "loop") {
+      path += ` C 884 402, 656 402, ${q.x} ${q.y}`;
+      dists.push(420);
+    } else if (q.mode === "C") {
+      const m = (p.x + q.x) / 2;
+      path += ` C ${m} ${p.y}, ${m} ${q.y}, ${q.x} ${q.y}`;
+      dists.push(Math.hypot(q.x - p.x, q.y - p.y) * 1.05);
+    } else {
+      path += ` L ${q.x} ${q.y}`;
+      dists.push(Math.hypot(q.x - p.x, q.y - p.y));
+    }
+  }
+  const total = dists.reduce((a, b) => a + b, 0);
+  let cum = 0;
+  const fractions = dists.map((d) => {
+    cum += d;
+    return cum / total;
+  });
+  // keyTimes: parked at start until jit, then the schedule (+jit), then hold.
+  const keyTimes = [0, ...schedule.map((t) => Math.min(t + jit, 0.995)), 1];
+  const keyPoints = [0, ...fractions, 1];
+  return { path, keyTimes: keyTimes.join(";"), keyPoints: keyPoints.join(";") };
+}
+
+const NORMAL_SCHEDULE = [0.02, 0.165, 0.2, 0.33, 0.35, 0.5, 0.53, 0.8, 0.84, 0.96];
+const LOOP_SCHEDULE = [
+  0.02, 0.165, 0.2, 0.33, 0.35, 0.5, 0.53, 0.645, 0.665, 0.78, 0.8, 0.9, 0.92,
+  0.96,
+];
+
+function JourneyDot({ d, loops }: { d: WaveDot; loops: boolean }) {
   if (REDUCED_MOTION) return null;
-  const s0 = Math.min(Math.max(slot / SLOTS + jitter, 0.001), 0.96);
-  const s1 = Math.min(Math.max((slot + 1) / SLOTS + jitter, s0 + 0.02), 0.999);
+  const s = SOURCE_LINKS[d.src];
+  const srcOff = d.lane * (s.h / 2 - 7);
+  const surf = SURFACE_LINKS[d.surface];
+  const surfMid = RULES_TOP + (70 / 3) * (d.surface + 0.5);
+
+  const anchors: Anchor[] = [
+    { x: SRC_X, y: s.c + srcOff },
+    { x: CORPUS_X, y: s.segC + srcOff, mode: "C" },
+    { x: 412, y: 302 + d.lane * 30, mode: "L" },
+    { x: 650, y: 290 + d.lane * 38, mode: "C" },
+    { x: 662, y: 290 + d.lane * 40, mode: "L" },
+    { x: 880, y: 290 + d.lane * 36, mode: "C" },
+    ...(loops
+      ? ([
+          { x: 884, y: 338, mode: "L" },
+          { x: 656, y: 348, mode: "loop" },
+          { x: 664, y: 290 + d.lane * 40, mode: "L" },
+          { x: 880, y: 290 + d.lane * 36, mode: "C" },
+        ] as Anchor[])
+      : []),
+    { x: 892, y: 285 + d.lane * 28, mode: "L" },
+    { x: 1120, y: 290 + d.lane * 28, mode: "C" },
+    { x: 1132, y: surfMid + d.lane * 8, mode: "L" },
+    { x: SURFACE_X, y: surf.c + d.lane * 6, mode: "C" },
+  ];
+
+  const { path, keyTimes, keyPoints } = buildJourney(
+    anchors,
+    loops ? LOOP_SCHEDULE : NORMAL_SCHEDULE,
+    d.jit,
+  );
+
+  // grey while raw text, amber once encoded, green once past the gates
+  const greenAt = (loops ? 0.8 : 0.53) + d.jit;
+
   return (
-    <circle className={cls} r={r} opacity="0">
+    <circle className="lsk-dot" r="3" fill="#78716c" opacity="0">
       <animateMotion
         dur={`${CYCLE}s`}
         repeatCount="indefinite"
         path={path}
         calcMode="linear"
-        keyPoints={`0;0;1;1`}
-        keyTimes={`0;${s0};${s1};1`}
+        keyPoints={keyPoints}
+        keyTimes={keyTimes}
       />
       <animate
         attributeName="opacity"
         dur={`${CYCLE}s`}
         repeatCount="indefinite"
         values="0;0;1;1;0;0"
-        keyTimes={`0;${s0};${Math.min(s0 + 0.015, 1)};${Math.max(s1 - 0.015, 0)};${s1};1`}
+        keyTimes={`0;${0.01 + d.jit};${0.025 + d.jit};${0.955 + d.jit};${Math.min(0.97 + d.jit, 0.995)};1`}
+      />
+      <animate
+        attributeName="fill"
+        dur={`${CYCLE}s`}
+        repeatCount="indefinite"
+        calcMode="discrete"
+        values="#78716c;#92400e;#166534"
+        keyTimes={`0;${0.35 + d.jit};${greenAt}`}
       />
     </circle>
   );
@@ -400,70 +470,15 @@ export function LaunchGraphic() {
               ))}
             </g>
 
-            {/* ── the cohort: a random batch enters together, travels
-                 every stage in its own lanes, sometimes loses one to
-                 the redraft loop, and redistributes across the
-                 application branches at the end ─────────────────── */}
+            {/* ── the cohort: a random batch enters together, each dot
+                 one continuous journey — never hidden mid-flight. One
+                 may detour through the redraft loop while the others
+                 continue; all redistribute across the application
+                 branches at the end ─────────────────────────────── */}
             <g className="lsk__stage lsk__stage--5" key={wave}>
-              {plan.dots.map((d, i) => {
-                const s = SOURCE_LINKS[d.src];
-                const srcOff = d.lane * (s.h / 2 - 7);
-                const surf = SURFACE_LINKS[d.surface];
-                const surfMid = RULES_TOP + (70 / 3) * (d.surface + 0.5);
-                return (
-                  <g key={i}>
-                    <RelayDot
-                      path={center(SRC_X, s.c + srcOff, CORPUS_X, s.segC + srcOff)}
-                      slot={0}
-                      jitter={d.jit}
-                      cls="lsk-dot lsk-dot--raw"
-                      r={3}
-                    />
-                    <RelayDot
-                      path={center(412, 302 + d.lane * 30, 650, 290 + d.lane * 38)}
-                      slot={1}
-                      jitter={d.jit}
-                      cls="lsk-dot lsk-dot--raw"
-                      r={3}
-                    />
-                    <RelayDot
-                      path={center(662, 290 + d.lane * 40, 880, 290 + d.lane * 36)}
-                      slot={2}
-                      jitter={d.jit}
-                      cls="lsk-dot lsk-dot--amber"
-                      r={3}
-                    />
-                    {plan.loopIdx === i && (
-                      <RelayDot
-                        path={LOOP_PATH}
-                        slot={3}
-                        jitter={d.jit * 0.5}
-                        cls="lsk-dot lsk-dot--amber"
-                        r={2.5}
-                      />
-                    )}
-                    <RelayDot
-                      path={center(892, 285 + d.lane * 28, 1120, 290 + d.lane * 28)}
-                      slot={4}
-                      jitter={d.jit}
-                      cls="lsk-dot lsk-dot--green"
-                      r={3}
-                    />
-                    <RelayDot
-                      path={center(
-                        RULES_X,
-                        surfMid + d.lane * 8,
-                        SURFACE_X,
-                        surf.c + d.lane * 6,
-                      )}
-                      slot={5}
-                      jitter={d.jit}
-                      cls="lsk-dot lsk-dot--green"
-                      r={2.5}
-                    />
-                  </g>
-                );
-              })}
+              {plan.dots.map((d, i) => (
+                <JourneyDot d={d} loops={plan.loopIdx === i} key={i} />
+              ))}
             </g>
           </svg>
         </div>

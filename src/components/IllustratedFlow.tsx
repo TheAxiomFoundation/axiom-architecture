@@ -26,8 +26,8 @@ const P = {
 } as const;
 
 const CAPTIONS = [
-  { w: P.pub, name: "A law is published", sub: "hundreds of official sites" },
-  { w: P.cap, name: "Captured & filed", sub: "fingerprinted · 1.7M+ provisions" },
+  { w: P.pub, name: "Laws are published", sub: "statutes · regulations · guidance — hundreds of official sites" },
+  { w: P.cap, name: "Captured & filed", sub: "cross-referenced, fingerprinted, stored in the corpus · 1.7M+ provisions" },
   { w: P.enc, name: "Encoded", sub: "the text becomes an executable rule" },
   { w: P.gates, name: "The four gates", sub: "run · checks · compare · review — failures are redrafted" },
   { w: P.seal, name: "Sealed into the rulebook", sub: "3,000+ rules · signed & citable" },
@@ -49,21 +49,53 @@ function Vis({ a, b, r = 0.012, max = 1 }: { a: number; b: number; r?: number; m
 
 // ── stage props ───────────────────────────────────────────────────────
 
-function Portico() {
+// three sources, three kinds of document: the legislature's portico,
+// an agency office, the register
+function Sources() {
   return (
-    <g opacity="0" transform="translate(85, 125)">
-      <Vis a={0.004} b={0.155} r={0.02} />
-      <polygon className="ill-line" points="8,42 60,12 112,42" />
-      <line className="ill-line" x1="14" y1="42" x2="106" y2="42" />
-      {[30, 55, 80].map((x) => (
-        <rect key={x} className="ill-line" x={x} y="48" width="11" height="60" />
-      ))}
-      <rect className="ill-line" x="10" y="108" width="100" height="9" />
+    <g opacity="0">
+      <Vis a={0.004} b={0.15} r={0.02} />
+      {/* legislature */}
+      <g transform="translate(80, 55)">
+        <polygon className="ill-line" points="8,42 60,12 112,42" />
+        <line className="ill-line" x1="14" y1="42" x2="106" y2="42" />
+        {[30, 55, 80].map((x) => (
+          <rect key={x} className="ill-line" x={x} y="48" width="11" height="60" />
+        ))}
+        <rect className="ill-line" x="10" y="108" width="100" height="9" />
+        <text className="ill-caption" x="60" y="134" textAnchor="middle">legislature</text>
+      </g>
+      {/* agency */}
+      <g transform="translate(96, 215)">
+        <rect className="ill-line" x="8" y="10" width="76" height="70" rx="2" />
+        <line className="ill-line" x1="2" y1="10" x2="90" y2="10" />
+        {[0, 1, 2].map((r) =>
+          [0, 1, 2].map((c) => (
+            <rect key={`${r}${c}`} className="ill-ink" x={20 + c * 22} y={20 + r * 17} width="10" height="9" strokeWidth="0" opacity="0.55" />
+          ))
+        )}
+        <rect className="ill-line" x="38" y="66" width="16" height="14" />
+        <text className="ill-caption" x="46" y="102" textAnchor="middle">agency</text>
+      </g>
+      {/* the register */}
+      <g transform="translate(88, 358)">
+        <rect className="ill-line" x="6" y="8" width="88" height="58" rx="2" />
+        <line className="ill-line" x1="50" y1="8" x2="50" y2="66" />
+        <line className="ill-ink" strokeWidth="2.6" x1="13" y1="19" x2="43" y2="19" />
+        {[30, 39, 48, 57].map((y) => (
+          <line key={y} className="ill-ink" x1="13" y1={y} x2="43" y2={y} strokeWidth="1.2" />
+        ))}
+        {[19, 30, 39, 48, 57].map((y) => (
+          <line key={y} className="ill-ink" x1="57" y1={y} x2="87" y2={y} strokeWidth="1.2" />
+        ))}
+        <text className="ill-caption" x="50" y="90" textAnchor="middle">register</text>
+      </g>
     </g>
   );
 }
 
-function Cabinet() {
+// the corpus: the cabinet the sibling documents are filed into
+function Corpus() {
   return (
     <g opacity="0" transform="translate(280, 150)">
       <Vis a={0.125} b={0.27} r={0.02} />
@@ -74,9 +106,95 @@ function Cabinet() {
       {[13, 38, 99].map((y) => (
         <line key={y} className="ill-ink" x1="30" y1={y} x2="42" y2={y} />
       ))}
-      {/* the open drawer the page is being indexed into */}
+      {/* the open drawer the documents are filed into */}
       <rect className="ill-paper" x="-11" y="58" width="94" height="22" rx="2" />
       <line className="ill-ink" x1="28" y1="69" x2="44" y2="69" />
+      <text className="ill-caption" x="36" y="130" textAnchor="middle">the corpus</text>
+    </g>
+  );
+}
+
+// sibling documents from the other sources: they fly in, cross-reference
+// the hero document, then are filed into the corpus
+const SIBLINGS = [
+  {
+    origin: [140, 262] as const, // agency
+    flank: [548, 172] as const,
+    leave: 0.208,
+    filed: 0.246,
+    appear: 0.028,
+    arrive: 0.1,
+  },
+  {
+    origin: [138, 396] as const, // register
+    flank: [556, 322] as const,
+    leave: 0.22,
+    filed: 0.258,
+    appear: 0.04,
+    arrive: 0.112,
+  },
+];
+const DRAWER: [number, number] = [316, 219]; // global center of the open drawer
+
+function SiblingDoc({ s }: { s: (typeof SIBLINGS)[number] }) {
+  const [ox, oy] = s.origin;
+  const [fx, fy] = s.flank;
+  return (
+    <g opacity="0">
+      <Vis a={s.appear} b={s.filed - 0.004} r={0.014} />
+      <animateTransform
+        attributeName="transform"
+        type="translate"
+        dur={`${CYCLE}s`}
+        repeatCount="indefinite"
+        calcMode="linear"
+        values={`${ox} ${oy};${ox} ${oy};${fx} ${fy};${fx} ${fy};${DRAWER[0]} ${DRAWER[1]};${DRAWER[0]} ${DRAWER[1]}`}
+        keyTimes={`0;${s.appear};${s.arrive};${s.leave};${s.filed};1`}
+      />
+      <animateTransform
+        attributeName="transform"
+        type="scale"
+        additive="sum"
+        dur={`${CYCLE}s`}
+        repeatCount="indefinite"
+        calcMode="linear"
+        values="0.3;0.3;0.62;0.62;0.2;0.2"
+        keyTimes={`0;${s.appear};${s.arrive};${s.leave};${s.filed};1`}
+      />
+      <rect className="ill-paper" x="-32" y="-42" width="64" height="84" rx="3" />
+      <line className="ill-ink" strokeWidth="2.2" x1="-22" y1="-28" x2="8" y2="-28" />
+      {[-12, 2, 16, 30].map((y) => (
+        <line key={y} className="ill-ink" x1="-22" y1={y} x2={y === 30 ? 8 : 22} y2={y} strokeWidth="1.4" />
+      ))}
+    </g>
+  );
+}
+
+// paper halo so labels stay legible over the dashed reference arrows
+const HALO: React.CSSProperties = {
+  paintOrder: "stroke",
+  stroke: "var(--color-paper)",
+  strokeWidth: 5,
+  strokeLinejoin: "round",
+};
+
+// the interaction beat: the documents cite and amend one another
+function CrossRefs() {
+  const on = 0.145;
+  const off = 0.205;
+  return (
+    <g opacity="0">
+      <animate
+        attributeName="opacity"
+        dur={`${CYCLE}s`}
+        repeatCount="indefinite"
+        values="0;0;1;1;0;0"
+        keyTimes={`0;${on};${on + 0.014};${off};${off + 0.012};1`}
+      />
+      <path className="ill-loop" d="M 572 185 C 600 195, 608 200, 622 210" markerEnd="url(#ill-ref-arr)" />
+      <path className="ill-loop" d="M 580 312 C 604 305, 610 300, 622 292" markerEnd="url(#ill-ref-arr)" />
+      <text className="ill-caption ill-caption--loop" style={HALO} x="548" y="216" textAnchor="middle">cites § 42</text>
+      <text className="ill-caption ill-caption--loop" style={HALO} x="556" y="286" textAnchor="middle">amends § 42</text>
     </g>
   );
 }
@@ -109,7 +227,7 @@ function TheDocument() {
         dur={`${CYCLE}s`}
         repeatCount="indefinite"
         calcMode="linear"
-        values={`150 235;150 235;${CXC} ${CYC};${CXC} ${CYC}`}
+        values={`142 118;142 118;${CXC} ${CYC};${CXC} ${CYC}`}
         keyTimes="0;0.015;0.115;1"
       />
       <animateTransform
@@ -491,8 +609,17 @@ export function IllustratedFlow() {
         role="img"
         aria-label="The life of a rule, as a looping film: a page slides out of the publisher's portico, is fingerprinted and filed, its text morphs into executable code, four gates stamp their checks — one failure is redrafted in place — the page is sealed into the rulebook, and copies fly out to the web, the API, and AI agents."
       >
-        <Portico />
-        <Cabinet />
+        <defs>
+          <marker id="ill-ref-arr" viewBox="0 0 8 8" refX="6" refY="4" markerWidth="5.5" markerHeight="5.5" orient="auto">
+            <path d="M0,0 L8,4 L0,8 z" fill="rgba(146,64,14,0.6)" />
+          </marker>
+        </defs>
+        <Sources />
+        <Corpus />
+        {SIBLINGS.map((s, i) => (
+          <SiblingDoc key={i} s={s} />
+        ))}
+        <CrossRefs />
         <TheDocument />
         <Gates />
         <SealedBook />

@@ -1,242 +1,276 @@
-// Illustrated variant of the launch flow, with the CHART'S narrative beats
-// kept intact: pages slide out of the publisher's portico and BREAK — their
-// lines highlight amber and detach as dots (provisions) — then the dots
-// travel the ground line, turn amber at the encoding lens, get checked at
-// the four gates (one fails and rides the loop back), and at the sealed
-// rulebook each dot splits into three, one per surface.
+// The illustrated launch story: not a row of vignettes but one continuously
+// evolving film about a single document. A page slides out of the publisher's
+// portico to center stage, is fingerprinted and filed, its text morphs into
+// code under the lens, four gates rise and stamp their checks (one fails —
+// the line is redrafted in place and re-checked), the page closes into a
+// sealed book, and copies fly out to the browser, the terminal, and the
+// AI agent. One SMIL clock drives everything; the loop is seamless.
 
-const CYCLE = 16;
+const CYCLE = 26;
 
 const REDUCED_MOTION =
   typeof window !== "undefined" &&
   window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-const GROUND_Y = 178;
-const GROUND = `M 30 ${GROUND_Y} H 1390`;
-const CX = [110, 340, 570, 800, 1030, 1280];
+const CXC = 710; // stage center
+const CYC = 245;
 
-const STAGES = [
-  { name: "A law is published", caption: "hundreds of official sites" },
-  { name: "Captured & filed", caption: "1.7M+ provisions · fingerprinted" },
-  { name: "Encoded", caption: "text becomes executable rules" },
-  { name: "The four gates", caption: "run · checks · compare · review" },
-  { name: "The rulebook", caption: "3,000+ rules · signed & citable" },
-  { name: "Everywhere", caption: "web · API · AI agents" },
+// phase windows (fractions of the cycle)
+const P = {
+  pub: [0.005, 0.13],
+  cap: [0.13, 0.26],
+  enc: [0.26, 0.44],
+  gates: [0.44, 0.66],
+  seal: [0.66, 0.78],
+  every: [0.78, 0.95],
+} as const;
+
+const CAPTIONS = [
+  { w: P.pub, name: "A law is published", sub: "hundreds of official sites" },
+  { w: P.cap, name: "Captured & filed", sub: "fingerprinted · 1.7M+ provisions" },
+  { w: P.enc, name: "Encoded", sub: "the text becomes an executable rule" },
+  { w: P.gates, name: "The four gates", sub: "run · checks · compare · review — failures are redrafted" },
+  { w: P.seal, name: "Sealed into the rulebook", sub: "3,000+ rules · signed & citable" },
+  { w: P.every, name: "Everywhere", sub: "web · API · AI agents" },
 ];
 
-// ── the deterministic wave ───────────────────────────────────────────
-// Two pages per cycle; each breaks into three dots. Constant speed:
-// keyTimes derive from cumulative distance.
-const PER_UNIT = 1 / 2300; // cycle-fraction per SVG unit of travel
-
-const DOCS = [{ delay: 0.02 }, { delay: 0.34 }];
-const LINE_STEP = 0.028;
-const departAt = (doc: number, line: number) =>
-  DOCS[doc].delay + 0.06 + line * LINE_STEP;
-
-// break spot: where the page lands and dissolves (global coords)
-const BREAK_X = 158;
-const PAGE_W = 32;
-const PAGE_H = 40;
-const PAGE_TOP = GROUND_Y - PAGE_H - 6;
-const lineY = (line: number) => PAGE_TOP + 10 + line * 9;
-
-// surface targets for the broadcast (global coords)
-const TARGETS: Array<[number, number]> = [
-  [1250, 84], // browser
-  [1250, 131], // terminal
-  [1318, 98], // chat bubble
-];
-
-const BOOK_X = 1035;
-const LENS_X = 570;
-const PAST_GATES_X = 832;
-const LOOP_FROM = 790;
-const LOOP_TO = 580;
-const LOOP_D = `M ${LOOP_FROM} ${GROUND_Y + 2} C ${LOOP_FROM - 20} ${GROUND_Y + 56}, ${LOOP_TO + 30} ${GROUND_Y + 56}, ${LOOP_TO} ${GROUND_Y + 4}`;
-
-type Seg = { x: number; y: number; mode?: "C" | "loop" };
-
-function journey(doc: number, line: number, loops: boolean) {
-  const start = departAt(doc, line);
-  const segs: Seg[] = [
-    { x: BREAK_X + PAGE_W / 2 + 2, y: lineY(line) },
-    { x: 190, y: GROUND_Y, mode: "C" },
-    { x: LENS_X, y: GROUND_Y },
-    ...(loops
-      ? ([
-          { x: LOOP_FROM, y: GROUND_Y },
-          { x: LOOP_TO, y: GROUND_Y, mode: "loop" },
-          { x: PAST_GATES_X, y: GROUND_Y },
-        ] as Seg[])
-      : ([{ x: PAST_GATES_X, y: GROUND_Y }] as Seg[])),
-    { x: BOOK_X, y: GROUND_Y },
-  ];
-  let path = `M ${segs[0].x} ${segs[0].y}`;
-  const dists = [0];
-  for (let i = 1; i < segs.length; i++) {
-    const p = segs[i - 1];
-    const q = segs[i];
-    if (q.mode === "loop") {
-      path += ` C ${LOOP_FROM - 20} ${GROUND_Y + 56}, ${LOOP_TO + 30} ${GROUND_Y + 56}, ${q.x} ${q.y}`;
-      dists.push(300);
-    } else if (q.mode === "C") {
-      const m = (p.x + q.x) / 2;
-      path += ` C ${m} ${p.y}, ${m} ${q.y}, ${q.x} ${q.y}`;
-      dists.push(Math.hypot(q.x - p.x, q.y - p.y) * 1.1);
-    } else {
-      path += ` L ${q.x} ${q.y}`;
-      dists.push(Math.abs(q.x - p.x) + Math.abs(q.y - p.y));
-    }
-  }
-  let cum = 0;
-  const total = dists.reduce((a, b) => a + b, 0);
-  const fractions: number[] = [];
-  const times: number[] = [];
-  for (const d of dists) {
-    cum += d;
-    fractions.push(cum / total);
-    times.push(Math.min(start + cum * PER_UNIT, 0.99));
-  }
-  // times index of interest: lens = seg index 2; past gates = second-to-last
-  const amberAt = times[2];
-  const greenAt = times[times.length - 2];
-  const arrival = times[times.length - 1];
-  return {
-    path,
-    keyTimes: [0, ...times, 1].join(";"),
-    keyPoints: [0, ...fractions, 1].join(";"),
-    start,
-    amberAt,
-    greenAt,
-    arrival,
-    gatesAt: loops ? [times[2] + (LOOP_FROM - LENS_X) * PER_UNIT, times[5]] : [times[2] + (PAST_GATES_X - LENS_X) * PER_UNIT],
-  };
+// opacity window helper: fade in over [a, a+r], out over [b, b+r]
+function Vis({ a, b, r = 0.012, max = 1 }: { a: number; b: number; r?: number; max?: number }) {
+  return (
+    <animate
+      attributeName="opacity"
+      dur={`${CYCLE}s`}
+      repeatCount="indefinite"
+      values={`0;0;${max};${max};0;0`}
+      keyTimes={`0;${a};${Math.min(a + r, b)};${b};${Math.min(b + r, 0.999)};1`}
+    />
+  );
 }
 
-function WaveDot({ doc, line, loops }: { doc: number; line: number; loops: boolean }) {
-  const j = journey(doc, line, loops);
+// ── stage props ───────────────────────────────────────────────────────
+
+function Portico() {
   return (
-    <g>
-      <circle r="3.2" fill="#78716c" opacity="0">
-        <animateMotion
-          dur={`${CYCLE}s`}
-          repeatCount="indefinite"
-          path={j.path}
-          calcMode="linear"
-          keyPoints={j.keyPoints}
-          keyTimes={j.keyTimes}
-        />
-        <animate
-          attributeName="opacity"
-          dur={`${CYCLE}s`}
-          repeatCount="indefinite"
-          values="0;0;1;1;0;0"
-          keyTimes={`0;${j.start};${j.start + 0.012};${j.arrival};${j.arrival + 0.008};1`}
-        />
-        <animate
-          attributeName="fill"
-          dur={`${CYCLE}s`}
-          repeatCount="indefinite"
-          calcMode="discrete"
-          values="#78716c;#92400e;#166534"
-          keyTimes={`0;${j.amberAt};${j.greenAt}`}
-        />
-      </circle>
-      {/* the broadcast: the sealed rule reaches all three surfaces */}
-      {TARGETS.map(([tx, ty], k) => {
-        const m = (BOOK_X + tx) / 2;
-        const bp = `M ${BOOK_X} ${GROUND_Y - 2} C ${m} ${GROUND_Y - 2}, ${m} ${ty}, ${tx} ${ty}`;
-        const dur = (Math.hypot(tx - BOOK_X, ty - GROUND_Y) * 1.15) * PER_UNIT;
-        const t1 = Math.min(j.arrival + dur, 0.995);
-        return (
-          <circle r="2.4" fill="#166534" opacity="0" key={k}>
-            <animateMotion
-              dur={`${CYCLE}s`}
-              repeatCount="indefinite"
-              path={bp}
-              calcMode="linear"
-              keyPoints="0;0;1;1"
-              keyTimes={`0;${j.arrival};${t1};1`}
-            />
-            <animate
-              attributeName="opacity"
-              dur={`${CYCLE}s`}
-              repeatCount="indefinite"
-              values="0;0;1;1;0;0"
-              keyTimes={`0;${j.arrival};${Math.min(j.arrival + 0.006, t1)};${t1};${Math.min(t1 + 0.01, 0.998)};1`}
-            />
-          </circle>
-        );
-      })}
+    <g opacity="0" transform="translate(85, 125)">
+      <Vis a={0.004} b={0.155} r={0.02} />
+      <polygon className="ill-line" points="8,42 60,12 112,42" />
+      <line className="ill-line" x1="14" y1="42" x2="106" y2="42" />
+      {[30, 55, 80].map((x) => (
+        <rect key={x} className="ill-line" x={x} y="48" width="11" height="60" />
+      ))}
+      <rect className="ill-line" x="10" y="108" width="100" height="9" />
     </g>
   );
 }
 
-// a page that slides from the portico to the break spot, then dissolves —
-// line by line, each highlighted line becoming one of the wave's dots
-function BreakingPage({ doc }: { doc: number }) {
-  const d = DOCS[doc].delay;
-  const gone = departAt(doc, 2) + 0.035;
-  const px = BREAK_X - PAGE_W / 2;
-  const slide = `${-46} ${-34};${-46} ${-34};0 0;0 0`;
-  const slideTimes = `0;${d};${d + 0.03};1`;
-  const fadeTimes = `0;${d};${d + 0.015};${gone};${gone + 0.02};1`;
+function Cabinet() {
   return (
-    <g>
+    <g opacity="0" transform="translate(280, 150)">
+      <Vis a={0.125} b={0.27} r={0.02} />
+      <rect className="ill-line" x="0" y="0" width="72" height="110" rx="3" />
+      {[26, 50, 88].map((y) => (
+        <line key={y} className="ill-line" x1="7" y1={y} x2="65" y2={y} />
+      ))}
+      {[13, 38, 99].map((y) => (
+        <line key={y} className="ill-ink" x1="30" y1={y} x2="42" y2={y} />
+      ))}
+      {/* the open drawer the page is being indexed into */}
+      <rect className="ill-paper" x="-11" y="58" width="94" height="22" rx="2" />
+      <line className="ill-ink" x1="28" y1="69" x2="44" y2="69" />
+    </g>
+  );
+}
+
+// ── the document, center stage ────────────────────────────────────────
+
+const SERIF_LINES: Array<[number, number, number]> = [
+  // [y, x1, x2] in doc-local coords (doc is 170×210 centered on origin)
+  [-60, -65, 65],
+  [-38, -65, 52],
+  [-16, -65, 65],
+];
+const MORPH_LINES: Array<[number, number, number, number]> = [
+  // [y, x1, x2, morphAt] — these three become code as the scan passes
+  [6, -65, 60, 0.36],
+  [28, -65, 65, 0.385],
+  [50, -65, 44, 0.41],
+];
+const CODE_AT = ["snap = tfp", "- 0.03 * inc", "if inc > cap: 0"];
+const CODE_FIXED = "- 0.30 * inc";
+const REDRAFT = { flag: 0.545, strike: 0.555, gone: 0.585, fixed: 0.592, pass: 0.615 };
+
+function TheDocument() {
+  return (
+    <g opacity="0">
+      {/* slides from the portico, grows to center stage, shrinks into the book */}
       <animateTransform
         attributeName="transform"
         type="translate"
         dur={`${CYCLE}s`}
         repeatCount="indefinite"
         calcMode="linear"
-        values={slide}
-        keyTimes={slideTimes}
+        values={`150 235;150 235;${CXC} ${CYC};${CXC} ${CYC}`}
+        keyTimes="0;0.015;0.115;1"
       />
-      {/* the sheet behind: this is a stack of pages, not a single leaf */}
-      <rect className="ill-paper ill-line" x={px + 4} y={PAGE_TOP - 4} width={PAGE_W} height={PAGE_H} rx="2" strokeWidth="1.4">
-        <animate attributeName="opacity" dur={`${CYCLE}s`} repeatCount="indefinite" values="0;0;1;1;0;0" keyTimes={fadeTimes} />
-      </rect>
-      <rect className="ill-paper ill-line" x={px} y={PAGE_TOP} width={PAGE_W} height={PAGE_H} rx="2" strokeWidth="1.4">
-        <animate attributeName="opacity" dur={`${CYCLE}s`} repeatCount="indefinite" values="0;0;1;1;0;0" keyTimes={fadeTimes} />
-      </rect>
-      {[0, 1, 2].map((line) => {
-        const dep = departAt(doc, line);
-        return (
-          <g key={line}>
-            <line
-              className="ill-ink"
-              x1={px + 5}
-              x2={px + PAGE_W - 5}
-              y1={lineY(line)}
-              y2={lineY(line)}
-            >
+      <animateTransform
+        attributeName="transform"
+        type="scale"
+        additive="sum"
+        dur={`${CYCLE}s`}
+        repeatCount="indefinite"
+        calcMode="linear"
+        values="0.18;0.18;1;1;0.3;0.3"
+        keyTimes="0;0.015;0.115;0.66;0.705;1"
+      />
+      <Vis a={0.006} b={0.7} r={0.015} />
+
+      <rect className="ill-paper" x="-85" y="-105" width="170" height="210" rx="4" />
+      {/* title */}
+      <line className="ill-ink" strokeWidth="2.6" x1="-65" y1="-86" x2="5" y2="-86" />
+      <text className="ill-code" style={{ fontSize: "11px" }} x="48" y="-82">{"§ 42"}</text>
+
+      {SERIF_LINES.map(([y, x1, x2]) => (
+        <line key={y} className="ill-ink" x1={x1} y1={y} x2={x2} y2={y} />
+      ))}
+
+      {/* the three operative lines: serif → code as the scan passes */}
+      {MORPH_LINES.map(([y, x1, x2, at], i) => (
+        <g key={y}>
+          <line className="ill-ink" x1={x1} y1={y} x2={x2} y2={y} opacity="1">
+            <animate
+              attributeName="opacity"
+              dur={`${CYCLE}s`}
+              repeatCount="indefinite"
+              values="1;1;0;0;1"
+              keyTimes={`0;${at};${at + 0.012};0.995;1`}
+            />
+          </line>
+          {i === 1 ? (
+            <>
+              {/* the flawed draft: caught at the compare gate, redrafted */}
+              <text className="ill-code" style={{ fontSize: "12.5px" }} x={x1} y={y + 4} opacity="0">
+                {CODE_AT[1]}
+                <animate
+                  attributeName="opacity"
+                  dur={`${CYCLE}s`}
+                  repeatCount="indefinite"
+                  values="0;0;1;1;0;0"
+                  keyTimes={`0;${at + 0.008};${at + 0.02};${REDRAFT.gone};${REDRAFT.gone + 0.006};1`}
+                />
+              </text>
+              <line className="ill-accent-line" strokeWidth="2.5" x1={x1 - 3} y1={y} x2={x1 + 78} y2={y} opacity="0">
+                <animate
+                  attributeName="opacity"
+                  dur={`${CYCLE}s`}
+                  repeatCount="indefinite"
+                  values="0;0;1;1;0;0"
+                  keyTimes={`0;${REDRAFT.strike};${REDRAFT.strike + 0.008};${REDRAFT.gone};${REDRAFT.gone + 0.006};1`}
+                />
+              </line>
+              <text className="ill-code" style={{ fontSize: "12.5px" }} x={x1} y={y + 4} opacity="0">
+                {CODE_FIXED}
+                <animate
+                  attributeName="opacity"
+                  dur={`${CYCLE}s`}
+                  repeatCount="indefinite"
+                  values="0;0;1;1;0;0"
+                  keyTimes={`0;${REDRAFT.fixed};${REDRAFT.fixed + 0.012};0.99;0.995;1`}
+                />
+              </text>
+            </>
+          ) : (
+            <text className="ill-code" style={{ fontSize: "12.5px" }} x={x1} y={y + 4} opacity="0">
+              {CODE_AT[i]}
               <animate
                 attributeName="opacity"
                 dur={`${CYCLE}s`}
                 repeatCount="indefinite"
                 values="0;0;1;1;0;0"
-                keyTimes={`0;${d};${d + 0.015};${dep};${dep + 0.008};1`}
+                keyTimes={`0;${at + 0.008};${at + 0.02};0.99;0.995;1`}
               />
-            </line>
-            {/* the amber highlight right before the line becomes a dot */}
-            <line
-              className="ill-accent-line"
-              strokeWidth="4"
-              strokeLinecap="round"
-              x1={px + 5}
-              x2={px + PAGE_W - 5}
-              y1={lineY(line)}
-              y2={lineY(line)}
-            >
+            </text>
+          )}
+        </g>
+      ))}
+
+      {/* fingerprint stamped at capture */}
+      <g opacity="0">
+        <Vis a={0.145} b={0.7} r={0.015} />
+        {[4, 8, 12].map((r) => (
+          <circle key={r} className="ill-accent-line" cx="56" cy="80" r={r} fill="none" />
+        ))}
+      </g>
+
+      {/* the encoding scan: amber line + magnifier sweeping down the page */}
+      <g opacity="0">
+        <Vis a={0.268} b={0.418} r={0.01} max={0.95} />
+        <animateTransform
+          attributeName="transform"
+          type="translate"
+          dur={`${CYCLE}s`}
+          repeatCount="indefinite"
+          calcMode="linear"
+          values="0 -72;0 -72;0 58;0 58"
+          keyTimes="0;0.27;0.42;1"
+        />
+        <line className="ill-accent-line" strokeWidth="2" x1="-78" y1="0" x2="78" y2="0" />
+        <circle className="ill-line" cx="92" cy="0" r="17" fill="rgba(146,64,14,0.05)" />
+        <line className="ill-line" x1="104" y1="12" x2="116" y2="25" strokeWidth="4" />
+      </g>
+    </g>
+  );
+}
+
+// ── the four gates, rising above the document ─────────────────────────
+
+const GATE_LABELS = ["run", "checks", "compare", "review"];
+const GATE_OK = [0.485, 0.515, REDRAFT.pass, 0.645];
+
+function Gates() {
+  return (
+    <g opacity="0">
+      <Vis a={0.44} b={0.66} r={0.018} />
+      <animateTransform
+        attributeName="transform"
+        type="translate"
+        dur={`${CYCLE}s`}
+        repeatCount="indefinite"
+        calcMode="linear"
+        values={`${CXC - 105} 72;${CXC - 105} 72;${CXC - 105} 52;${CXC - 105} 52`}
+        keyTimes="0;0.44;0.47;1"
+      />
+      {GATE_LABELS.map((label, i) => {
+        const x = i * 56;
+        const ok = GATE_OK[i];
+        return (
+          <g key={label}>
+            <path className="ill-line" d={`M ${x} 62 V 26 A 17 17 0 0 1 ${x + 34} 26 V 62`} fill="none" />
+            <text className="ill-caption" x={x + 17} y="76" textAnchor="middle">
+              {label}
+            </text>
+            {i === 2 && (
+              // the failure: compare catches the flawed coefficient
+              <text className="ill-check" style={{ fontSize: "15px", fill: "var(--color-accent)" }} x={x + 17} y="50" textAnchor="middle" opacity="0">
+                ✗
+                <animate
+                  attributeName="opacity"
+                  dur={`${CYCLE}s`}
+                  repeatCount="indefinite"
+                  values="0;0;1;1;0;0"
+                  keyTimes={`0;${REDRAFT.flag};${REDRAFT.flag + 0.008};${REDRAFT.gone};${REDRAFT.gone + 0.006};1`}
+                />
+              </text>
+            )}
+            <text className="ill-check" style={{ fontSize: "15px" }} x={x + 17} y="50" textAnchor="middle" opacity="0">
+              ✓
               <animate
                 attributeName="opacity"
                 dur={`${CYCLE}s`}
                 repeatCount="indefinite"
-                values="0;0;0.9;0.9;0;0"
-                keyTimes={`0;${dep - 0.025};${dep - 0.01};${dep + 0.004};${dep + 0.014};1`}
+                values="0;0;1;1;0;0"
+                keyTimes={`0;${ok};${ok + 0.008};0.658;0.672;1`}
               />
-            </line>
+            </text>
           </g>
         );
       })}
@@ -244,169 +278,226 @@ function BreakingPage({ doc }: { doc: number }) {
   );
 }
 
+// ── the sealed book ───────────────────────────────────────────────────
+
+function SealedBook() {
+  return (
+    <g opacity="0" transform={`translate(${CXC}, ${CYC})`}>
+      <Vis a={0.69} b={0.955} r={0.015} />
+      <rect className="ill-paper" x="-52" y="-66" width="104" height="132" rx="4" />
+      <line className="ill-line" x1="-40" y1="-66" x2="-40" y2="66" />
+      <line className="ill-ink" x1="-18" y1="-38" x2="30" y2="-38" strokeWidth="2.4" />
+      <text className="ill-code" style={{ fontSize: "12px" }} x="-18" y="-12">{"§ ✓"}</text>
+      {[48, 51].map((x) => (
+        <line key={x} className="ill-ink" x1={x} y1="-60" x2={x} y2="60" strokeWidth="1" opacity="0.5" />
+      ))}
+      {/* the wax seal pops on */}
+      <g opacity="0">
+        <animate
+          attributeName="opacity"
+          dur={`${CYCLE}s`}
+          repeatCount="indefinite"
+          values="0;0;1;1;0;0"
+          keyTimes="0;0.728;0.74;0.952;0.965;1"
+        />
+        <animateTransform
+          attributeName="transform"
+          type="scale"
+          additive="sum"
+          dur={`${CYCLE}s`}
+          repeatCount="indefinite"
+          calcMode="linear"
+          values="0.6;0.6;1.25;1;1"
+          keyTimes="0;0.728;0.738;0.746;1"
+        />
+        <polygon className="ill-accent-fill" points="18,34 27,58 22,54 18,60 14,54 9,58" />
+        <circle className="ill-accent-fill" cx="18" cy="34" r="12" />
+        <circle className="ill-paper" cx="18" cy="34" r="4.5" strokeWidth="0" />
+      </g>
+    </g>
+  );
+}
+
+// ── the surfaces, and the copies that fly to them ─────────────────────
+
+const DEVICES: Array<{ tx: number; ty: number; anchor: [number, number]; fly: number }> = [
+  { tx: 1000, ty: 85, anchor: [1046, 118], fly: 0.795 }, // browser
+  { tx: 1090, ty: 232, anchor: [1136, 258], fly: 0.815 }, // terminal
+  { tx: 995, ty: 360, anchor: [1030, 388], fly: 0.835 }, // agent
+];
+
+function Devices() {
+  return (
+    <g>
+      {/* browser */}
+      <g opacity="0" transform={`translate(${DEVICES[0].tx}, ${DEVICES[0].ty})`}>
+        <Vis a={0.775} b={0.95} r={0.015} />
+        <rect className="ill-paper ill-line" x="0" y="0" width="92" height="62" rx="4" />
+        <line className="ill-line" x1="0" y1="15" x2="92" y2="15" />
+        <circle className="ill-ink" cx="9" cy="8" r="1.8" />
+        <circle className="ill-ink" cx="16" cy="8" r="1.8" />
+        {[30, 42].map((y) => (
+          <line key={y} className="ill-ink" x1="10" y1={y} x2="66" y2={y} />
+        ))}
+      </g>
+      {/* API terminal */}
+      <g opacity="0" transform={`translate(${DEVICES[1].tx}, ${DEVICES[1].ty})`}>
+        <Vis a={0.795} b={0.95} r={0.015} />
+        <rect className="ill-dark" x="0" y="0" width="92" height="52" rx="4" />
+        <text className="ill-code ill-code--onDark" style={{ fontSize: "11px" }} x="10" y="30">{"> $291 ▌"}</text>
+      </g>
+      {/* AI agent */}
+      <g opacity="0" transform={`translate(${DEVICES[2].tx}, ${DEVICES[2].ty})`}>
+        <Vis a={0.815} b={0.95} r={0.015} />
+        <path
+          className="ill-paper ill-line"
+          d="M 6 14 h 52 a6 6 0 0 1 6 6 v 22 a6 6 0 0 1 -6 6 h -26 l -11 11 v -11 h -15 a6 6 0 0 1 -6 -6 v -22 a6 6 0 0 1 6 -6 Z"
+        />
+        <text className="ill-code" style={{ fontSize: "10px" }} x="13" y="33">{"§ cited"}</text>
+        <line className="ill-line" x1="32" y1="14" x2="32" y2="6" />
+        <circle className="ill-accent-fill" cx="32" cy="4" r="3" />
+      </g>
+
+      {/* three copies of the sealed rule fly out */}
+      {DEVICES.map(({ anchor: [ax, ay], fly }, i) => {
+        const t1 = fly + 0.06;
+        const mx = (CXC + ax) / 2;
+        return (
+          <g key={i} opacity="0">
+            <animateMotion
+              dur={`${CYCLE}s`}
+              repeatCount="indefinite"
+              path={`M ${CXC + 40} ${CYC - 20} C ${mx} ${CYC - 90}, ${mx} ${ay - 40}, ${ax} ${ay}`}
+              calcMode="linear"
+              keyPoints="0;0;1;1"
+              keyTimes={`0;${fly};${t1};1`}
+            />
+            <animate
+              attributeName="opacity"
+              dur={`${CYCLE}s`}
+              repeatCount="indefinite"
+              values="0;0;1;1;0;0"
+              keyTimes={`0;${fly};${fly + 0.008};${t1 - 0.004};${t1 + 0.008};1`}
+            />
+            <rect className="ill-paper" x="-9" y="-12" width="18" height="24" rx="2" strokeWidth="1.5" />
+            <line className="ill-ink" x1="-5" y1="-5" x2="5" y2="-5" strokeWidth="1.2" />
+            <line className="ill-ink" x1="-5" y1="1" x2="3" y2="1" strokeWidth="1.2" />
+          </g>
+        );
+      })}
+
+      {/* green arrival marks */}
+      {DEVICES.map(({ anchor: [ax, ay], fly }, i) => (
+        <circle key={i} cx={ax} cy={ay} r="3.4" fill="var(--color-success)" opacity="0">
+          <animate
+            attributeName="opacity"
+            dur={`${CYCLE}s`}
+            repeatCount="indefinite"
+            values="0;0;1;1;0;0"
+            keyTimes={`0;${fly + 0.058};${fly + 0.066};0.945;0.958;1`}
+          />
+        </circle>
+      ))}
+    </g>
+  );
+}
+
+// ── captions & progress ───────────────────────────────────────────────
+
+function Captions() {
+  return (
+    <g>
+      {CAPTIONS.map(({ w, name, sub }) => (
+        <g key={name} opacity="0">
+          <Vis a={w[0]} b={w[1]} r={0.014} />
+          <text className="ill-name" style={{ fontSize: "21px" }} x={CXC} y="468" textAnchor="middle">
+            {name}
+          </text>
+          <text className="ill-caption" x={CXC} y="490" textAnchor="middle">
+            {sub}
+          </text>
+        </g>
+      ))}
+      {/* six-beat progress row */}
+      {CAPTIONS.map(({ w }, i) => {
+        const x = CXC - 60 + i * 24;
+        return (
+          <g key={i}>
+            <circle className="ill-line" strokeWidth="1.2" cx={x} cy="514" r="3.2" fill="none" opacity="0.55" />
+            <circle cx={x} cy="514" r="3.2" fill="var(--color-accent)" opacity="0">
+              <Vis a={w[0]} b={w[1]} r={0.01} />
+            </circle>
+          </g>
+        );
+      })}
+    </g>
+  );
+}
+
+// ── reduced-motion fallback: the story as one composed still ──────────
+
+function StaticStory() {
+  return (
+    <svg className="ill" viewBox="0 0 1420 540" role="img" aria-label="The life of a rule: a published law is captured and fingerprinted, encoded into executable code, checked at four gates, sealed into the rulebook, and delivered to the web, the API, and AI agents.">
+      <g transform={`translate(${CXC}, ${CYC})`}>
+        <rect className="ill-paper" x="-85" y="-105" width="170" height="210" rx="4" />
+        <line className="ill-ink" strokeWidth="2.6" x1="-65" y1="-86" x2="5" y2="-86" />
+        <text className="ill-code" style={{ fontSize: "11px" }} x="48" y="-82">{"§ 42"}</text>
+        {SERIF_LINES.map(([y, x1, x2]) => (
+          <line key={y} className="ill-ink" x1={x1} y1={y} x2={x2} y2={y} />
+        ))}
+        <text className="ill-code" style={{ fontSize: "12.5px" }} x="-65" y="10">{CODE_AT[0]}</text>
+        <text className="ill-code" style={{ fontSize: "12.5px" }} x="-65" y="32">{CODE_FIXED}</text>
+        <text className="ill-code" style={{ fontSize: "12.5px" }} x="-65" y="54">{CODE_AT[2]}</text>
+        {[4, 8, 12].map((r) => (
+          <circle key={r} className="ill-accent-line" cx="56" cy="80" r={r} fill="none" />
+        ))}
+      </g>
+      <g transform={`translate(${CXC - 105}, 52)`}>
+        {GATE_LABELS.map((label, i) => {
+          const x = i * 56;
+          return (
+            <g key={label}>
+              <path className="ill-line" d={`M ${x} 62 V 26 A 17 17 0 0 1 ${x + 34} 26 V 62`} fill="none" />
+              <text className="ill-check" style={{ fontSize: "15px" }} x={x + 17} y="50" textAnchor="middle">✓</text>
+              <text className="ill-caption" x={x + 17} y="76" textAnchor="middle">{label}</text>
+            </g>
+          );
+        })}
+      </g>
+      <text className="ill-name" style={{ fontSize: "21px" }} x={CXC} y="468" textAnchor="middle">
+        From published law to a rule you can trust
+      </text>
+      <text className="ill-caption" x={CXC} y="490" textAnchor="middle">
+        publish · capture · encode · check · seal · deliver — web · API · AI agents
+      </text>
+    </svg>
+  );
+}
+
 export function IllustratedFlow() {
+  if (REDUCED_MOTION) {
+    return (
+      <div className="ill__wrap">
+        <StaticStory />
+      </div>
+    );
+  }
   return (
     <div className="ill__wrap">
       <svg
         className="ill"
-        viewBox="0 0 1420 300"
+        viewBox="0 0 1420 540"
         role="img"
-        aria-label="Illustrated flow: pages emerge from the publisher and break into provisions; the dots are filed into the corpus, encoded at the lens, checked at four gates (failures loop back), sealed into the rulebook, and broadcast to the web, the API, and AI agents."
+        aria-label="The life of a rule, as a looping film: a page slides out of the publisher's portico, is fingerprinted and filed, its text morphs into executable code, four gates stamp their checks — one failure is redrafted in place — the page is sealed into the rulebook, and copies fly out to the web, the API, and AI agents."
       >
-        <path className="ill-ground" d={GROUND} />
-
-        <path className="ill-loop" d={LOOP_D} markerEnd="url(#ill-arr)" />
-        <text className="ill-caption ill-caption--loop" x={(CX[2] + CX[3]) / 2} y={GROUND_Y + 70} textAnchor="middle">
-          ↺ any failure — redrafted
-        </text>
-
-        <defs>
-          <marker id="ill-arr" viewBox="0 0 8 8" refX="6" refY="4" markerWidth="6" markerHeight="6" orient="auto">
-            <path d="M0,0 L8,4 L0,8 z" fill="rgba(146,64,14,0.75)" />
-          </marker>
-        </defs>
-
-        {/* ── 1 · the publisher's portico ──────────────────────── */}
-        <g className="ill-scene" transform={`translate(${CX[0] - 60}, 40)`}>
-          <polygon className="ill-line" points="8,42 60,12 112,42" />
-          <line className="ill-line" x1="14" y1="42" x2="106" y2="42" />
-          {[30, 55, 80].map((x) => (
-            <rect key={x} className="ill-line" x={x} y="48" width="11" height="60" />
-          ))}
-          <rect className="ill-line" x="10" y="108" width="100" height="9" />
-        </g>
-        {/* pages emerge and break into provisions */}
-        {!REDUCED_MOTION && (
-          <g>
-            <BreakingPage doc={0} />
-            <BreakingPage doc={1} />
-          </g>
-        )}
-
-        {/* ── 2 · the archive cabinet ──────────────────────────── */}
-        <g className="ill-scene" transform={`translate(${CX[1] - 60}, 46)`}>
-          <rect className="ill-line" x="28" y="14" width="64" height="98" rx="3" />
-          {[38, 60, 96].map((y) => (
-            <line key={y} className="ill-line" x1="34" y1={y} x2="86" y2={y} />
-          ))}
-          {[26, 48, 104].map((y) => (
-            <line key={y} className="ill-ink" x1="54" y1={y} x2="66" y2={y} />
-          ))}
-          <rect className="ill-paper ill-line" x="18" y="66" width="84" height="20" rx="2" />
-          <line className="ill-ink" x1="52" y1="76" x2="68" y2="76" />
-          {[5, 9, 13].map((r) => (
-            <circle key={r} className="ill-accent-line" cx="92" cy="104" r={r} fill="none" />
-          ))}
-        </g>
-
-        {/* ── 3 · the lens: text becomes code ──────────────────── */}
-        <g className="ill-scene" transform={`translate(${CX[2] - 60}, 46)`}>
-          <rect className="ill-paper ill-line" x="18" y="18" width="84" height="94" rx="3" />
-          {[32, 41, 50].map((y) => (
-            <line key={y} className="ill-ink" x1="28" y1={y} x2={y === 50 ? 74 : 92} y2={y} />
-          ))}
-          <line className="ill-line" x1="24" y1="62" x2="96" y2="62" strokeDasharray="3 3" />
-          <text className="ill-code" x="28" y="82">{"snap = tfp"}</text>
-          <text className="ill-code" x="28" y="98">{"− 0.30 × inc"}</text>
-          <circle className="ill-line" cx="88" cy="40" r="17" fill="rgba(146,64,14,0.05)" />
-          <line className="ill-line" x1="100" y1="53" x2="112" y2="66" strokeWidth="4" />
-          {!REDUCED_MOTION && (
-            <line className="ill-accent-line" x1="76" y1="41" x2="100" y2="41" strokeWidth="2.5">
-              <animate attributeName="opacity" dur="3.5s" repeatCount="indefinite" values="0;1;0" keyTimes="0;0.5;1" />
-            </line>
-          )}
-        </g>
-
-        {/* ── 4 · the four gates ───────────────────────────────── */}
-        <g className="ill-scene" transform={`translate(${CX[3] - 66}, 52)`}>
-          {[0, 1, 2, 3].map((i) => {
-            const x = 10 + i * 32;
-            // two flash sequences per cycle: page-1 cohort + page-2 cohort
-            const a = 0.30 + i * 0.02;
-            const b = 0.62 + i * 0.02;
-            return (
-              <g key={i}>
-                <path
-                  className="ill-line"
-                  d={`M ${x} 106 V 62 A 13 13 0 0 1 ${x + 26} 62 V 106`}
-                  fill="none"
-                />
-                <text className="ill-check" x={x + 13} y="52" textAnchor="middle" opacity={REDUCED_MOTION ? 1 : 0}>
-                  ✓
-                  {!REDUCED_MOTION && (
-                    <animate
-                      attributeName="opacity"
-                      dur={`${CYCLE}s`}
-                      repeatCount="indefinite"
-                      values="0;0;1;1;0;0;1;1;0;0"
-                      keyTimes={`0;${a};${a + 0.015};${a + 0.1};${a + 0.13};${b};${b + 0.015};${b + 0.1};${b + 0.13};1`}
-                    />
-                  )}
-                </text>
-              </g>
-            );
-          })}
-        </g>
-
-        {/* ── 5 · the rulebook, sealed ─────────────────────────── */}
-        <g className="ill-scene" transform={`translate(${CX[4] - 60}, 52)`}>
-          <path className="ill-paper ill-line" d="M 60 30 C 40 22, 18 24, 12 30 V 100 C 18 94, 40 92, 60 100 Z" />
-          <path className="ill-paper ill-line" d="M 60 30 C 80 22, 102 24, 108 30 V 100 C 102 94, 80 92, 60 100 Z" />
-          {[44, 54, 64].map((y) => (
-            <line key={y} className="ill-ink" x1="22" y1={y} x2="50" y2={y} />
-          ))}
-          {[44, 54].map((y) => (
-            <line key={`r${y}`} className="ill-ink" x1="70" y1={y} x2="98" y2={y} />
-          ))}
-          <text className="ill-code" x="70" y="80">{"§ ✓"}</text>
-          <polygon className="ill-accent-fill" points="88,96 96,116 92,113 88,118 84,113 80,116" />
-          <circle className="ill-accent-fill" cx="88" cy="96" r="10" />
-          <circle className="ill-paper" cx="88" cy="96" r="4" />
-        </g>
-
-        {/* ── 6 · everywhere: browser, terminal, agent ─────────── */}
-        <g className="ill-scene" transform={`translate(${CX[5] - 66}, 44)`}>
-          <rect className="ill-paper ill-line" x="8" y="12" width="66" height="46" rx="4" />
-          <line className="ill-line" x1="8" y1="24" x2="74" y2="24" />
-          <circle className="ill-ink" cx="15" cy="18" r="1.6" />
-          <circle className="ill-ink" cx="21" cy="18" r="1.6" />
-          {[34, 42].map((y) => (
-            <line key={y} className="ill-ink" x1="15" y1={y} x2="60" y2={y} />
-          ))}
-          <rect className="ill-dark" x="8" y="68" width="66" height="38" rx="4" />
-          <text className="ill-code ill-code--onDark" x="15" y="90">{"> $291 ▌"}</text>
-          <path
-            className="ill-paper ill-line"
-            d="M 88 40 h 40 a6 6 0 0 1 6 6 v 20 a6 6 0 0 1 -6 6 h -22 l -10 10 v -10 h -8 a6 6 0 0 1 -6 -6 v -20 a6 6 0 0 1 6 -6 Z"
-          />
-          <text className="ill-code" x="94" y="60">{"§ cited"}</text>
-          <line className="ill-line" x1="108" y1="40" x2="108" y2="32" />
-          <circle className="ill-accent-fill" cx="108" cy="30" r="3" />
-        </g>
-
-        {/* ── stage labels ─────────────────────────────────────── */}
-        {STAGES.map((s, i) => (
-          <g key={s.name}>
-            <text className="ill-name" x={CX[i]} y="216" textAnchor="middle">
-              {s.name}
-            </text>
-            <text className="ill-caption" x={CX[i]} y="234" textAnchor="middle">
-              {s.caption}
-            </text>
-          </g>
-        ))}
-
-        {/* ── the wave: two pages, six provisions, one redraft ─── */}
-        {!REDUCED_MOTION && (
-          <g>
-            <WaveDot doc={0} line={0} loops={false} />
-            <WaveDot doc={0} line={1} loops={false} />
-            <WaveDot doc={0} line={2} loops={true} />
-            <WaveDot doc={1} line={0} loops={false} />
-            <WaveDot doc={1} line={1} loops={false} />
-            <WaveDot doc={1} line={2} loops={false} />
-          </g>
-        )}
+        <Portico />
+        <Cabinet />
+        <TheDocument />
+        <Gates />
+        <SealedBook />
+        <Devices />
+        <Captions />
       </svg>
     </div>
   );

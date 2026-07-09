@@ -1164,3 +1164,261 @@ body::before {
     max-width: 100%;
   }
 }
+
+/* ────────────────────────────────────────────────────────────
+   Launch graphic (external tab) — the flow chart
+   ──────────────────────────────────────────────────────────── */
+
+.canvas--launch {
+  overflow-y: auto;
+}
+
+.launch {
+  min-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 36px 36px 36px;
+}
+
+.launch__poster {
+  width: 100%;
+  max-width: 1240px;
+}
+
+.launch__header {
+  text-align: center;
+}
+
+.launch__eyebrow {
+  font-family: var(--f-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+  margin-bottom: 10px;
+}
+
+.launch__headline {
+  margin: 0 0 10px 0;
+  font-family: var(--f-serif);
+  font-weight: 400;
+  font-size: clamp(28px, 3.2vw, 40px);
+  line-height: 1.06;
+  letter-spacing: -0.015em;
+  color: var(--color-ink);
+}
+
+.launch__headline em {
+  font-style: italic;
+  color: var(--color-accent);
+}
+
+.launch__sub {
+  margin: 0 auto;
+  max-width: 640px;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--color-ink-secondary);
+}
+
+/* ── the chart ─────────────────────────────────────────────── */
+
+.lsk__wrap {
+  margin-top: 10px;
+  overflow-x: auto;
+}
+
+.lsk {
+  display: block;
+  width: 100%;
+  min-width: 960px;
+  height: auto;
+}
+
+.lsk__stage {
+  animation: launch-fade 0.7s var(--ease-out) both;
+}
+
+.lsk__stage--1 { animation-delay: 0.05s; }
+.lsk__stage--2 { animation-delay: 0.3s; }
+.lsk__stage--3 { animation-delay: 0.55s; }
+.lsk__stage--4 { animation-delay: 0.8s; }
+.lsk__stage--5 { animation-delay: 1.05s; }
+
+/* ribbons — widths carry the story */
+
+.lsk-ribbon {
+  transition: opacity 180ms var(--ease-out);
+}
+
+.lsk-ribbon--raw0 { fill: rgba(120, 113, 108, 0.22); }
+.lsk-ribbon--raw1 { fill: rgba(120, 113, 108, 0.3); }
+
+.lsk-ribbon--draft { fill: rgba(146, 64, 14, 0.2); }
+.lsk-ribbon--encoded { fill: rgba(146, 64, 14, 0.38); }
+.lsk-ribbon--verified { fill: rgba(22, 101, 52, 0.32); }
+
+.lsk-ribbon:hover {
+  opacity: 0.75;
+}
+
+/* bars (stage nodes) */
+
+.lsk-stub {
+  fill: var(--color-rule-strong);
+}
+
+.lsk-bar--corpus { fill: #78716c; }
+.lsk-bar--encode { fill: var(--color-accent); }
+.lsk-bar--gates { fill: var(--color-ink); }
+.lsk-bar--rules { fill: var(--color-success); }
+
+/* the redraft loop */
+
+.lsk-loop {
+  fill: none;
+  stroke: rgba(146, 64, 14, 0.55);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 4;
+}
+
+.lsk-loop-label {
+  font-family: var(--f-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  fill: var(--color-accent);
+}
+
+/* labels */
+
+.lsk-eyebrow {
+  font-family: var(--f-mono);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  fill: var(--color-ink-muted);
+}
+
+.lsk-name {
+  font-family: var(--f-serif);
+  font-size: 16.5px;
+  fill: var(--color-ink);
+}
+
+.lsk-srclabel {
+  font-family: var(--f-body);
+  font-size: 11.5px;
+  font-weight: 600;
+  fill: var(--color-ink);
+}
+
+.lsk-srcsub {
+  font-family: var(--f-mono);
+  font-size: 8px;
+  fill: var(--color-ink-muted);
+}
+
+.lsk-agree {
+  font-family: var(--f-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.05em;
+  fill: var(--color-success);
+}
+
+.lsk-retest {
+  font-family: var(--f-mono);
+  font-size: 8.5px;
+  letter-spacing: 0.06em;
+  fill: var(--color-ink-muted);
+}
+
+/* particles */
+
+.lsk-dot--raw { fill: #78716c; }
+.lsk-dot--amber { fill: var(--color-accent); }
+.lsk-dot--green { fill: var(--color-success); }
+
+/* ── foot line ─────────────────────────────────────────────── */
+
+.launch__footline {
+  margin-top: 14px;
+  padding-top: 13px;
+  border-top: 1px solid var(--color-rule);
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-family: var(--f-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-ink-secondary);
+}
+
+.launch__footbrand {
+  color: var(--color-ink-muted);
+  text-transform: none;
+  letter-spacing: 0.06em;
+}
+
+.launch__footbrand .glyph-axiom {
+  color: var(--color-accent);
+}
+
+@keyframes launch-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lsk__stage {
+    animation: none;
+  }
+}
+
+@media (max-width: 1020px) {
+  .launch {
+    align-items: flex-start;
+    padding: 72px 14px 42px 14px;
+  }
+}
+
+/* stage 6: the application layer */
+.lsk__stage--6 { animation-delay: 1.3s; }
+
+.lsk-ribbon--surface { fill: rgba(22, 101, 52, 0.18); }
+
+/* the document that breaks apart at the mouth of its source stream */
+.lsk-docbreak rect {
+  fill: var(--color-paper-elevated);
+  stroke: var(--color-ink);
+  stroke-width: 1.4;
+}
+
+.lsk-docbreak__line {
+  stroke: var(--color-ink-secondary);
+  stroke-width: 2;
+}
+
+.lsk-docbreak__line--seed {
+  stroke: var(--color-accent);
+}
+
+/* the four gates' sequential checks */
+.lsk-gate-check {
+  font-family: var(--f-mono);
+  font-size: 10px;
+  fill: var(--color-success);
+}
+
+/* a line of the document, highlighted before it detaches as a dot */
+.lsk-docbreak__line--hot {
+  stroke: var(--color-accent);
+  stroke-width: 3;
+}

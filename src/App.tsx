@@ -13,6 +13,7 @@ import type { LayerNodeData } from "./components/LayerNode";
 import { LabeledEdge } from "./components/LabeledEdge";
 import { DetailPanel } from "./components/DetailPanel";
 import { EncodingPlaybook } from "./components/EncodingPlaybook";
+import { LaunchGraphic } from "./components/LaunchGraphic";
 import { NotesPanel } from "./components/NotesPanel";
 import { SpecsPanel } from "./components/SpecsPanel";
 import { SceneSwitcher } from "./components/SceneSwitcher";
@@ -104,6 +105,7 @@ export type DetailMode = "external" | "internal";
 export const NOTES_TAB_ID = "notes";
 export const PLAYBOOK_TAB_ID = "encoding-playbook";
 export const SPECS_TAB_ID = "specs";
+export const LAUNCH_TAB_ID = "launch";
 
 export function App() {
   const [activeLayoutId, setActiveLayoutId] = useState(LAYOUTS[0].id);
@@ -121,7 +123,8 @@ export function App() {
   const showNotes = activeLayoutId === NOTES_TAB_ID;
   const showPlaybook = activeLayoutId === PLAYBOOK_TAB_ID;
   const showSpecs = activeLayoutId === SPECS_TAB_ID;
-  const showDoc = showNotes || showPlaybook || showSpecs;
+  const showLaunch = activeLayoutId === LAUNCH_TAB_ID;
+  const showDoc = showNotes || showPlaybook || showSpecs || showLaunch;
 
   const catalog = useMemo(() => new Map(NODES.map((node) => [node.id, node])), []);
 
@@ -229,8 +232,13 @@ export function App() {
         notesTabId={NOTES_TAB_ID}
         playbookTabId={PLAYBOOK_TAB_ID}
         specsTabId={SPECS_TAB_ID}
+        launchTabId={LAUNCH_TAB_ID}
       />
-      {showNotes ? (
+      {showLaunch ? (
+        <main className="canvas canvas--launch">
+          <LaunchGraphic />
+        </main>
+      ) : showNotes ? (
         <main className="canvas canvas--notes">
           <NotesPanel />
         </main>

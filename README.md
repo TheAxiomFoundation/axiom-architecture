@@ -33,8 +33,12 @@ previous one and adds a new column to the right:
 | § 05 · Pipeline | axiom-foundation.org (incl. the /ops dashboard), finbot, dashboard-builder, axiom-microsim, axiom-demo-shell |
 | § 06 · Platform | axiom-api (HTTP API + SDKs on Vercel/Modal), axiom-mcp (MCP server for agents), the GA4 → Axiom CRM analytics loop |
 
-Three documentation tabs live below the scenes in the sidebar:
+Four extra tabs live below the scenes in the sidebar:
 
+- **Launch graphic** — the external one-pager: the five-stage story
+  (source law → corpus → executable rules → validated → answered) with a
+  single real provision (7 U.S.C. § 2017(a), the SNAP allotment) carried
+  through every stage. Screenshot-ready for launch materials.
 - **Encoding playbook** — how to take a state benefit program end-to-end.
 - **Specs & contracts** — the durable formats that hold the ecosystem
   together (RuleSpec v1, ProvisionRecord JSONL, citation paths, compose

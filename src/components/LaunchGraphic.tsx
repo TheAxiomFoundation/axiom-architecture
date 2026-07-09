@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 // External process graphic as a real chart: a hand-drawn Sankey flow.
 // Ribbon widths carry the story — hundreds of official sources merge into
@@ -98,28 +98,80 @@ type WaveDot = {
   surface: number;
 };
 
-function makeWave(): { dots: WaveDot[]; loopIdx: number } {
+function makeWave(): { dots: WaveDot[]; loopIdx: number; srcIdx: number } {
   const n = 5 + Math.floor(Math.random() * 4);
+  // Each wave is ONE document from one publisher (weighted by stream size,
+  // so State codes publishes most often). Its provisions are the dots.
   const totalH = SOURCES.reduce((sum, s) => sum + s.h, 0);
-  const dots: WaveDot[] = Array.from({ length: n }, (_, i) => {
-    // weight source choice by stream size so State codes carries more
-    let pick = Math.random() * totalH;
-    let src = 0;
-    for (let j = 0; j < SOURCES.length; j++) {
-      pick -= SOURCES[j].h;
-      if (pick <= 0) {
-        src = j;
-        break;
-      }
+  let pick = Math.random() * totalH;
+  let srcIdx = 0;
+  for (let j = 0; j < SOURCES.length; j++) {
+    pick -= SOURCES[j].h;
+    if (pick <= 0) {
+      srcIdx = j;
+      break;
     }
-    return {
-      src,
-      lane: (i / Math.max(n - 1, 1) - 0.5) * 1.6 + (Math.random() - 0.5) * 0.3,
-      jit: Math.random() * 0.015,
-      surface: Math.floor(Math.random() * 3),
-    };
-  });
-  return { dots, loopIdx: Math.random() < 0.6 ? Math.floor(Math.random() * n) : -1 };
+  }
+  const dots: WaveDot[] = Array.from({ length: n }, (_, i) => ({
+    src: srcIdx,
+    lane: (i / Math.max(n - 1, 1) - 0.5) * 1.6 + (Math.random() - 0.5) * 0.3,
+    jit: Math.random() * 0.015,
+    surface: Math.floor(Math.random() * 3),
+  }));
+  return {
+    dots,
+    loopIdx: Math.random() < 0.6 ? Math.floor(Math.random() * n) : -1,
+    srcIdx,
+  };
+}
+
+// The document that breaks apart: appears at the mouth of its source
+// stream, its text lines dissolve as the wave's dots pop out of it.
+// (Positions derive from SRC_X, declared below — computed inside the
+// components so module evaluation order stays legal.)
+const DOC_W = 34;
+const DOC_H = 44;
+const docX = () => SRC_X + 10; // sits at the stream's mouth
+const docCenterX = () => docX() + DOC_W / 2;
+
+function BreakingDocument({ srcIdx }: { srcIdx: number }) {
+  if (REDUCED_MOTION) return null;
+  const s = SOURCE_LINKS[srcIdx];
+  const top = s.c - DOC_H / 2;
+  const DOC_X = docX();
+  return (
+    <g className="lsk-docbreak" filter="url(#lsk-doc-shadow)">
+      <rect x={DOC_X} y={top} width={DOC_W} height={DOC_H} rx="3">
+        <animate
+          attributeName="opacity"
+          dur={`${CYCLE}s`}
+          repeatCount="indefinite"
+          values="0;0;1;1;0;0"
+          keyTimes="0;0.005;0.018;0.09;0.13;1"
+        />
+      </rect>
+      {[0, 1, 2, 3].map((i) => (
+        <line
+          key={i}
+          className={i === 1 ? "lsk-docbreak__line lsk-docbreak__line--seed" : "lsk-docbreak__line"}
+          x1={DOC_X + 6}
+          x2={DOC_X + DOC_W - (i === 3 ? 13 : 6)}
+          y1={top + 10 + i * 8}
+          y2={top + 10 + i * 8}
+        >
+          {/* lines dissolve one by one as the dots pour out — the text
+               literally becomes the provisions */}
+          <animate
+            attributeName="opacity"
+            dur={`${CYCLE}s`}
+            repeatCount="indefinite"
+            values="0;0;1;1;0;0"
+            keyTimes={`0;0.005;0.018;${0.045 + i * 0.012};${0.06 + i * 0.012};1`}
+          />
+        </line>
+      ))}
+    </g>
+  );
 }
 
 // One dot = one circle riding ONE continuous path for its whole journey —
@@ -157,7 +209,8 @@ function buildJourney(anchors: Anchor[], jit: number) {
     }
   }
   const total = dists.reduce((a, b) => a + b, 0);
-  const start = 0.01 + jit;
+  // dots emerge from the document while it dissolves (~0.03–0.05)
+  const start = 0.035 + jit;
   let cum = 0;
   const fractions: number[] = [];
   const times: number[] = [];
@@ -183,7 +236,8 @@ function JourneyDot({ d, loops }: { d: WaveDot; loops: boolean }) {
   const surfMid = RULES_TOP + (70 / 3) * (d.surface + 0.5);
 
   const anchors: Anchor[] = [
-    { x: SRC_X, y: s.c + srcOff },
+    // born inside the dissolving document at the stream's mouth
+    { x: docCenterX(), y: s.c + d.lane * 7 },
     { x: CORPUS_X, y: s.segC + srcOff, mode: "C" },
     { x: 412, y: 302 + d.lane * 30, mode: "L" },
     { x: 650, y: 290 + d.lane * 38, mode: "C" },
@@ -274,19 +328,21 @@ const CORPUS_BOTTOM = acc; // 472
 export function LaunchGraphic() {
   const [wave, setWave] = useState(0);
   const plan = useMemo(makeWave, [wave]);
+  const svgRef = useRef<SVGSVGElement | null>(null);
 
-  // Re-roll the cohort at each cycle boundary. SMIL runs on the document
-  // clock, so EVERY swap is re-scheduled against that clock rather than a
-  // fixed interval — a raw setInterval drifts (and throttles in background
-  // tabs), which eventually remounted mid-cycle and killed late-flying
-  // loop dots in transit. Self-correcting timeouts keep the swap landing
-  // just after phase zero, when no dot is airborne.
+  // Re-roll the cohort at each cycle boundary. CRITICAL: SMIL animations
+  // run on the SVG's OWN clock (svg.getCurrentTime()), which is offset
+  // from document.timeline by however long the page existed before this
+  // tab mounted — scheduling against any other clock lands the swap
+  // mid-cycle and kills late-flying loop dots in transit. Every swap is
+  // re-scheduled from the SVG clock itself, so it always lands just after
+  // phase zero, when no dot is airborne.
   useEffect(() => {
     if (REDUCED_MOTION) return;
     let timeout: number;
     const schedule = () => {
-      const docTime = Number(document.timeline?.currentTime ?? 0);
-      const toBoundary = CYCLE * 1000 - (docTime % (CYCLE * 1000)) + 80;
+      const svgTime = svgRef.current?.getCurrentTime?.() ?? 0;
+      const toBoundary = (CYCLE - (svgTime % CYCLE)) * 1000 + 80;
       timeout = window.setTimeout(() => {
         setWave((w) => w + 1);
         schedule();
@@ -313,12 +369,22 @@ export function LaunchGraphic() {
 
         <div className="lsk__wrap">
           <svg
+            ref={svgRef}
             className="lsk"
             viewBox="0 0 1420 560"
             role="img"
             aria-label="Flow chart: hundreds of official legal sources — federal, state, agency guidance, UK, Canada, Belgium — merge into a corpus of 1.7M+ provisions; a narrower stream is drafted into rules, passes four verification gates (failures loop back for redrafting), emerges as 3,000+ verified signed rules re-tested weekly, and fans out to the web, APIs, and AI agents."
           >
             <defs>
+              <filter id="lsk-doc-shadow" x="-40%" y="-40%" width="180%" height="180%">
+                <feDropShadow
+                  dx="0"
+                  dy="2"
+                  stdDeviation="3"
+                  floodColor="#1c1917"
+                  floodOpacity="0.28"
+                />
+              </filter>
               <marker
                 id="lsk-loop-arr"
                 viewBox="0 0 8 8"
@@ -335,6 +401,9 @@ export function LaunchGraphic() {
             <g className="lsk__stage lsk__stage--1">
               <text className="lsk-eyebrow" x="30" y="52">
                 hundreds of official sites
+              </text>
+              <text className="lsk-retest" x="30" y="550">
+                each wave: one document, broken into its provisions
               </text>
               {SOURCE_LINKS.map((s) => (
                 <g key={s.label}>
@@ -489,7 +558,12 @@ export function LaunchGraphic() {
                  may detour through the redraft loop while the others
                  continue; all redistribute across the application
                  branches at the end ─────────────────────────────── */}
-            <g className="lsk__stage lsk__stage--5" key={wave}>
+            {/* NOTE: no lsk__stage class here — that CSS load-fade restarts
+                 on every wave remount and would hide the first ~1.7s of
+                 each cycle (exactly the document-break window). SMIL owns
+                 all visibility in this layer. */}
+            <g key={wave}>
+              <BreakingDocument srcIdx={plan.srcIdx} />
               {plan.dots.map((d, i) => (
                 <JourneyDot d={d} loops={plan.loopIdx === i} key={i} />
               ))}

@@ -1393,3 +1393,19 @@ body::before {
 .lsk__stage--6 { animation-delay: 1.3s; }
 
 .lsk-ribbon--surface { fill: rgba(22, 101, 52, 0.18); }
+
+/* the document that breaks apart at the mouth of its source stream */
+.lsk-docbreak rect {
+  fill: var(--color-paper-elevated);
+  stroke: var(--color-ink);
+  stroke-width: 1.4;
+}
+
+.lsk-docbreak__line {
+  stroke: var(--color-ink-secondary);
+  stroke-width: 2;
+}
+
+.lsk-docbreak__line--seed {
+  stroke: var(--color-accent);
+}

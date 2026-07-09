@@ -1659,3 +1659,134 @@ body::before {
   fill: rgba(146, 64, 14, 0.65);
   font-style: italic;
 }
+
+/* ────────────────────────────────────────────────────────────
+   Illustrated flow (launch tab, "illustrated" view)
+   ──────────────────────────────────────────────────────────── */
+
+.launch__viewtoggle {
+  margin-top: 14px;
+  display: inline-flex;
+  border: 1px solid var(--color-rule);
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--color-paper-elevated);
+}
+
+.launch__viewtoggle-btn {
+  background: transparent;
+  border: none;
+  padding: 5px 16px;
+  font-family: var(--f-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted);
+  cursor: pointer;
+  transition: background 180ms var(--ease-out), color 180ms var(--ease-out);
+}
+
+.launch__viewtoggle-btn--active {
+  background: var(--color-accent);
+  color: var(--color-paper-elevated);
+}
+
+.ill__wrap {
+  margin-top: 26px;
+  overflow-x: auto;
+}
+
+.ill {
+  display: block;
+  width: 100%;
+  min-width: 1020px;
+  height: auto;
+}
+
+/* line-art vocabulary */
+
+.ill-line {
+  stroke: var(--color-ink);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  fill: none;
+}
+
+rect.ill-line,
+polygon.ill-line {
+  fill: var(--color-paper-elevated);
+}
+
+.ill-paper {
+  fill: var(--color-paper-elevated);
+  stroke: var(--color-ink);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
+.ill-ink {
+  stroke: var(--color-ink-secondary);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  fill: var(--color-ink-secondary);
+}
+
+.ill-dark {
+  fill: var(--color-ink);
+}
+
+.ill-accent-line {
+  stroke: var(--color-accent);
+  stroke-width: 1.6;
+  fill: none;
+}
+
+.ill-accent-fill {
+  fill: var(--color-accent);
+}
+
+.ill-code {
+  font-family: var(--f-mono);
+  font-size: 9.5px;
+  fill: var(--color-ink);
+}
+
+.ill-code--onDark {
+  fill: #faf9f6;
+}
+
+.ill-check {
+  font-family: var(--f-mono);
+  font-size: 13px;
+  fill: var(--color-success);
+}
+
+.ill-ground {
+  stroke: var(--color-rule-strong);
+  stroke-width: 2;
+}
+
+.ill-loop {
+  stroke: rgba(146, 64, 14, 0.55);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 4;
+  fill: none;
+}
+
+.ill-name {
+  font-family: var(--f-serif);
+  font-size: 16.5px;
+  fill: var(--color-ink);
+}
+
+.ill-caption {
+  font-family: var(--f-mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  fill: var(--color-ink-muted);
+}
+
+.ill-caption--loop {
+  fill: var(--color-accent);
+}

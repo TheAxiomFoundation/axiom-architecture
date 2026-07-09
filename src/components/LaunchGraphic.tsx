@@ -115,7 +115,7 @@ function makeWave(): { dots: WaveDot[]; loopIdx: number } {
     return {
       src,
       lane: (i / Math.max(n - 1, 1) - 0.5) * 1.6 + (Math.random() - 0.5) * 0.3,
-      jit: Math.random() * 0.03,
+      jit: Math.random() * 0.015,
       surface: Math.floor(Math.random() * 3),
     };
   });
@@ -132,10 +132,11 @@ type Anchor = { x: number; y: number; mode?: "C" | "L" | "loop" };
 // Constant velocity: every dot covers path-distance at the same shared
 // speed (SVG units per second). keyTimes are derived from cumulative
 // distance, so time ∝ distance for every segment of every dot — a
-// redrafted dot's longer journey honestly takes longer. 190 leaves the
-// longest journey (far source + redraft loop) comfortable headroom to
-// finish and fade before the wave resets.
-const SPEED = 190;
+// redrafted dot's longer journey honestly takes longer. 210 puts the
+// worst-case journey (farthest source + widest lane + redraft loop,
+// ~2320 units) at ~0.88 of the cycle, so every dot finishes AND fades
+// with margin before the wave resets.
+const SPEED = 210;
 
 function buildJourney(anchors: Anchor[], jit: number) {
   let path = `M ${anchors[0].x} ${anchors[0].y}`;
@@ -229,7 +230,7 @@ function JourneyDot({ d, loops }: { d: WaveDot; loops: boolean }) {
         dur={`${CYCLE}s`}
         repeatCount="indefinite"
         values="0;0;1;1;0;0"
-        keyTimes={`0;${start};${Math.min(start + 0.015, arrival)};${Math.min(arrival + 0.008, 0.98)};${Math.min(arrival + 0.022, 0.99)};1`}
+        keyTimes={`0;${start};${Math.min(start + 0.015, arrival)};${Math.max(Math.min(arrival + 0.01, 0.97), arrival)};${Math.max(Math.min(arrival + 0.025, 0.985), arrival + 0.005)};1`}
       />
       <animate
         attributeName="fill"

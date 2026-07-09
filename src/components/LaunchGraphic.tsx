@@ -1067,7 +1067,9 @@ export function LaunchGraphic() {
                     height={r.hit[3]}
                     rx="10"
                   />
-                  <text x={r.hit[0] + 10} y={r.hit[1] + 18}>
+                  {/* label rides ON the outline, with a paper halo so it
+                       never fights the chart's own text */}
+                  <text x={r.hit[0] + 12} y={r.hit[1] + 4}>
                     {r.kicker} · under the hood ↗
                   </text>
                 </g>

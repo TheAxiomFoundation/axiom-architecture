@@ -1456,6 +1456,11 @@ body::before {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   fill: var(--color-accent);
+  /* paper halo: masks the chart underneath instead of colliding with it */
+  stroke: var(--color-paper);
+  stroke-width: 4px;
+  stroke-linejoin: round;
+  paint-order: stroke;
   opacity: 0;
   transition: opacity 160ms var(--ease-out);
   pointer-events: none;

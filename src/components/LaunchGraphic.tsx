@@ -245,17 +245,41 @@ function BreakingDocument({ doc }: { doc: WaveDoc }) {
   const flip = FLIP_AT + d;
   return (
     <g className="lsk-docbreak" filter="url(#lsk-doc-shadow)">
+      {/* the original sheet — page one lives on this */}
       <rect x={DOC_X} y={top} width={DOC_W} height={DOC_H} rx="3">
-        {/* shell: in, brief dip at the page turn, out after page two */}
         <animate
           attributeName="opacity"
           dur={`${CYCLE}s`}
           repeatCount="indefinite"
-          values="0;0;1;1;0.25;1;1;0;0"
-          keyTimes={`0;${0.005 + d};${0.018 + d};${flip - 0.012};${flip};${flip + 0.012};${0.34 + d};${0.375 + d};1`}
+          values="0;0;1;1;0;0"
+          keyTimes={`0;${0.005 + d};${0.018 + d};${0.34 + d};${0.375 + d};1`}
         />
       </rect>
       <DocPage doc={doc} page={0} top={top} />
+      {/* the page turn: a NEW sheet drops in from above the old one,
+           hovers offset for a beat (two outlines, own shadow), then
+           settles exactly on top — page two lives on this sheet */}
+      <g filter="url(#lsk-doc-shadow)">
+        <rect x={DOC_X} y={top} width={DOC_W} height={DOC_H} rx="3">
+          <animate
+            attributeName="opacity"
+            dur={`${CYCLE}s`}
+            repeatCount="indefinite"
+            values="0;0;1;1;0;0"
+            keyTimes={`0;${flip - 0.016};${flip - 0.01};${0.34 + d};${0.375 + d};1`}
+          />
+          <animateTransform
+            attributeName="transform"
+            type="translate"
+            dur={`${CYCLE}s`}
+            repeatCount="indefinite"
+            calcMode="spline"
+            keySplines="0 0 1 1;0.2 0.8 0.2 1;0 0 1 1"
+            values="4 -11;4 -11;0 0;0 0"
+            keyTimes={`0;${flip - 0.014};${flip};1`}
+          />
+        </rect>
+      </g>
       <DocPage doc={doc} page={1} top={top} />
     </g>
   );

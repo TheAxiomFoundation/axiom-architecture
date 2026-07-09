@@ -53,7 +53,9 @@ const SURFACE_X = 1300;
 const RULES_TOP = 255;
 
 // One wave per cycle; dots move at constant velocity within it.
-const CYCLE = 13;
+// SPEED × CYCLE is held ≈ constant vs earlier tunings so all derived
+// keyTime fractions (spotlight windows, color flips) stay valid.
+const CYCLE = 17;
 
 const REDUCED_MOTION =
   typeof window !== "undefined" &&
@@ -65,12 +67,12 @@ const REDUCED_MOTION =
 const DIM = 0.55;
 
 const WIN = {
-  sources: [0.01, 0.16],
-  draft: [0.15, 0.28],
-  encoded: [0.27, 0.4],
-  loop: [0.39, 0.61],
-  verified: [0.37, 0.51],
-  surfaces: [0.49, 0.62],
+  sources: [0.01, 0.2],
+  draft: [0.15, 0.32],
+  encoded: [0.27, 0.44],
+  loop: [0.39, 0.65],
+  verified: [0.37, 0.55],
+  surfaces: [0.49, 0.66],
 } as const;
 
 function Pulse({ w }: { w: readonly [number, number] }) {
@@ -94,34 +96,54 @@ function Pulse({ w }: { w: readonly [number, number] }) {
 type WaveDot = {
   src: number;
   lane: number; // -1..1 across the ribbon's thickness
-  jit: number; // small per-dot start offset within each slot
+  jit: number; // small per-dot start offset
+  delay: number; // its document's arrival offset
   surface: number;
 };
 
-function makeWave(): { dots: WaveDot[]; loopIdx: number; srcIdx: number } {
-  const n = 5 + Math.floor(Math.random() * 4);
-  // Each wave is ONE document from one publisher (weighted by stream size,
-  // so State codes publishes most often). Its provisions are the dots.
-  const totalH = SOURCES.reduce((sum, s) => sum + s.h, 0);
-  let pick = Math.random() * totalH;
-  let srcIdx = 0;
-  for (let j = 0; j < SOURCES.length; j++) {
-    pick -= SOURCES[j].h;
-    if (pick <= 0) {
-      srcIdx = j;
-      break;
+type WaveDoc = { srcIdx: number; delay: number };
+
+function pickSource(exclude: Set<number>): number {
+  const pool = SOURCES.map((s, j) => (exclude.has(j) ? 0 : s.h));
+  const total = pool.reduce((a, b) => a + b, 0);
+  let pick = Math.random() * total;
+  for (let j = 0; j < pool.length; j++) {
+    pick -= pool[j];
+    if (pick <= 0) return j;
+  }
+  return 0;
+}
+
+function makeWave(): { dots: WaveDot[]; loopIdx: number; docs: WaveDoc[] } {
+  // Each wave: 1–3 documents from DIFFERENT publishers (weighted by stream
+  // size), each arriving at a slightly different moment and breaking into
+  // its own provisions.
+  const k = 1 + (Math.random() < 0.55 ? 1 : 0) + (Math.random() < 0.3 ? 1 : 0);
+  const chosen = new Set<number>();
+  const docs: WaveDoc[] = Array.from({ length: k }, (_, i) => {
+    const srcIdx = pickSource(chosen);
+    chosen.add(srcIdx);
+    return { srcIdx, delay: i === 0 ? 0 : Math.random() * 0.04 };
+  });
+
+  const dots: WaveDot[] = [];
+  for (const doc of docs) {
+    const n = 2 + Math.floor(Math.random() * 3); // 2–4 provisions per doc
+    for (let i = 0; i < n; i++) {
+      dots.push({
+        src: doc.srcIdx,
+        lane:
+          (i / Math.max(n - 1, 1) - 0.5) * 1.5 + (Math.random() - 0.5) * 0.3,
+        jit: Math.random() * 0.012,
+        delay: doc.delay,
+        surface: Math.floor(Math.random() * 3),
+      });
     }
   }
-  const dots: WaveDot[] = Array.from({ length: n }, (_, i) => ({
-    src: srcIdx,
-    lane: (i / Math.max(n - 1, 1) - 0.5) * 1.6 + (Math.random() - 0.5) * 0.3,
-    jit: Math.random() * 0.015,
-    surface: Math.floor(Math.random() * 3),
-  }));
   return {
     dots,
-    loopIdx: Math.random() < 0.6 ? Math.floor(Math.random() * n) : -1,
-    srcIdx,
+    loopIdx: Math.random() < 0.6 ? Math.floor(Math.random() * dots.length) : -1,
+    docs,
   };
 }
 
@@ -134,7 +156,7 @@ const DOC_H = 44;
 const docX = () => SRC_X + 10; // sits at the stream's mouth
 const docCenterX = () => docX() + DOC_W / 2;
 
-function BreakingDocument({ srcIdx }: { srcIdx: number }) {
+function BreakingDocument({ srcIdx, delay }: { srcIdx: number; delay: number }) {
   if (REDUCED_MOTION) return null;
   const s = SOURCE_LINKS[srcIdx];
   const top = s.c - DOC_H / 2;
@@ -147,7 +169,7 @@ function BreakingDocument({ srcIdx }: { srcIdx: number }) {
           dur={`${CYCLE}s`}
           repeatCount="indefinite"
           values="0;0;1;1;0;0"
-          keyTimes="0;0.005;0.018;0.09;0.13;1"
+          keyTimes={`0;${0.005 + delay};${0.018 + delay};${0.09 + delay};${0.13 + delay};1`}
         />
       </rect>
       {[0, 1, 2, 3].map((i) => (
@@ -166,7 +188,7 @@ function BreakingDocument({ srcIdx }: { srcIdx: number }) {
             dur={`${CYCLE}s`}
             repeatCount="indefinite"
             values="0;0;1;1;0;0"
-            keyTimes={`0;0.005;0.018;${0.045 + i * 0.012};${0.06 + i * 0.012};1`}
+            keyTimes={`0;${0.005 + delay};${0.018 + delay};${0.045 + delay + i * 0.012};${0.06 + delay + i * 0.012};1`}
           />
         </line>
       ))}
@@ -184,11 +206,11 @@ type Anchor = { x: number; y: number; mode?: "C" | "L" | "loop" };
 // Constant velocity: every dot covers path-distance at the same shared
 // speed (SVG units per second). keyTimes are derived from cumulative
 // distance, so time ∝ distance for every segment of every dot — a
-// redrafted dot's longer journey honestly takes longer. 210 puts the
-// worst-case journey (farthest source + widest lane + redraft loop,
-// ~2320 units) at ~0.88 of the cycle, so every dot finishes AND fades
-// with margin before the wave resets.
-const SPEED = 210;
+// redrafted dot's longer journey honestly takes longer. 160 × 17s ≈ the
+// previous 210 × 13s budget, so the worst-case journey (farthest source +
+// widest lane + max doc delay + redraft loop) still finishes and fades
+// with margin before the wave resets — just ~25% slower on screen.
+const SPEED = 160;
 
 function buildJourney(anchors: Anchor[], jit: number) {
   let path = `M ${anchors[0].x} ${anchors[0].y}`;
@@ -259,7 +281,7 @@ function JourneyDot({ d, loops }: { d: WaveDot; loops: boolean }) {
 
   const { path, keyTimes, keyPoints, times, start } = buildJourney(
     anchors,
-    d.jit,
+    d.jit + d.delay,
   );
 
   // grey while raw text, amber once past the encode bar, green once past
@@ -403,7 +425,7 @@ export function LaunchGraphic() {
                 hundreds of official sites
               </text>
               <text className="lsk-retest" x="30" y="550">
-                each wave: one document, broken into its provisions
+                documents arrive and break into their provisions
               </text>
               {SOURCE_LINKS.map((s) => (
                 <g key={s.label}>
@@ -563,7 +585,13 @@ export function LaunchGraphic() {
                  each cycle (exactly the document-break window). SMIL owns
                  all visibility in this layer. */}
             <g key={wave}>
-              <BreakingDocument srcIdx={plan.srcIdx} />
+              {plan.docs.map((doc) => (
+                <BreakingDocument
+                  srcIdx={doc.srcIdx}
+                  delay={doc.delay}
+                  key={doc.srcIdx}
+                />
+              ))}
               {plan.dots.map((d, i) => (
                 <JourneyDot d={d} loops={plan.loopIdx === i} key={i} />
               ))}

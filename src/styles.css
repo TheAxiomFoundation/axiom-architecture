@@ -1409,3 +1409,16 @@ body::before {
 .lsk-docbreak__line--seed {
   stroke: var(--color-accent);
 }
+
+/* the four gates' sequential checks */
+.lsk-gate-check {
+  font-family: var(--f-mono);
+  font-size: 10px;
+  fill: var(--color-success);
+}
+
+/* a line of the document, highlighted before it detaches as a dot */
+.lsk-docbreak__line--hot {
+  stroke: var(--color-accent);
+  stroke-width: 3;
+}

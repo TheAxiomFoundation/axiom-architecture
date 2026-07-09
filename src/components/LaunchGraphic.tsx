@@ -64,15 +64,16 @@ const REDUCED_MOTION =
 // Spotlight: a section holds full opacity while the cohort is passing
 // through it (windows derived from the constant-speed timings); the rest
 // of the time it rests slightly dimmed. Reduced motion: fully lit, still.
-const DIM = 0.55;
+// Softer dim now that two staggered page-cohorts overlap the windows.
+const DIM = 0.7;
 
 const WIN = {
-  sources: [0.01, 0.2],
-  draft: [0.15, 0.32],
-  encoded: [0.27, 0.44],
-  loop: [0.39, 0.65],
-  verified: [0.37, 0.55],
-  surfaces: [0.49, 0.66],
+  sources: [0.01, 0.44],
+  draft: [0.12, 0.52],
+  encoded: [0.24, 0.62],
+  loop: [0.36, 0.62],
+  verified: [0.34, 0.75],
+  surfaces: [0.46, 0.85],
 } as const;
 
 function Pulse({ w }: { w: readonly [number, number] }) {
@@ -93,52 +94,74 @@ function Pulse({ w }: { w: readonly [number, number] }) {
 // One cohort per cycle: a random batch of "provisions" that enters together,
 // travels every stage in its own lanes, sometimes loses one to the redraft
 // loop, and redistributes across the application branches at the end.
+// Two pages per document per cycle: page 1's lines highlight slowly and
+// become dots; mid-wave the document flips and page 2 emits while page 1
+// is crossing the gates — the chart always has material in flight.
+const EMIT_AT = 0.028; // first line highlight, as fraction of cycle
+const LINE_STEP = 0.02; // between line highlights
+const PAGE2_AT = 0.175; // page-two emission offset
+const FLIP_AT = 0.16; // the page turn
+
 type WaveDot = {
   src: number;
   lane: number; // -1..1 across the ribbon's thickness
   jit: number; // small per-dot start offset
   delay: number; // its document's arrival offset
+  page: 0 | 1;
+  line: number; // which text line of the page it came from
   surface: number;
   loops: boolean; // fails the gates and rides the redraft loop
 };
 
-type WaveDoc = { srcIdx: number; delay: number };
+type WaveDoc = { srcIdx: number; delay: number; pages: [number[], number[]] };
+
+const dotStart = (d: Pick<WaveDot, "delay" | "page" | "line" | "jit">) =>
+  EMIT_AT + d.delay + d.page * PAGE2_AT + d.line * LINE_STEP + d.jit;
+
+function pickLines(n: number): number[] {
+  const all = [0, 1, 2, 3].sort(() => Math.random() - 0.5);
+  return all.slice(0, n).sort((a, b) => a - b);
+}
 
 function makeWave(): { dots: WaveDot[]; docs: WaveDoc[] } {
-  // Each wave: one document from EVERY publisher, arriving staggered —
-  // the whole fan fires each cycle, and the corpus visibly drinks from
-  // all its sources at once. Each document breaks into 2–3 provisions.
+  // One document from EVERY publisher, arriving staggered; each page
+  // highlights 1–2 of its lines, and each highlighted line becomes a dot.
   const docs: WaveDoc[] = SOURCES.map((_, srcIdx) => ({
     srcIdx,
     delay: Math.random() * 0.05,
+    pages: [
+      pickLines(1 + (Math.random() < 0.6 ? 1 : 0)),
+      pickLines(1 + (Math.random() < 0.6 ? 1 : 0)),
+    ] as [number[], number[]],
   }));
 
   const dots: WaveDot[] = [];
   for (const doc of docs) {
-    const n = 2 + Math.floor(Math.random() * 2); // 2–3 provisions per doc
-    for (let i = 0; i < n; i++) {
-      dots.push({
-        src: doc.srcIdx,
-        lane:
-          (i / Math.max(n - 1, 1) - 0.5) * 1.5 + (Math.random() - 0.5) * 0.3,
-        jit: Math.random() * 0.012,
-        delay: doc.delay,
-        surface: Math.floor(Math.random() * 3),
-        loops: false,
+    doc.pages.forEach((lines, page) => {
+      lines.forEach((line, i) => {
+        dots.push({
+          src: doc.srcIdx,
+          lane:
+            (i / Math.max(lines.length - 1, 1) - 0.5) * 1.4 +
+            (Math.random() - 0.5) * 0.3,
+          jit: Math.random() * 0.006,
+          delay: doc.delay,
+          page: page as 0 | 1,
+          line,
+          surface: Math.floor(Math.random() * 3),
+          loops: false,
+        });
       });
-    }
+    });
   }
   // Every wave redrafts at least one provision; 30% of waves a second.
-  // Failures are drawn from the EARLY departers (skipping the very first)
-  // so the redraft detour resolves mid-wave — a late-departing failure
-  // would leave the whole cycle waiting on one straggler.
+  // Failures come from the first few departers (skipping the very first)
+  // so the loop detour still finishes comfortably inside the cycle.
   const fails = 1 + (Math.random() < 0.3 ? 1 : 0);
   const byDeparture = [...dots.keys()].sort(
-    (a, b) => dots[a].delay + dots[a].jit - (dots[b].delay + dots[b].jit),
+    (a, b) => dotStart(dots[a]) - dotStart(dots[b]),
   );
-  const earlyPool = byDeparture
-    .slice(1, Math.max(3, Math.ceil(dots.length / 2)))
-    .sort(() => Math.random() - 0.5);
+  const earlyPool = byDeparture.slice(1, 6).sort(() => Math.random() - 0.5);
   for (const idx of earlyPool.slice(0, fails)) dots[idx].loops = true;
   return { dots, docs };
 }
@@ -152,42 +175,91 @@ const DOC_H = 44;
 const docX = () => SRC_X + 10; // sits at the stream's mouth
 const docCenterX = () => docX() + DOC_W / 2;
 
-function BreakingDocument({ srcIdx, delay }: { srcIdx: number; delay: number }) {
+function DocPage({
+  doc,
+  page,
+  top,
+}: {
+  doc: WaveDoc;
+  page: 0 | 1;
+  top: number;
+}) {
+  const DOC_X = docX();
+  const d = doc.delay;
+  // page visibility window
+  const pageIn = page === 0 ? 0.018 + d : FLIP_AT + d + 0.012;
+  const pageOut = page === 0 ? FLIP_AT + d - 0.012 : 0.33 + d;
+  return (
+    <>
+      {[0, 1, 2, 3].map((i) => {
+        const highlighted = doc.pages[page].includes(i);
+        const depart = highlighted
+          ? dotStart({ delay: d, page, line: i, jit: 0 })
+          : null;
+        const x1 = DOC_X + 6;
+        const x2 = DOC_X + DOC_W - (i === 3 ? 13 : 6);
+        const y = top + 10 + i * 8;
+        // a highlighted line fades out as its dot departs; plain lines
+        // live until the page turns / the shell fades
+        const lineOut = depart !== null ? depart + 0.006 : pageOut;
+        return (
+          <g key={`${page}-${i}`}>
+            <line className="lsk-docbreak__line" x1={x1} x2={x2} y1={y} y2={y}>
+              <animate
+                attributeName="opacity"
+                dur={`${CYCLE}s`}
+                repeatCount="indefinite"
+                values="0;0;1;1;0;0"
+                keyTimes={`0;${pageIn};${pageIn + 0.008};${lineOut};${lineOut + 0.012};1`}
+              />
+            </line>
+            {highlighted && depart !== null && (
+              <line
+                className="lsk-docbreak__line lsk-docbreak__line--hot"
+                x1={x1}
+                x2={x2}
+                y1={y}
+                y2={y}
+              >
+                {/* the slow highlight: amber sweeps in well before the
+                     line detaches as a dot */}
+                <animate
+                  attributeName="opacity"
+                  dur={`${CYCLE}s`}
+                  repeatCount="indefinite"
+                  values="0;0;1;1;0;0"
+                  keyTimes={`0;${depart - 0.018};${depart - 0.004};${depart + 0.004};${depart + 0.014};1`}
+                />
+              </line>
+            )}
+          </g>
+        );
+      })}
+    </>
+  );
+}
+
+function BreakingDocument({ doc }: { doc: WaveDoc }) {
   if (REDUCED_MOTION) return null;
-  const s = SOURCE_LINKS[srcIdx];
+  const s = SOURCE_LINKS[doc.srcIdx];
   const top = s.c - DOC_H / 2;
   const DOC_X = docX();
+  const d = doc.delay;
+  const flip = FLIP_AT + d;
   return (
     <g className="lsk-docbreak" filter="url(#lsk-doc-shadow)">
       <rect x={DOC_X} y={top} width={DOC_W} height={DOC_H} rx="3">
+        {/* shell: in, brief dip at the page turn, out after page two */}
         <animate
           attributeName="opacity"
           dur={`${CYCLE}s`}
           repeatCount="indefinite"
-          values="0;0;1;1;0;0"
-          keyTimes={`0;${0.005 + delay};${0.018 + delay};${0.09 + delay};${0.13 + delay};1`}
+          values="0;0;1;1;0.25;1;1;0;0"
+          keyTimes={`0;${0.005 + d};${0.018 + d};${flip - 0.012};${flip};${flip + 0.012};${0.34 + d};${0.375 + d};1`}
         />
       </rect>
-      {[0, 1, 2, 3].map((i) => (
-        <line
-          key={i}
-          className={i === 1 ? "lsk-docbreak__line lsk-docbreak__line--seed" : "lsk-docbreak__line"}
-          x1={DOC_X + 6}
-          x2={DOC_X + DOC_W - (i === 3 ? 13 : 6)}
-          y1={top + 10 + i * 8}
-          y2={top + 10 + i * 8}
-        >
-          {/* lines dissolve one by one as the dots pour out — the text
-               literally becomes the provisions */}
-          <animate
-            attributeName="opacity"
-            dur={`${CYCLE}s`}
-            repeatCount="indefinite"
-            values="0;0;1;1;0;0"
-            keyTimes={`0;${0.005 + delay};${0.018 + delay};${0.045 + delay + i * 0.012};${0.06 + delay + i * 0.012};1`}
-          />
-        </line>
-      ))}
+      <DocPage doc={doc} page={0} top={top} />
+      <DocPage doc={doc} page={1} top={top} />
     </g>
   );
 }
@@ -208,7 +280,7 @@ type Anchor = { x: number; y: number; mode?: "C" | "L" | "loop" };
 // with margin before the wave resets — just ~25% slower on screen.
 const SPEED = 160;
 
-function buildJourney(anchors: Anchor[], jit: number) {
+function buildJourney(anchors: Anchor[], startAt: number) {
   let path = `M ${anchors[0].x} ${anchors[0].y}`;
   const dists = [0];
   for (let i = 1; i < anchors.length; i++) {
@@ -227,8 +299,8 @@ function buildJourney(anchors: Anchor[], jit: number) {
     }
   }
   const total = dists.reduce((a, b) => a + b, 0);
-  // dots emerge from the document while it dissolves (~0.03–0.05)
-  const start = 0.035 + jit;
+  // each dot departs the moment its highlighted line detaches
+  const start = startAt;
   let cum = 0;
   const fractions: number[] = [];
   const times: number[] = [];
@@ -277,7 +349,7 @@ function JourneyDot({ d, loops }: { d: WaveDot; loops: boolean }) {
 
   const { path, keyTimes, keyPoints, times, start } = buildJourney(
     anchors,
-    d.jit + d.delay,
+    dotStart(d),
   );
 
   // grey while raw text, amber once past the encode bar, green once past
@@ -421,7 +493,8 @@ export function LaunchGraphic() {
                 hundreds of official sites
               </text>
               <text className="lsk-retest" x="30" y="550">
-                documents arrive and break into their provisions
+                documents arrive, page after page, and break into their
+                provisions
               </text>
               {SOURCE_LINKS.map((s) => (
                 <g key={s.label}>
@@ -499,7 +572,53 @@ export function LaunchGraphic() {
               >
                 <Pulse w={WIN.encoded} />
               </path>
-              <rect className="lsk-bar lsk-bar--gates" x="880" y="245" width="12" height="90" rx="3" />
+              {/* the four gates, literally: four segments that flash ✓ in
+                   sequence as each cohort passes (page 1, then page 2) */}
+              {[0, 1, 2, 3].map((i) => {
+                const segH = (90 - 9) / 4;
+                const y = 245 + i * (segH + 3);
+                const a = 0.355 + i * 0.028;
+                const bb = 0.575 + i * 0.028;
+                return (
+                  <g key={i}>
+                    <rect
+                      className="lsk-bar lsk-bar--gates"
+                      x="880"
+                      y={y}
+                      width="12"
+                      height={segH}
+                      rx="2"
+                    >
+                      {!REDUCED_MOTION && (
+                        <animate
+                          attributeName="fill"
+                          dur={`${CYCLE}s`}
+                          repeatCount="indefinite"
+                          values="#1c1917;#1c1917;#166534;#166534;#1c1917;#1c1917;#166534;#166534;#1c1917;#1c1917"
+                          keyTimes={`0;${a};${a + 0.012};${a + 0.042};${a + 0.055};${bb};${bb + 0.012};${bb + 0.042};${bb + 0.055};1`}
+                        />
+                      )}
+                    </rect>
+                    {!REDUCED_MOTION && (
+                      <text
+                        className="lsk-gate-check"
+                        x="898"
+                        y={y + segH / 2 + 3}
+                        opacity="0"
+                      >
+                        ✓
+                        <animate
+                          attributeName="opacity"
+                          dur={`${CYCLE}s`}
+                          repeatCount="indefinite"
+                          values="0;0;1;1;0;0;1;1;0;0"
+                          keyTimes={`0;${a};${a + 0.012};${a + 0.042};${a + 0.055};${bb};${bb + 0.012};${bb + 0.042};${bb + 0.055};1`}
+                        />
+                      </text>
+                    )}
+                  </g>
+                );
+              })}
               <text className="lsk-name" x="870" y="207" textAnchor="middle">
                 Four gates
               </text>
@@ -582,11 +701,7 @@ export function LaunchGraphic() {
                  all visibility in this layer. */}
             <g key={wave}>
               {plan.docs.map((doc) => (
-                <BreakingDocument
-                  srcIdx={doc.srcIdx}
-                  delay={doc.delay}
-                  key={doc.srcIdx}
-                />
+                <BreakingDocument doc={doc} key={doc.srcIdx} />
               ))}
               {plan.dots.map((d, i) => (
                 <JourneyDot d={d} loops={d.loops} key={i} />

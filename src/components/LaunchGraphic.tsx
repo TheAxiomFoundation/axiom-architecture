@@ -42,20 +42,252 @@ const SOURCES = [
   { label: "Belgium", sub: "ELI · federal acts", c: 514, h: 30 },
 ];
 
-// The application layer: where verified rules are used.
+// The application layer: where verified rules are used. `dock` is where
+// the green (executable) branch lands; Web's stub is taller because it
+// ALSO receives the pale "whole corpus, browsable" band above its dock.
 const SURFACES = [
-  { label: "Web", sub: "browse & trace", c: 210 },
-  { label: "API + SDKs", sub: "calculate at scale", c: 290 },
-  { label: "AI agents", sub: "cited answers", c: 370 },
+  { label: "Web", sub: "browse & trace", c: 250, dock: 268, stubTop: 208, stubH: 70 },
+  { label: "API + SDKs", sub: "calculate at scale", c: 330, dock: 330, stubTop: 320, stubH: 20 },
+  { label: "AI agents", sub: "cited answers", c: 410, dock: 410, stubTop: 400, stubH: 20 },
 ];
+
+// The whole corpus flows to the web TODAY — browsable and citable even
+// before a provision is encoded. This band is what kills the "1.7M
+// provisions drop out of the pipeline" misreading.
+const BROWSE_BAND = link(412, 152, 196, 1300, 210, 246);
 const RULES_X = 1132;
 const SURFACE_X = 1300;
-const RULES_TOP = 255;
+const RULES_TOP = 295;
 
 // One wave per cycle; dots move at constant velocity within it.
 // SPEED × CYCLE is held ≈ constant vs earlier tunings so all derived
 // keyTime fractions (spotlight windows, color flips) stay valid.
 const CYCLE = 17;
+
+// ── Under the hood: click a pathway, zoom in, see the machinery ──────
+// The overview viewBox glides into the region while a panel explains
+// what actually happens there. The live animation keeps running — you
+// watch the same dots up close.
+const OVERVIEW: Box = [0, 0, 1420, 620];
+
+// Frame a region's CONTENT box so it sits fully inside the panel-free part
+// of the viewport. The svg's aspect is fixed by the viewBox (width: 100%,
+// height: auto), so the math is exact — no hand-tuned zoom targets.
+function computeView(r: Region): Box {
+  const A = 1420 / 620; // viewport aspect
+  const PANEL = 0.38; // fraction covered by the docked panel (incl. margin)
+  const PAD = 16;
+  const [bx, by, bw0, bh0] = r.box;
+  const cw = bw0 + PAD * 2;
+  const ch = bh0 + PAD * 2;
+  const ccx = bx + bw0 / 2;
+  const ccy = by + bh0 / 2;
+  const free = 1 - PANEL;
+  const H = Math.max(ch, cw / (A * free));
+  const W = A * H;
+  const x0 =
+    r.side === "left" ? ccx - W * (PANEL + free / 2) : ccx - W * (free / 2);
+  return [x0, ccy - H / 2, W, H];
+}
+
+type Box = [number, number, number, number];
+
+type Region = {
+  id: string;
+  box: Box; // CONTENT box — everything that must remain visible when zoomed
+  hit: Box; // clickable overlay area
+  side: "left" | "right"; // where the panel docks
+  kicker: string;
+  title: string;
+  steps: Array<{ name: string; detail: string }>;
+  foot: string;
+};
+
+const REGIONS: Region[] = [
+  {
+    id: "capture",
+    box: [15, 25, 600, 530],
+    hit: [15, 30, 580, 525],
+    side: "right",
+    kicker: "01 · capture",
+    title: "From publisher to permanent record",
+    steps: [
+      {
+        name: "Fetch",
+        detail:
+          "Rate-limited downloads from each official site — raw bytes, untouched.",
+      },
+      {
+        name: "Parse",
+        detail:
+          "Every publisher's format — XML, HTML, PDF — becomes typed structure.",
+      },
+      {
+        name: "Address",
+        detail:
+          "Each provision gets a canonical citation path, like us/statute/7/2017/a.",
+      },
+      {
+        name: "Fingerprint & file",
+        detail:
+          "sha256 checksums; originals mirrored to cold storage; provisions loaded to the live corpus.",
+      },
+    ],
+    foot: "A coverage report compares what we expected against what we extracted — incomplete ingests fail loudly.",
+  },
+  {
+    id: "corpus",
+    box: [330, 85, 330, 400],
+    hit: [335, 90, 240, 400],
+    side: "right",
+    kicker: "02 · the corpus",
+    title: "One table of the law",
+    steps: [
+      {
+        name: "1.7M+ provisions",
+        detail: "One row per provision — body text plus 20+ metadata columns.",
+      },
+      {
+        name: "Deterministic identity",
+        detail:
+          "Row ids derive from the citation path, so re-ingesting the same law is a no-op, never a duplicate.",
+      },
+      {
+        name: "The document survives",
+        detail:
+          "Whole snapshots preserve the original bytes; parent links keep each document's tree navigable.",
+      },
+      {
+        name: "Derived indexes",
+        detail:
+          "Navigation, counts, and cross-references all rebuild from provisions in minutes.",
+      },
+    ],
+    foot: "corpus.provisions is the single source of truth — everything downstream is rebuildable.",
+  },
+  {
+    id: "drafting",
+    box: [385, 225, 310, 245],
+    hit: [420, 220, 250, 190],
+    side: "right",
+    kicker: "03 · encoding",
+    title: "AI drafts, the source decides",
+    steps: [
+      {
+        name: "Workspace",
+        detail:
+          "The provision plus its context: sibling sections, cross-references, definitions.",
+      },
+      {
+        name: "Draft",
+        detail:
+          "An AI drafts the executable rule in RuleSpec — an open YAML format.",
+      },
+      {
+        name: "Proof atoms",
+        detail:
+          "Every number and condition must cite its exact source words: 0.30 ← “30 per centum”.",
+      },
+      {
+        name: "Approved names",
+        detail:
+          "A concept registry locks each legal concept to one canonical variable name.",
+      },
+    ],
+    foot: "No citation, no rule — ungrounded values are rejected before validation even starts.",
+  },
+  {
+    id: "gates",
+    box: [655, 220, 340, 270],
+    hit: [680, 220, 240, 300],
+    side: "left",
+    kicker: "04 · validation",
+    title: "The gauntlet, gate by gate",
+    steps: [
+      {
+        name: "1 · It runs",
+        detail: "The Rust rules engine must compile and execute the draft.",
+      },
+      {
+        name: "2 · 50+ checks",
+        detail:
+          "Automated: no unsourced numbers, full subsection coverage, tests pass.",
+      },
+      {
+        name: "3 · It agrees",
+        detail:
+          "Outputs must match independent calculators within tolerance before landing.",
+      },
+      {
+        name: "4 · It’s reviewed",
+        detail:
+          "Independent reviewers sign off — separate from the drafting AI.",
+      },
+    ],
+    foot: "Any failure loops back for redrafting — deterministic repair commands fix the common cases automatically.",
+  },
+  {
+    id: "rulebook",
+    box: [875, 235, 340, 245],
+    hit: [900, 240, 250, 220],
+    side: "left",
+    kicker: "05 · the rulebook",
+    title: "Signed, versioned, citable",
+    steps: [
+      {
+        name: "Signed manifest",
+        detail:
+          "Every accepted rule ships with a cryptographically signed record of how it was made.",
+      },
+      {
+        name: "Versioned provenance",
+        detail:
+          "The encoder version is pinned into the manifest — every rule is reproducible.",
+      },
+      {
+        name: "Durable ids",
+        detail:
+          "us:statutes/7/2017/a#snap_allotment — stable forever, safe to cite.",
+      },
+      {
+        name: "Open",
+        detail: "Anyone can read, run, or challenge any rule in the book.",
+      },
+    ],
+    foot: "3,000+ rules and counting — one per provision, each bundled with its tests.",
+  },
+  {
+    id: "delivery",
+    box: [1095, 170, 325, 320],
+    hit: [1150, 170, 265, 300],
+    side: "left",
+    kicker: "06 · delivery",
+    title: "From rulebook to answers",
+    steps: [
+      {
+        name: "Compose",
+        detail:
+          "Atomic rules assemble into runnable programs — SNAP for a state, income tax for a year.",
+      },
+      {
+        name: "Execute",
+        detail:
+          "The Rust engine computes answers in milliseconds, at population scale.",
+      },
+      {
+        name: "Serve",
+        detail:
+          "Web, API + SDKs, and AI agents — every answer cites its provisions.",
+      },
+      {
+        name: "Stay current",
+        detail:
+          "Re-verified weekly against independent calculators; every legislature watched hourly.",
+      },
+    ],
+    foot: "✓ 99.9% agreement with PolicyEngine · TAXSIM · EUROMOD across 299,993 checks.",
+  },
+];
 
 const REDUCED_MOTION =
   typeof window !== "undefined" &&
@@ -320,7 +552,7 @@ function buildJourney(anchors: Anchor[], startAt: number) {
     const p = anchors[i - 1];
     const q = anchors[i];
     if (q.mode === "loop") {
-      path += ` C 884 402, 656 402, ${q.x} ${q.y}`;
+      path += ` C 884 442, 656 442, ${q.x} ${q.y}`;
       dists.push(420);
     } else if (q.mode === "C") {
       const m = (p.x + q.x) / 2;
@@ -394,29 +626,28 @@ function buildDotJourney(d: WaveDot) {
   const loops = d.loops;
   const s = SOURCE_LINKS[d.src];
   const srcOff = d.lane * (s.h / 2 - 7);
-  const surf = SURFACE_LINKS[d.surface];
-  const surfMid = RULES_TOP + (70 / 3) * (d.surface + 0.5);
 
   const anchors: Anchor[] = [
     // born inside the dissolving document at the stream's mouth
     { x: docCenterX(), y: s.c + d.lane * 7 },
     { x: CORPUS_X, y: s.segC + srcOff, mode: "C" },
-    { x: 412, y: 302 + d.lane * 30, mode: "L" },
-    { x: 650, y: 290 + d.lane * 38, mode: "C" },
-    { x: 662, y: 290 + d.lane * 40, mode: "L" },
-    { x: 880, y: 290 + d.lane * 36, mode: "C" },
+    { x: 412, y: 292 + d.lane * 18, mode: "L" },
+    { x: 650, y: 330 + d.lane * 38, mode: "C" },
+    { x: 662, y: 330 + d.lane * 40, mode: "L" },
+    { x: 880, y: 330 + d.lane * 36, mode: "C" },
     ...(loops
       ? ([
-          { x: 884, y: 338, mode: "L" },
-          { x: 656, y: 348, mode: "loop" },
-          { x: 664, y: 290 + d.lane * 40, mode: "L" },
-          { x: 880, y: 290 + d.lane * 36, mode: "C" },
+          { x: 884, y: 378, mode: "L" },
+          { x: 656, y: 388, mode: "loop" },
+          { x: 664, y: 330 + d.lane * 40, mode: "L" },
+          { x: 880, y: 330 + d.lane * 36, mode: "C" },
         ] as Anchor[])
       : []),
-    { x: 892, y: 285 + d.lane * 28, mode: "L" },
-    { x: 1120, y: 290 + d.lane * 28, mode: "C" },
-    { x: 1132, y: surfMid + d.lane * 8, mode: "L" },
-    { x: SURFACE_X, y: surf.c + d.lane * 6, mode: "C" },
+    { x: 892, y: 325 + d.lane * 28, mode: "L" },
+    { x: 1120, y: 330 + d.lane * 28, mode: "C" },
+    // the trunk ENDS at the rulebook bar — from here the rule broadcasts
+    // to ALL THREE surfaces at once (three branch dots), not one of them
+    { x: 1132, y: 330 + d.lane * 20, mode: "L" },
   ];
 
   const built = buildJourney(anchors, dotStart(d));
@@ -430,39 +661,76 @@ function buildDotJourney(d: WaveDot) {
     arrival: times[times.length - 1],
     // when this dot hits the gates bar (loop dots hit it twice)
     gateCrossings: loops ? [times[5], times[9]] : [times[5]],
+    // the broadcast: at the rulebook, one rule → all three surfaces
+    branches: SURFACE_LINKS.map((surf) => {
+      const y0 = 330 + d.lane * 20;
+      const y1 = surf.dock + d.lane * 5;
+      const dist = Math.hypot(SURFACE_X - RULES_X, y1 - y0) * 1.05;
+      return {
+        path: center(RULES_X, surf.branchMid + d.lane * 6, SURFACE_X, y1),
+        dur: dist / SPEED / CYCLE,
+      };
+    }),
   };
 }
 
 function JourneyDot({ j }: { j: DotJourney }) {
   if (REDUCED_MOTION) return null;
-  const { path, keyTimes, keyPoints, start, amberAt, greenAt, arrival } = j;
+  const { path, keyTimes, keyPoints, start, amberAt, greenAt, arrival, branches } = j;
 
   return (
-    <circle className="lsk-dot" r="2.6" fill="#78716c" opacity="0">
-      <animateMotion
-        dur={`${CYCLE}s`}
-        repeatCount="indefinite"
-        path={path}
-        calcMode="linear"
-        keyPoints={keyPoints}
-        keyTimes={keyTimes}
-      />
-      <animate
-        attributeName="opacity"
-        dur={`${CYCLE}s`}
-        repeatCount="indefinite"
-        values="0;0;1;1;0;0"
-        keyTimes={`0;${start};${Math.min(start + 0.015, arrival)};${Math.max(Math.min(arrival + 0.01, 0.97), arrival)};${Math.max(Math.min(arrival + 0.025, 0.985), arrival + 0.005)};1`}
-      />
-      <animate
-        attributeName="fill"
-        dur={`${CYCLE}s`}
-        repeatCount="indefinite"
-        calcMode="discrete"
-        values="#78716c;#92400e;#166534"
-        keyTimes={`0;${amberAt};${greenAt}`}
-      />
-    </circle>
+    <g>
+      {/* the trunk: source → corpus → gates → the rulebook bar */}
+      <circle className="lsk-dot" r="2.6" fill="#78716c" opacity="0">
+        <animateMotion
+          dur={`${CYCLE}s`}
+          repeatCount="indefinite"
+          path={path}
+          calcMode="linear"
+          keyPoints={keyPoints}
+          keyTimes={keyTimes}
+        />
+        <animate
+          attributeName="opacity"
+          dur={`${CYCLE}s`}
+          repeatCount="indefinite"
+          values="0;0;1;1;0;0"
+          keyTimes={`0;${start};${Math.min(start + 0.015, arrival)};${arrival + 0.002};${arrival + 0.008};1`}
+        />
+        <animate
+          attributeName="fill"
+          dur={`${CYCLE}s`}
+          repeatCount="indefinite"
+          calcMode="discrete"
+          values="#78716c;#92400e;#166534"
+          keyTimes={`0;${amberAt};${greenAt}`}
+        />
+      </circle>
+      {/* the broadcast: at the rulebook, the rule fans to ALL surfaces */}
+      {branches.map((b, k) => {
+        const t0 = arrival;
+        const t1 = Math.min(t0 + b.dur, 0.99);
+        return (
+          <circle className="lsk-dot lsk-dot--branch" r="2.2" key={k} opacity="0">
+            <animateMotion
+              dur={`${CYCLE}s`}
+              repeatCount="indefinite"
+              path={b.path}
+              calcMode="linear"
+              keyPoints="0;0;1;1"
+              keyTimes={`0;${t0};${t1};1`}
+            />
+            <animate
+              attributeName="opacity"
+              dur={`${CYCLE}s`}
+              repeatCount="indefinite"
+              values="0;0;1;1;0;0"
+              keyTimes={`0;${t0};${Math.min(t0 + 0.006, t1)};${t1};${Math.min(t1 + 0.01, 0.995)};1`}
+            />
+          </circle>
+        );
+      })}
+    </g>
   );
 }
 const SURFACE_LINKS = SURFACES.map((s, i) => {
@@ -470,8 +738,9 @@ const SURFACE_LINKS = SURFACES.map((s, i) => {
   const b0 = RULES_TOP + (70 / 3) * (i + 1);
   return {
     ...s,
-    d: link(RULES_X, t0, b0, SURFACE_X, s.c - 10, s.c + 10),
-    cd: center(RULES_X, (t0 + b0) / 2, SURFACE_X, s.c),
+    d: link(RULES_X, t0, b0, SURFACE_X, s.dock - 10, s.dock + 10),
+    cd: center(RULES_X, (t0 + b0) / 2, SURFACE_X, s.dock),
+    branchMid: (t0 + b0) / 2,
   };
 });
 
@@ -512,6 +781,43 @@ export function LaunchGraphic() {
   }, [journeys]);
   const svgRef = useRef<SVGSVGElement | null>(null);
 
+  // ── zoom into a pathway ─────────────────────────────────────────
+  const [zoom, setZoom] = useState<Region | null>(null);
+  const viewBoxRef = useRef<Box>(OVERVIEW);
+
+  useEffect(() => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    const target: Box = zoom ? computeView(zoom) : OVERVIEW;
+    const from = viewBoxRef.current;
+    if (REDUCED_MOTION) {
+      svg.setAttribute("viewBox", target.join(" "));
+      viewBoxRef.current = target;
+      return;
+    }
+    const t0 = performance.now();
+    const DUR = 550;
+    let raf = 0;
+    const ease = (t: number) => 1 - Math.pow(1 - t, 3);
+    const tick = (now: number) => {
+      const p = ease(Math.min((now - t0) / DUR, 1));
+      const cur = from.map((v, i) => v + (target[i] - v) * p) as Box;
+      svg.setAttribute("viewBox", cur.join(" "));
+      viewBoxRef.current = cur;
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [zoom]);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setZoom(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
   // Re-roll the cohort at each cycle boundary. CRITICAL: SMIL animations
   // run on the SVG's OWN clock (svg.getCurrentTime()), which is offset
   // from document.timeline by however long the page existed before this
@@ -545,17 +851,21 @@ export function LaunchGraphic() {
           <p className="launch__sub">
             The whole process in one flow: what we capture, what we encode,
             what survives the gates — and where it goes. Widths are
-            illustrative; the counts are real.
+            illustrative; the counts are real.{" "}
+            <strong className="launch__sub-hint">
+              Click any stage to look under the hood.
+            </strong>
           </p>
         </header>
 
         <div className="lsk__wrap">
           <svg
             ref={svgRef}
-            className="lsk"
-            viewBox="0 0 1420 560"
+            className={`lsk ${zoom ? "lsk--zoomed" : ""}`}
+            onClick={() => zoom && setZoom(null)}
+            viewBox="0 0 1420 620"
             role="img"
-            aria-label="Flow chart: hundreds of official legal sources — federal, state, agency guidance, UK, Canada, Belgium — merge into a corpus of 1.7M+ provisions; a narrower stream is drafted into rules, passes four verification gates (failures loop back for redrafting), emerges as 3,000+ verified signed rules re-tested weekly, and fans out to the web, APIs, and AI agents."
+            aria-label="Flow chart: hundreds of official legal sources — federal, state, agency guidance, UK, Canada, Belgium — merge into a corpus of 1.7M+ provisions. The whole corpus flows to the web, browsable today. A growing stream is additionally encoded into rules (the goal: every provision, executable), passes four verification gates (failures loop back for redrafting), and lands in the rulebook as 3,000+ verified signed rules — each broadcast to every surface at once: web, APIs, and AI agents."
           >
             <defs>
               <filter id="lsk-doc-shadow" x="-40%" y="-40%" width="180%" height="180%">
@@ -639,19 +949,52 @@ export function LaunchGraphic() {
               </text>
             </g>
 
-            {/* corpus → encoding (the working slice) */}
+            {/* corpus → web: EVERYTHING is browsable today, encoded or not.
+                 This is the flow that would otherwise read as "dropped". */}
+            <g className="lsk__stage lsk__stage--2">
+              <path className="lsk-ribbon lsk-ribbon--browse" d={BROWSE_BAND} />
+              <text className="lsk-band-label" x="820" y="200" textAnchor="middle">
+                the whole corpus, browsable today
+              </text>
+              {!REDUCED_MOTION &&
+                [0, 1].map((i) => (
+                  <circle key={i} className="lsk-dot lsk-dot--raw" r="2.4" opacity="0.7">
+                    <animateMotion
+                      dur="9s"
+                      begin={`${-4.5 * i - 1}s`}
+                      repeatCount="indefinite"
+                      path={center(412, 168 + i * 16, 1300, 222 + i * 12)}
+                    />
+                  </circle>
+                ))}
+            </g>
+
+            {/* corpus → encoding (the executable frontier). The dashed
+                 envelope is the GOAL: the entire corpus, executable — the
+                 solid stream grows to fill it. Actual vs target, in chart
+                 grammar. */}
             <g className="lsk__stage lsk__stage--3">
               <path
+                className="lsk-goal"
+                d={link(412, 200, 472, 650, 280, 380)}
+              />
+              <path
                 className="lsk-ribbon lsk-ribbon--draft"
-                d={link(412, 262, 342, 650, 240, 340)}
+                d={link(412, 272, 312, 650, 280, 380)}
               >
                 <Pulse w={WIN.draft} />
               </path>
-              <rect className="lsk-bar lsk-bar--encode" x="650" y="240" width="12" height="100" rx="3" />
-              <text className="lsk-name" x="656" y="207" textAnchor="middle">
+              <text className="lsk-band-label lsk-band-label--frontier" x="520" y="274" textAnchor="middle">
+                encoded so far · growing weekly
+              </text>
+              <text className="lsk-band-label lsk-band-label--goal" x="540" y="452" textAnchor="middle">
+                the goal: every provision, executable
+              </text>
+              <rect className="lsk-bar lsk-bar--encode" x="650" y="280" width="12" height="100" rx="3" />
+              <text className="lsk-name" x="656" y="247" textAnchor="middle">
                 Encoding
               </text>
-              <text className="lsk-eyebrow" x="656" y="224" textAnchor="middle">
+              <text className="lsk-eyebrow" x="656" y="264" textAnchor="middle">
                 tied to the source text
               </text>
             </g>
@@ -660,7 +1003,7 @@ export function LaunchGraphic() {
             <g className="lsk__stage lsk__stage--4">
               <path
                 className="lsk-ribbon lsk-ribbon--encoded"
-                d={link(662, 240, 340, 880, 245, 335)}
+                d={link(662, 280, 380, 880, 285, 375)}
               >
                 <Pulse w={WIN.encoded} />
               </path>
@@ -671,7 +1014,7 @@ export function LaunchGraphic() {
                    re-entries) and never without it */}
               {[0, 1, 2, 3].map((i) => {
                 const segH = (90 - 9) / 4;
-                const y = 245 + i * (segH + 3);
+                const y = 285 + i * (segH + 3);
                 const fill = flashTrack(gateTracks[i], "#166534", "#1c1917");
                 const check = flashTrack(gateTracks[i], "1", "0");
                 return (
@@ -714,22 +1057,22 @@ export function LaunchGraphic() {
                   </g>
                 );
               })}
-              <text className="lsk-name" x="870" y="207" textAnchor="middle">
+              <text className="lsk-name" x="870" y="247" textAnchor="middle">
                 Four gates
               </text>
-              <text className="lsk-eyebrow" x="870" y="224" textAnchor="middle">
+              <text className="lsk-eyebrow" x="870" y="264" textAnchor="middle">
                 run · 50+ checks · compare · review
               </text>
 
               {/* the redraft loop — failures flow back into encoding */}
               <path
                 className="lsk-loop"
-                d="M 886 338 C 886 402, 656 402, 656 348"
+                d="M 886 378 C 886 442, 656 442, 656 388"
                 markerEnd="url(#lsk-loop-arr)"
               >
                 <Pulse w={WIN.loop} />
               </path>
-              <text className="lsk-loop-label" x="771" y="411" textAnchor="middle">
+              <text className="lsk-loop-label" x="771" y="451" textAnchor="middle">
                 ↺ any failure — redrafted
               </text>
             </g>
@@ -738,28 +1081,28 @@ export function LaunchGraphic() {
             <g className="lsk__stage lsk__stage--5">
               <path
                 className="lsk-ribbon lsk-ribbon--verified"
-                d={link(892, 250, 320, 1120, 255, 325)}
+                d={link(892, 290, 360, 1120, 295, 365)}
               >
                 <Pulse w={WIN.verified} />
               </path>
-              <rect className="lsk-bar lsk-bar--rules" x="1120" y="255" width="12" height="70" rx="3" />
-              <text className="lsk-name" x="1072" y="359" textAnchor="middle">
+              <rect className="lsk-bar lsk-bar--rules" x="1120" y="295" width="12" height="70" rx="3" />
+              <text className="lsk-name" x="1072" y="399" textAnchor="middle">
                 The rulebook
               </text>
-              <text className="lsk-eyebrow" x="1072" y="376" textAnchor="middle">
+              <text className="lsk-eyebrow" x="1072" y="416" textAnchor="middle">
                 3,000+ rules · signed &amp; citable
               </text>
-              <text className="lsk-agree" x="1072" y="393" textAnchor="middle">
+              <text className="lsk-agree" x="1072" y="433" textAnchor="middle">
                 ✓ 99.9% agreement with independent calculators
               </text>
-              <text className="lsk-retest" x="1072" y="410" textAnchor="middle">
+              <text className="lsk-retest" x="1072" y="450" textAnchor="middle">
                 re-tested weekly · law watched hourly
               </text>
             </g>
 
             {/* ── stage: the application layer ───────────────── */}
             <g className="lsk__stage lsk__stage--6">
-              <text className="lsk-eyebrow" x="1300" y="172">
+              <text className="lsk-eyebrow" x="1300" y="198">
                 where it&apos;s used
               </text>
               {SURFACE_LINKS.map((s) => (
@@ -770,9 +1113,9 @@ export function LaunchGraphic() {
                   <rect
                     className="lsk-stub"
                     x={SURFACE_X}
-                    y={s.c - 10}
+                    y={s.stubTop}
                     width="8"
-                    height="20"
+                    height={s.stubH}
                     rx="2"
                   />
                   <text className="lsk-srclabel" x={SURFACE_X + 16} y={s.c - 1}>
@@ -783,6 +1126,9 @@ export function LaunchGraphic() {
                   </text>
                 </g>
               ))}
+              <text className="lsk-band-label" x="1180" y="472" textAnchor="middle">
+                every rule, on every surface
+              </text>
             </g>
 
             {/* ── the cohort: a random batch enters together, each dot
@@ -802,7 +1148,75 @@ export function LaunchGraphic() {
                 <JourneyDot j={j} key={i} />
               ))}
             </g>
+
+            {/* ── focus scrim: when zoomed, dim everything outside the
+                 region's content box so the section reads isolated even
+                 when the frame is wide (tall regions like capture) ──── */}
+            {zoom && (
+              <path
+                className="lsk-scrim"
+                fillRule="evenodd"
+                d={`M -1200 -1400 H 3200 V 2200 H -1200 Z M ${zoom.box[0] - 14} ${zoom.box[1] - 14} h ${zoom.box[2] + 28} v ${zoom.box[3] + 28} h ${-(zoom.box[2] + 28)} Z`}
+              />
+            )}
+
+            {/* ── clickable pathways (only in overview) ────────── */}
+            {!zoom &&
+              REGIONS.map((r) => (
+                <g
+                  className="lsk-hit"
+                  key={r.id}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setZoom(r);
+                  }}
+                >
+                  <rect
+                    x={r.hit[0]}
+                    y={r.hit[1]}
+                    width={r.hit[2]}
+                    height={r.hit[3]}
+                    rx="10"
+                  />
+                  {/* label rides ON the outline, with a paper halo so it
+                       never fights the chart's own text */}
+                  <text x={r.hit[0] + 12} y={r.hit[1] + 4}>
+                    {r.kicker} ↗
+                  </text>
+                </g>
+              ))}
           </svg>
+
+          {/* ── the under-the-hood panel ─────────────────────────── */}
+          {zoom && (
+            <aside
+              className={`lgx lgx--${zoom.side}`}
+              role="dialog"
+              aria-label={zoom.title}
+            >
+              <div className="lgx__kicker">{zoom.kicker}</div>
+              <h2 className="lgx__title">{zoom.title}</h2>
+              <ol className="lgx__steps">
+                {zoom.steps.map((step, i) => (
+                  <li className="lgx__step" key={step.name}>
+                    <span className="lgx__step-n">{i + 1}</span>
+                    <div>
+                      <div className="lgx__step-name">{step.name}</div>
+                      <div className="lgx__step-detail">{step.detail}</div>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+              <p className="lgx__foot">{zoom.foot}</p>
+              <button
+                type="button"
+                className="lgx__back"
+                onClick={() => setZoom(null)}
+              >
+                ← back to the overview
+              </button>
+            </aside>
+          )}
         </div>
 
         <footer className="launch__footline">

@@ -1415,10 +1415,247 @@ body::before {
   font-family: var(--f-mono);
   font-size: 10px;
   fill: var(--color-success);
+  stroke: var(--color-paper);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+  paint-order: stroke;
 }
 
 /* a line of the document, highlighted before it detaches as a dot */
 .lsk-docbreak__line--hot {
   stroke: var(--color-accent);
   stroke-width: 3;
+}
+
+/* ── under the hood: clickable pathways + zoom panel ─────────── */
+
+.launch__sub-hint {
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
+.lsk__wrap {
+  position: relative;
+}
+
+.lsk--zoomed {
+  cursor: zoom-out;
+}
+
+.lsk-hit {
+  cursor: zoom-in;
+}
+
+.lsk-hit rect {
+  fill: transparent;
+  stroke: transparent;
+  stroke-width: 1.5;
+  stroke-dasharray: 5 5;
+  transition: stroke 160ms var(--ease-out);
+}
+
+.lsk-hit text {
+  font-family: var(--f-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  fill: var(--color-accent);
+  /* paper halo: masks the chart underneath instead of colliding with it */
+  stroke: var(--color-paper);
+  stroke-width: 4px;
+  stroke-linejoin: round;
+  paint-order: stroke;
+  opacity: 0;
+  transition: opacity 160ms var(--ease-out);
+  pointer-events: none;
+}
+
+.lsk-hit:hover rect {
+  stroke: rgba(146, 64, 14, 0.45);
+}
+
+.lsk-hit:hover text {
+  opacity: 1;
+}
+
+/* the panel */
+
+.lgx {
+  position: absolute;
+  top: 12px;
+  bottom: 12px;
+  width: min(400px, 44%);
+  overflow-y: auto;
+  background: var(--color-paper-elevated);
+  border: 1px solid var(--color-rule);
+  border-radius: 12px;
+  box-shadow: 0 24px 60px -30px rgba(28, 25, 23, 0.5);
+  padding: 22px 24px;
+  animation: lgx-in 0.45s var(--ease-out) both;
+  animation-delay: 0.25s;
+}
+
+.lgx--right {
+  right: 8px;
+}
+
+.lgx--left {
+  left: 8px;
+}
+
+@keyframes lgx-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.lgx__kicker {
+  font-family: var(--f-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+  margin-bottom: 8px;
+}
+
+.lgx__title {
+  margin: 0 0 14px 0;
+  font-family: var(--f-serif);
+  font-weight: 400;
+  font-size: 22px;
+  line-height: 1.15;
+  color: var(--color-ink);
+}
+
+.lgx__steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.lgx__step {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+}
+
+.lgx__step-n {
+  flex-shrink: 0;
+  font-family: var(--f-mono);
+  font-size: 9px;
+  color: var(--color-accent);
+  border: 1px solid rgba(146, 64, 14, 0.4);
+  border-radius: 999px;
+  padding: 1px 7px;
+}
+
+.lgx__step-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+.lgx__step-detail {
+  margin-top: 2px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--color-ink-secondary);
+}
+
+.lgx__foot {
+  margin: 16px 0 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-rule);
+  font-family: var(--f-mono);
+  font-size: 10px;
+  line-height: 1.6;
+  letter-spacing: 0.03em;
+  color: var(--color-ink-muted);
+}
+
+.lgx__back {
+  margin-top: 14px;
+  border: 1px solid var(--color-rule);
+  background: var(--color-paper);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-family: var(--f-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--color-ink-secondary);
+  cursor: pointer;
+  transition: border-color 160ms var(--ease-out), color 160ms var(--ease-out);
+}
+
+.lgx__back:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+@media (max-width: 1020px) {
+  .lgx,
+  .lgx--left,
+  .lgx--right {
+    left: 8px;
+    right: 8px;
+    top: auto;
+    bottom: 8px;
+    width: auto;
+    max-height: 55%;
+  }
+}
+
+/* focus scrim: dims everything outside the zoomed region */
+.lsk-scrim {
+  fill: var(--color-paper);
+  opacity: 0.78;
+  pointer-events: none;
+  animation: launch-fade 0.5s var(--ease-out) 0.2s both;
+}
+
+/* the browsable-corpus band + honest-flow labels */
+.lsk-ribbon--browse {
+  fill: rgba(120, 113, 108, 0.13);
+}
+
+.lsk-band-label {
+  font-family: var(--f-mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  fill: var(--color-ink-muted);
+  /* paper halo: dashed envelope edges, ribbons, and passing dots are
+     masked behind the text instead of crossing it */
+  stroke: var(--color-paper);
+  stroke-width: 3.5px;
+  stroke-linejoin: round;
+  paint-order: stroke;
+}
+
+.lsk-band-label--frontier {
+  fill: var(--color-accent);
+}
+
+.lsk-dot--branch {
+  fill: #166534;
+}
+
+/* the goal envelope: the whole corpus, executable — actual vs target */
+.lsk-goal {
+  fill: none;
+  stroke: rgba(146, 64, 14, 0.32);
+  stroke-width: 1.4;
+  stroke-dasharray: 5 5;
+}
+
+.lsk-band-label--goal {
+  fill: rgba(146, 64, 14, 0.65);
+  font-style: italic;
 }

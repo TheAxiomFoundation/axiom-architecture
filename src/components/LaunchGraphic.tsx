@@ -99,11 +99,12 @@ type WaveDot = {
   jit: number; // small per-dot start offset
   delay: number; // its document's arrival offset
   surface: number;
+  loops: boolean; // fails the gates and rides the redraft loop
 };
 
 type WaveDoc = { srcIdx: number; delay: number };
 
-function makeWave(): { dots: WaveDot[]; loopIdx: number; docs: WaveDoc[] } {
+function makeWave(): { dots: WaveDot[]; docs: WaveDoc[] } {
   // Each wave: one document from EVERY publisher, arriving staggered —
   // the whole fan fires each cycle, and the corpus visibly drinks from
   // all its sources at once. Each document breaks into 2–3 provisions.
@@ -123,14 +124,16 @@ function makeWave(): { dots: WaveDot[]; loopIdx: number; docs: WaveDoc[] } {
         jit: Math.random() * 0.012,
         delay: doc.delay,
         surface: Math.floor(Math.random() * 3),
+        loops: false,
       });
     }
   }
-  return {
-    dots,
-    loopIdx: Math.random() < 0.6 ? Math.floor(Math.random() * dots.length) : -1,
-    docs,
-  };
+  // Every wave redrafts at least one provision; 30% of waves a second.
+  // With 14-21 dots in flight, a single optional failure was invisible.
+  const fails = 1 + (Math.random() < 0.3 ? 1 : 0);
+  const shuffled = [...dots.keys()].sort(() => Math.random() - 0.5);
+  for (const idx of shuffled.slice(0, fails)) dots[idx].loops = true;
+  return { dots, docs };
 }
 
 // The document that breaks apart: appears at the mouth of its source
@@ -579,7 +582,7 @@ export function LaunchGraphic() {
                 />
               ))}
               {plan.dots.map((d, i) => (
-                <JourneyDot d={d} loops={plan.loopIdx === i} key={i} />
+                <JourneyDot d={d} loops={d.loops} key={i} />
               ))}
             </g>
           </svg>

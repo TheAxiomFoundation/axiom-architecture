@@ -63,11 +63,31 @@ const CYCLE = 17;
 // watch the same dots up close.
 const OVERVIEW: Box = [0, 0, 1420, 560];
 
+// Frame a region's CONTENT box so it sits fully inside the panel-free part
+// of the viewport. The svg's aspect is fixed by the viewBox (width: 100%,
+// height: auto), so the math is exact — no hand-tuned zoom targets.
+function computeView(r: Region): Box {
+  const A = 1420 / 560; // viewport aspect
+  const PANEL = 0.38; // fraction covered by the docked panel (incl. margin)
+  const PAD = 16;
+  const [bx, by, bw0, bh0] = r.box;
+  const cw = bw0 + PAD * 2;
+  const ch = bh0 + PAD * 2;
+  const ccx = bx + bw0 / 2;
+  const ccy = by + bh0 / 2;
+  const free = 1 - PANEL;
+  const H = Math.max(ch, cw / (A * free));
+  const W = A * H;
+  const x0 =
+    r.side === "left" ? ccx - W * (PANEL + free / 2) : ccx - W * (free / 2);
+  return [x0, ccy - H / 2, W, H];
+}
+
 type Box = [number, number, number, number];
 
 type Region = {
   id: string;
-  box: Box; // viewBox target
+  box: Box; // CONTENT box — everything that must remain visible when zoomed
   hit: Box; // clickable overlay area
   side: "left" | "right"; // where the panel docks
   kicker: string;
@@ -79,7 +99,7 @@ type Region = {
 const REGIONS: Region[] = [
   {
     id: "capture",
-    box: [10, 25, 640, 540],
+    box: [15, 25, 600, 530],
     hit: [15, 30, 580, 525],
     side: "right",
     kicker: "01 · capture",
@@ -110,7 +130,7 @@ const REGIONS: Region[] = [
   },
   {
     id: "corpus",
-    box: [300, 70, 480, 440],
+    box: [330, 85, 330, 400],
     hit: [335, 90, 240, 400],
     side: "right",
     kicker: "02 · the corpus",
@@ -140,7 +160,7 @@ const REGIONS: Region[] = [
   },
   {
     id: "drafting",
-    box: [380, 140, 400, 300],
+    box: [385, 185, 310, 170],
     hit: [420, 170, 250, 180],
     side: "right",
     kicker: "03 · encoding",
@@ -171,7 +191,7 @@ const REGIONS: Region[] = [
   },
   {
     id: "gates",
-    box: [600, 140, 420, 360],
+    box: [655, 180, 340, 255],
     hit: [680, 180, 240, 300],
     side: "left",
     kicker: "04 · validation",
@@ -201,7 +221,7 @@ const REGIONS: Region[] = [
   },
   {
     id: "rulebook",
-    box: [840, 160, 400, 280],
+    box: [875, 195, 340, 230],
     hit: [900, 200, 250, 220],
     side: "left",
     kicker: "05 · the rulebook",
@@ -231,7 +251,7 @@ const REGIONS: Region[] = [
   },
   {
     id: "delivery",
-    box: [1050, 100, 370, 360],
+    box: [1095, 135, 325, 290],
     hit: [1150, 130, 265, 300],
     side: "left",
     kicker: "06 · delivery",
@@ -724,7 +744,7 @@ export function LaunchGraphic() {
   useEffect(() => {
     const svg = svgRef.current;
     if (!svg) return;
-    const target: Box = zoom ? zoom.box : OVERVIEW;
+    const target: Box = zoom ? computeView(zoom) : OVERVIEW;
     const from = viewBoxRef.current;
     if (REDUCED_MOTION) {
       svg.setAttribute("viewBox", target.join(" "));
@@ -1070,7 +1090,7 @@ export function LaunchGraphic() {
                   {/* label rides ON the outline, with a paper halo so it
                        never fights the chart's own text */}
                   <text x={r.hit[0] + 12} y={r.hit[1] + 4}>
-                    {r.kicker} · under the hood ↗
+                    {r.kicker} ↗
                   </text>
                 </g>
               ))}

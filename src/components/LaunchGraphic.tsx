@@ -129,10 +129,17 @@ function makeWave(): { dots: WaveDot[]; docs: WaveDoc[] } {
     }
   }
   // Every wave redrafts at least one provision; 30% of waves a second.
-  // With 14-21 dots in flight, a single optional failure was invisible.
+  // Failures are drawn from the EARLY departers (skipping the very first)
+  // so the redraft detour resolves mid-wave — a late-departing failure
+  // would leave the whole cycle waiting on one straggler.
   const fails = 1 + (Math.random() < 0.3 ? 1 : 0);
-  const shuffled = [...dots.keys()].sort(() => Math.random() - 0.5);
-  for (const idx of shuffled.slice(0, fails)) dots[idx].loops = true;
+  const byDeparture = [...dots.keys()].sort(
+    (a, b) => dots[a].delay + dots[a].jit - (dots[b].delay + dots[b].jit),
+  );
+  const earlyPool = byDeparture
+    .slice(1, Math.max(3, Math.ceil(dots.length / 2)))
+    .sort(() => Math.random() - 0.5);
+  for (const idx of earlyPool.slice(0, fails)) dots[idx].loops = true;
   return { dots, docs };
 }
 

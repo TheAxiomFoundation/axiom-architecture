@@ -351,8 +351,47 @@ function buildJourney(anchors: Anchor[], startAt: number) {
   };
 }
 
-function JourneyDot({ d, loops }: { d: WaveDot; loops: boolean }) {
-  if (REDUCED_MOTION) return null;
+// Merge overlapping [a,b] windows so dense traffic reads as a held flash
+// rather than flicker; isolated crossings (stragglers, redraft re-entries)
+// get their own blips.
+function mergeIntervals(iv: Array<[number, number]>): Array<[number, number]> {
+  const sorted = [...iv].sort((p, q) => p[0] - q[0]);
+  const out: Array<[number, number]> = [];
+  for (const [a, b] of sorted) {
+    const last = out[out.length - 1];
+    if (last && a <= last[1] + 0.006) last[1] = Math.max(last[1], b);
+    else out.push([a, b]);
+  }
+  return out;
+}
+
+// Build a SMIL values/keyTimes pair that sits at `off`, switching to `on`
+// during each interval.
+function flashTrack(
+  intervals: Array<[number, number]>,
+  on: string,
+  off: string,
+) {
+  const values: string[] = [off];
+  const times: number[] = [0];
+  let cursor = 0.001;
+  for (const [a0, b0] of intervals) {
+    const a = Math.max(a0, cursor + 0.001);
+    const b = Math.min(Math.max(b0, a + 0.006), 0.985);
+    if (b <= a) continue;
+    times.push(a, Math.min(a + 0.005, b), b, Math.min(b + 0.005, 0.99));
+    values.push(off, on, on, off);
+    cursor = b + 0.005;
+  }
+  times.push(1);
+  values.push(off);
+  return { values: values.join(";"), keyTimes: times.join(";") };
+}
+
+type DotJourney = ReturnType<typeof buildDotJourney>;
+
+function buildDotJourney(d: WaveDot) {
+  const loops = d.loops;
   const s = SOURCE_LINKS[d.src];
   const srcOff = d.lane * (s.h / 2 - 7);
   const surf = SURFACE_LINKS[d.surface];
@@ -380,17 +419,23 @@ function JourneyDot({ d, loops }: { d: WaveDot; loops: boolean }) {
     { x: SURFACE_X, y: surf.c + d.lane * 6, mode: "C" },
   ];
 
-  const { path, keyTimes, keyPoints, times, start } = buildJourney(
-    anchors,
-    dotStart(d),
-  );
+  const built = buildJourney(anchors, dotStart(d));
+  const { times } = built;
+  return {
+    ...built,
+    // grey while raw text, amber once past the encode bar, green once
+    // past the gates — for loop dots, past the SECOND crossing.
+    amberAt: times[4],
+    greenAt: times[loops ? 10 : 6],
+    arrival: times[times.length - 1],
+    // when this dot hits the gates bar (loop dots hit it twice)
+    gateCrossings: loops ? [times[5], times[9]] : [times[5]],
+  };
+}
 
-  // grey while raw text, amber once past the encode bar, green once past
-  // the gates — for loop dots, past the SECOND gates crossing.
-  const amberAt = times[4];
-  const greenAt = times[loops ? 10 : 6];
-  // fade out on arrival — dots deliver and disappear, they don't park
-  const arrival = times[times.length - 1];
+function JourneyDot({ j }: { j: DotJourney }) {
+  if (REDUCED_MOTION) return null;
+  const { path, keyTimes, keyPoints, start, amberAt, greenAt, arrival } = j;
 
   return (
     <circle className="lsk-dot" r="2.6" fill="#78716c" opacity="0">
@@ -451,6 +496,20 @@ const CORPUS_BOTTOM = acc; // 472
 export function LaunchGraphic() {
   const [wave, setWave] = useState(0);
   const plan = useMemo(makeWave, [wave]);
+  const journeys = useMemo(() => plan.dots.map(buildDotJourney), [plan]);
+  // The gates flash exactly when nodes cross them: gate i's window is each
+  // crossing shifted by a small cascade offset, merged.
+  const gateTracks = useMemo(() => {
+    const crossings = journeys.flatMap((j) => j.gateCrossings);
+    return [0, 1, 2, 3].map((i) => {
+      const shift = i * 0.005;
+      return mergeIntervals(
+        crossings.map(
+          (t) => [t + shift - 0.002, t + shift + 0.012] as [number, number],
+        ),
+      );
+    });
+  }, [journeys]);
   const svgRef = useRef<SVGSVGElement | null>(null);
 
   // Re-roll the cohort at each cycle boundary. CRITICAL: SMIL animations
@@ -605,15 +664,18 @@ export function LaunchGraphic() {
               >
                 <Pulse w={WIN.encoded} />
               </path>
-              {/* the four gates, literally: four segments that flash ✓ in
-                   sequence as each cohort passes (page 1, then page 2) */}
+              {/* the four gates, literally: four segments that flash ✓ in a
+                   quick cascade EVERY time nodes cross the bar — windows are
+                   computed from the dots' actual crossing times, so the
+                   checks fire with the traffic (including redraft
+                   re-entries) and never without it */}
               {[0, 1, 2, 3].map((i) => {
                 const segH = (90 - 9) / 4;
                 const y = 245 + i * (segH + 3);
-                const a = 0.355 + i * 0.028;
-                const bb = 0.575 + i * 0.028;
+                const fill = flashTrack(gateTracks[i], "#166534", "#1c1917");
+                const check = flashTrack(gateTracks[i], "1", "0");
                 return (
-                  <g key={i}>
+                  <g key={`${wave}-${i}`}>
                     <rect
                       className="lsk-bar lsk-bar--gates"
                       x="880"
@@ -627,8 +689,8 @@ export function LaunchGraphic() {
                           attributeName="fill"
                           dur={`${CYCLE}s`}
                           repeatCount="indefinite"
-                          values="#1c1917;#1c1917;#166534;#166534;#1c1917;#1c1917;#166534;#166534;#1c1917;#1c1917"
-                          keyTimes={`0;${a};${a + 0.012};${a + 0.042};${a + 0.055};${bb};${bb + 0.012};${bb + 0.042};${bb + 0.055};1`}
+                          values={fill.values}
+                          keyTimes={fill.keyTimes}
                         />
                       )}
                     </rect>
@@ -644,8 +706,8 @@ export function LaunchGraphic() {
                           attributeName="opacity"
                           dur={`${CYCLE}s`}
                           repeatCount="indefinite"
-                          values="0;0;1;1;0;0;1;1;0;0"
-                          keyTimes={`0;${a};${a + 0.012};${a + 0.042};${a + 0.055};${bb};${bb + 0.012};${bb + 0.042};${bb + 0.055};1`}
+                          values={check.values}
+                          keyTimes={check.keyTimes}
                         />
                       </text>
                     )}
@@ -736,8 +798,8 @@ export function LaunchGraphic() {
               {plan.docs.map((doc) => (
                 <BreakingDocument doc={doc} key={doc.srcIdx} />
               ))}
-              {plan.dots.map((d, i) => (
-                <JourneyDot d={d} loops={d.loops} key={i} />
+              {journeys.map((j, i) => (
+                <JourneyDot j={j} key={i} />
               ))}
             </g>
           </svg>

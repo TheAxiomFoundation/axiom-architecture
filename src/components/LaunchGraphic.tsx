@@ -132,8 +132,10 @@ type Anchor = { x: number; y: number; mode?: "C" | "L" | "loop" };
 // Constant velocity: every dot covers path-distance at the same shared
 // speed (SVG units per second). keyTimes are derived from cumulative
 // distance, so time ∝ distance for every segment of every dot — a
-// redrafted dot's longer journey honestly takes longer.
-const SPEED = 175;
+// redrafted dot's longer journey honestly takes longer. 190 leaves the
+// longest journey (far source + redraft loop) comfortable headroom to
+// finish and fade before the wave resets.
+const SPEED = 190;
 
 function buildJourney(anchors: Anchor[], jit: number) {
   let path = `M ${anchors[0].x} ${anchors[0].y}`;
@@ -168,6 +170,7 @@ function buildJourney(anchors: Anchor[], jit: number) {
     keyTimes: [0, ...times, 1].join(";"),
     keyPoints: [0, ...fractions, 1].join(";"),
     times,
+    start,
   };
 }
 
@@ -199,12 +202,17 @@ function JourneyDot({ d, loops }: { d: WaveDot; loops: boolean }) {
     { x: SURFACE_X, y: surf.c + d.lane * 6, mode: "C" },
   ];
 
-  const { path, keyTimes, keyPoints, times } = buildJourney(anchors, d.jit);
+  const { path, keyTimes, keyPoints, times, start } = buildJourney(
+    anchors,
+    d.jit,
+  );
 
   // grey while raw text, amber once past the encode bar, green once past
   // the gates — for loop dots, past the SECOND gates crossing.
   const amberAt = times[4];
   const greenAt = times[loops ? 10 : 6];
+  // fade out on arrival — dots deliver and disappear, they don't park
+  const arrival = times[times.length - 1];
 
   return (
     <circle className="lsk-dot" r="3" fill="#78716c" opacity="0">
@@ -221,7 +229,7 @@ function JourneyDot({ d, loops }: { d: WaveDot; loops: boolean }) {
         dur={`${CYCLE}s`}
         repeatCount="indefinite"
         values="0;0;1;1;0;0"
-        keyTimes={`0;${0.01 + d.jit};${0.025 + d.jit};${0.955 + d.jit};${Math.min(0.97 + d.jit, 0.995)};1`}
+        keyTimes={`0;${start};${Math.min(start + 0.015, arrival)};${Math.min(arrival + 0.008, 0.98)};${Math.min(arrival + 0.022, 0.99)};1`}
       />
       <animate
         attributeName="fill"
@@ -267,21 +275,24 @@ export function LaunchGraphic() {
   const plan = useMemo(makeWave, [wave]);
 
   // Re-roll the cohort at each cycle boundary. SMIL runs on the document
-  // clock, so we align the swap to just after phase zero — the new batch
-  // appears exactly as a fresh wave enters the sources.
+  // clock, so EVERY swap is re-scheduled against that clock rather than a
+  // fixed interval — a raw setInterval drifts (and throttles in background
+  // tabs), which eventually remounted mid-cycle and killed late-flying
+  // loop dots in transit. Self-correcting timeouts keep the swap landing
+  // just after phase zero, when no dot is airborne.
   useEffect(() => {
     if (REDUCED_MOTION) return;
-    let interval: number | undefined;
-    const docTime = Number(document.timeline?.currentTime ?? 0);
-    const toBoundary = CYCLE * 1000 - (docTime % (CYCLE * 1000)) + 80;
-    const timeout = window.setTimeout(() => {
-      setWave((w) => w + 1);
-      interval = window.setInterval(() => setWave((w) => w + 1), CYCLE * 1000);
-    }, toBoundary);
-    return () => {
-      window.clearTimeout(timeout);
-      if (interval !== undefined) window.clearInterval(interval);
+    let timeout: number;
+    const schedule = () => {
+      const docTime = Number(document.timeline?.currentTime ?? 0);
+      const toBoundary = CYCLE * 1000 - (docTime % (CYCLE * 1000)) + 80;
+      timeout = window.setTimeout(() => {
+        setWave((w) => w + 1);
+        schedule();
+      }, toBoundary);
     };
+    schedule();
+    return () => window.clearTimeout(timeout);
   }, []);
 
   return (

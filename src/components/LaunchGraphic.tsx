@@ -1069,6 +1069,17 @@ export function LaunchGraphic() {
               ))}
             </g>
 
+            {/* ── focus scrim: when zoomed, dim everything outside the
+                 region's content box so the section reads isolated even
+                 when the frame is wide (tall regions like capture) ──── */}
+            {zoom && (
+              <path
+                className="lsk-scrim"
+                fillRule="evenodd"
+                d={`M -1200 -1400 H 3200 V 2200 H -1200 Z M ${zoom.box[0] - 14} ${zoom.box[1] - 14} h ${zoom.box[2] + 28} v ${zoom.box[3] + 28} h ${-(zoom.box[2] + 28)} Z`}
+              />
+            )}
+
             {/* ── clickable pathways (only in overview) ────────── */}
             {!zoom &&
               REGIONS.map((r) => (

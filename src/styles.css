@@ -1608,3 +1608,11 @@ body::before {
     max-height: 55%;
   }
 }
+
+/* focus scrim: dims everything outside the zoomed region */
+.lsk-scrim {
+  fill: var(--color-paper);
+  opacity: 0.78;
+  pointer-events: none;
+  animation: launch-fade 0.5s var(--ease-out) 0.2s both;
+}

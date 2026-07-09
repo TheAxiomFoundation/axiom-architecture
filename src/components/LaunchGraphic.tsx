@@ -57,6 +57,211 @@ const RULES_TOP = 255;
 // keyTime fractions (spotlight windows, color flips) stay valid.
 const CYCLE = 17;
 
+// ── Under the hood: click a pathway, zoom in, see the machinery ──────
+// The overview viewBox glides into the region while a panel explains
+// what actually happens there. The live animation keeps running — you
+// watch the same dots up close.
+const OVERVIEW: Box = [0, 0, 1420, 560];
+
+type Box = [number, number, number, number];
+
+type Region = {
+  id: string;
+  box: Box; // viewBox target
+  hit: Box; // clickable overlay area
+  side: "left" | "right"; // where the panel docks
+  kicker: string;
+  title: string;
+  steps: Array<{ name: string; detail: string }>;
+  foot: string;
+};
+
+const REGIONS: Region[] = [
+  {
+    id: "capture",
+    box: [10, 25, 640, 540],
+    hit: [15, 30, 580, 525],
+    side: "right",
+    kicker: "01 · capture",
+    title: "From publisher to permanent record",
+    steps: [
+      {
+        name: "Fetch",
+        detail:
+          "Rate-limited downloads from each official site — raw bytes, untouched.",
+      },
+      {
+        name: "Parse",
+        detail:
+          "Every publisher's format — XML, HTML, PDF — becomes typed structure.",
+      },
+      {
+        name: "Address",
+        detail:
+          "Each provision gets a canonical citation path, like us/statute/7/2017/a.",
+      },
+      {
+        name: "Fingerprint & file",
+        detail:
+          "sha256 checksums; originals mirrored to cold storage; provisions loaded to the live corpus.",
+      },
+    ],
+    foot: "A coverage report compares what we expected against what we extracted — incomplete ingests fail loudly.",
+  },
+  {
+    id: "corpus",
+    box: [300, 70, 480, 440],
+    hit: [335, 90, 240, 400],
+    side: "right",
+    kicker: "02 · the corpus",
+    title: "One table of the law",
+    steps: [
+      {
+        name: "1.7M+ provisions",
+        detail: "One row per provision — body text plus 20+ metadata columns.",
+      },
+      {
+        name: "Deterministic identity",
+        detail:
+          "Row ids derive from the citation path, so re-ingesting the same law is a no-op, never a duplicate.",
+      },
+      {
+        name: "The document survives",
+        detail:
+          "Whole snapshots preserve the original bytes; parent links keep each document's tree navigable.",
+      },
+      {
+        name: "Derived indexes",
+        detail:
+          "Navigation, counts, and cross-references all rebuild from provisions in minutes.",
+      },
+    ],
+    foot: "corpus.provisions is the single source of truth — everything downstream is rebuildable.",
+  },
+  {
+    id: "drafting",
+    box: [380, 140, 400, 300],
+    hit: [420, 170, 250, 180],
+    side: "right",
+    kicker: "03 · encoding",
+    title: "AI drafts, the source decides",
+    steps: [
+      {
+        name: "Workspace",
+        detail:
+          "The provision plus its context: sibling sections, cross-references, definitions.",
+      },
+      {
+        name: "Draft",
+        detail:
+          "An AI drafts the executable rule in RuleSpec — an open YAML format.",
+      },
+      {
+        name: "Proof atoms",
+        detail:
+          "Every number and condition must cite its exact source words: 0.30 ← “30 per centum”.",
+      },
+      {
+        name: "Approved names",
+        detail:
+          "A concept registry locks each legal concept to one canonical variable name.",
+      },
+    ],
+    foot: "No citation, no rule — ungrounded values are rejected before validation even starts.",
+  },
+  {
+    id: "gates",
+    box: [600, 140, 420, 360],
+    hit: [680, 180, 240, 300],
+    side: "left",
+    kicker: "04 · validation",
+    title: "The gauntlet, gate by gate",
+    steps: [
+      {
+        name: "1 · It runs",
+        detail: "The Rust rules engine must compile and execute the draft.",
+      },
+      {
+        name: "2 · 50+ checks",
+        detail:
+          "Automated: no unsourced numbers, full subsection coverage, tests pass.",
+      },
+      {
+        name: "3 · It agrees",
+        detail:
+          "Outputs must match independent calculators within tolerance before landing.",
+      },
+      {
+        name: "4 · It’s reviewed",
+        detail:
+          "Independent reviewers sign off — separate from the drafting AI.",
+      },
+    ],
+    foot: "Any failure loops back for redrafting — deterministic repair commands fix the common cases automatically.",
+  },
+  {
+    id: "rulebook",
+    box: [840, 160, 400, 280],
+    hit: [900, 200, 250, 220],
+    side: "left",
+    kicker: "05 · the rulebook",
+    title: "Signed, versioned, citable",
+    steps: [
+      {
+        name: "Signed manifest",
+        detail:
+          "Every accepted rule ships with a cryptographically signed record of how it was made.",
+      },
+      {
+        name: "Versioned provenance",
+        detail:
+          "The encoder version is pinned into the manifest — every rule is reproducible.",
+      },
+      {
+        name: "Durable ids",
+        detail:
+          "us:statutes/7/2017/a#snap_allotment — stable forever, safe to cite.",
+      },
+      {
+        name: "Open",
+        detail: "Anyone can read, run, or challenge any rule in the book.",
+      },
+    ],
+    foot: "3,000+ rules and counting — one per provision, each bundled with its tests.",
+  },
+  {
+    id: "delivery",
+    box: [1050, 100, 370, 360],
+    hit: [1150, 130, 265, 300],
+    side: "left",
+    kicker: "06 · delivery",
+    title: "From rulebook to answers",
+    steps: [
+      {
+        name: "Compose",
+        detail:
+          "Atomic rules assemble into runnable programs — SNAP for a state, income tax for a year.",
+      },
+      {
+        name: "Execute",
+        detail:
+          "The Rust engine computes answers in milliseconds, at population scale.",
+      },
+      {
+        name: "Serve",
+        detail:
+          "Web, API + SDKs, and AI agents — every answer cites its provisions.",
+      },
+      {
+        name: "Stay current",
+        detail:
+          "Re-verified weekly against independent calculators; every legislature watched hourly.",
+      },
+    ],
+    foot: "✓ 99.9% agreement with PolicyEngine · TAXSIM · EUROMOD across 299,993 checks.",
+  },
+];
+
 const REDUCED_MOTION =
   typeof window !== "undefined" &&
   window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -512,6 +717,43 @@ export function LaunchGraphic() {
   }, [journeys]);
   const svgRef = useRef<SVGSVGElement | null>(null);
 
+  // ── zoom into a pathway ─────────────────────────────────────────
+  const [zoom, setZoom] = useState<Region | null>(null);
+  const viewBoxRef = useRef<Box>(OVERVIEW);
+
+  useEffect(() => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    const target: Box = zoom ? zoom.box : OVERVIEW;
+    const from = viewBoxRef.current;
+    if (REDUCED_MOTION) {
+      svg.setAttribute("viewBox", target.join(" "));
+      viewBoxRef.current = target;
+      return;
+    }
+    const t0 = performance.now();
+    const DUR = 550;
+    let raf = 0;
+    const ease = (t: number) => 1 - Math.pow(1 - t, 3);
+    const tick = (now: number) => {
+      const p = ease(Math.min((now - t0) / DUR, 1));
+      const cur = from.map((v, i) => v + (target[i] - v) * p) as Box;
+      svg.setAttribute("viewBox", cur.join(" "));
+      viewBoxRef.current = cur;
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [zoom]);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setZoom(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
   // Re-roll the cohort at each cycle boundary. CRITICAL: SMIL animations
   // run on the SVG's OWN clock (svg.getCurrentTime()), which is offset
   // from document.timeline by however long the page existed before this
@@ -545,14 +787,18 @@ export function LaunchGraphic() {
           <p className="launch__sub">
             The whole process in one flow: what we capture, what we encode,
             what survives the gates — and where it goes. Widths are
-            illustrative; the counts are real.
+            illustrative; the counts are real.{" "}
+            <strong className="launch__sub-hint">
+              Click any stage to look under the hood.
+            </strong>
           </p>
         </header>
 
         <div className="lsk__wrap">
           <svg
             ref={svgRef}
-            className="lsk"
+            className={`lsk ${zoom ? "lsk--zoomed" : ""}`}
+            onClick={() => zoom && setZoom(null)}
             viewBox="0 0 1420 560"
             role="img"
             aria-label="Flow chart: hundreds of official legal sources — federal, state, agency guidance, UK, Canada, Belgium — merge into a corpus of 1.7M+ provisions; a narrower stream is drafted into rules, passes four verification gates (failures loop back for redrafting), emerges as 3,000+ verified signed rules re-tested weekly, and fans out to the web, APIs, and AI agents."
@@ -802,7 +1048,62 @@ export function LaunchGraphic() {
                 <JourneyDot j={j} key={i} />
               ))}
             </g>
+
+            {/* ── clickable pathways (only in overview) ────────── */}
+            {!zoom &&
+              REGIONS.map((r) => (
+                <g
+                  className="lsk-hit"
+                  key={r.id}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setZoom(r);
+                  }}
+                >
+                  <rect
+                    x={r.hit[0]}
+                    y={r.hit[1]}
+                    width={r.hit[2]}
+                    height={r.hit[3]}
+                    rx="10"
+                  />
+                  <text x={r.hit[0] + 10} y={r.hit[1] + 18}>
+                    {r.kicker} · under the hood ↗
+                  </text>
+                </g>
+              ))}
           </svg>
+
+          {/* ── the under-the-hood panel ─────────────────────────── */}
+          {zoom && (
+            <aside
+              className={`lgx lgx--${zoom.side}`}
+              role="dialog"
+              aria-label={zoom.title}
+            >
+              <div className="lgx__kicker">{zoom.kicker}</div>
+              <h2 className="lgx__title">{zoom.title}</h2>
+              <ol className="lgx__steps">
+                {zoom.steps.map((step, i) => (
+                  <li className="lgx__step" key={step.name}>
+                    <span className="lgx__step-n">{i + 1}</span>
+                    <div>
+                      <div className="lgx__step-name">{step.name}</div>
+                      <div className="lgx__step-detail">{step.detail}</div>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+              <p className="lgx__foot">{zoom.foot}</p>
+              <button
+                type="button"
+                className="lgx__back"
+                onClick={() => setZoom(null)}
+              >
+                ← back to the overview
+              </button>
+            </aside>
+          )}
         </div>
 
         <footer className="launch__footline">

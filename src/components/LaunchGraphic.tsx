@@ -103,32 +103,18 @@ type WaveDot = {
 
 type WaveDoc = { srcIdx: number; delay: number };
 
-function pickSource(exclude: Set<number>): number {
-  const pool = SOURCES.map((s, j) => (exclude.has(j) ? 0 : s.h));
-  const total = pool.reduce((a, b) => a + b, 0);
-  let pick = Math.random() * total;
-  for (let j = 0; j < pool.length; j++) {
-    pick -= pool[j];
-    if (pick <= 0) return j;
-  }
-  return 0;
-}
-
 function makeWave(): { dots: WaveDot[]; loopIdx: number; docs: WaveDoc[] } {
-  // Each wave: 1–3 documents from DIFFERENT publishers (weighted by stream
-  // size), each arriving at a slightly different moment and breaking into
-  // its own provisions.
-  const k = 1 + (Math.random() < 0.55 ? 1 : 0) + (Math.random() < 0.3 ? 1 : 0);
-  const chosen = new Set<number>();
-  const docs: WaveDoc[] = Array.from({ length: k }, (_, i) => {
-    const srcIdx = pickSource(chosen);
-    chosen.add(srcIdx);
-    return { srcIdx, delay: i === 0 ? 0 : Math.random() * 0.04 };
-  });
+  // Each wave: one document from EVERY publisher, arriving staggered —
+  // the whole fan fires each cycle, and the corpus visibly drinks from
+  // all its sources at once. Each document breaks into 2–3 provisions.
+  const docs: WaveDoc[] = SOURCES.map((_, srcIdx) => ({
+    srcIdx,
+    delay: Math.random() * 0.05,
+  }));
 
   const dots: WaveDot[] = [];
   for (const doc of docs) {
-    const n = 2 + Math.floor(Math.random() * 3); // 2–4 provisions per doc
+    const n = 2 + Math.floor(Math.random() * 2); // 2–3 provisions per doc
     for (let i = 0; i < n; i++) {
       dots.push({
         src: doc.srcIdx,

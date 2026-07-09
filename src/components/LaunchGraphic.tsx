@@ -42,12 +42,19 @@ const SOURCES = [
   { label: "Belgium", sub: "ELI · federal acts", c: 514, h: 30 },
 ];
 
-// The application layer: where verified rules are used.
+// The application layer: where verified rules are used. `dock` is where
+// the green (executable) branch lands; Web's stub is taller because it
+// ALSO receives the pale "whole corpus, browsable" band above its dock.
 const SURFACES = [
-  { label: "Web", sub: "browse & trace", c: 210 },
-  { label: "API + SDKs", sub: "calculate at scale", c: 290 },
-  { label: "AI agents", sub: "cited answers", c: 370 },
+  { label: "Web", sub: "browse & trace", c: 210, dock: 228, stubTop: 168, stubH: 70 },
+  { label: "API + SDKs", sub: "calculate at scale", c: 290, dock: 290, stubTop: 280, stubH: 20 },
+  { label: "AI agents", sub: "cited answers", c: 370, dock: 370, stubTop: 360, stubH: 20 },
 ];
+
+// The whole corpus flows to the web TODAY — browsable and citable even
+// before a provision is encoded. This band is what kills the "1.7M
+// provisions drop out of the pipeline" misreading.
+const BROWSE_BAND = link(412, 152, 196, 1300, 170, 206);
 const RULES_X = 1132;
 const SURFACE_X = 1300;
 const RULES_TOP = 255;
@@ -251,7 +258,7 @@ const REGIONS: Region[] = [
   },
   {
     id: "delivery",
-    box: [1095, 135, 325, 290],
+    box: [1095, 130, 325, 310],
     hit: [1150, 130, 265, 300],
     side: "left",
     kicker: "06 · delivery",
@@ -619,14 +626,12 @@ function buildDotJourney(d: WaveDot) {
   const loops = d.loops;
   const s = SOURCE_LINKS[d.src];
   const srcOff = d.lane * (s.h / 2 - 7);
-  const surf = SURFACE_LINKS[d.surface];
-  const surfMid = RULES_TOP + (70 / 3) * (d.surface + 0.5);
 
   const anchors: Anchor[] = [
     // born inside the dissolving document at the stream's mouth
     { x: docCenterX(), y: s.c + d.lane * 7 },
     { x: CORPUS_X, y: s.segC + srcOff, mode: "C" },
-    { x: 412, y: 302 + d.lane * 30, mode: "L" },
+    { x: 412, y: 292 + d.lane * 18, mode: "L" },
     { x: 650, y: 290 + d.lane * 38, mode: "C" },
     { x: 662, y: 290 + d.lane * 40, mode: "L" },
     { x: 880, y: 290 + d.lane * 36, mode: "C" },
@@ -640,8 +645,9 @@ function buildDotJourney(d: WaveDot) {
       : []),
     { x: 892, y: 285 + d.lane * 28, mode: "L" },
     { x: 1120, y: 290 + d.lane * 28, mode: "C" },
-    { x: 1132, y: surfMid + d.lane * 8, mode: "L" },
-    { x: SURFACE_X, y: surf.c + d.lane * 6, mode: "C" },
+    // the trunk ENDS at the rulebook bar — from here the rule broadcasts
+    // to ALL THREE surfaces at once (three branch dots), not one of them
+    { x: 1132, y: 290 + d.lane * 20, mode: "L" },
   ];
 
   const built = buildJourney(anchors, dotStart(d));
@@ -655,39 +661,76 @@ function buildDotJourney(d: WaveDot) {
     arrival: times[times.length - 1],
     // when this dot hits the gates bar (loop dots hit it twice)
     gateCrossings: loops ? [times[5], times[9]] : [times[5]],
+    // the broadcast: at the rulebook, one rule → all three surfaces
+    branches: SURFACE_LINKS.map((surf) => {
+      const y0 = 290 + d.lane * 20;
+      const y1 = surf.dock + d.lane * 5;
+      const dist = Math.hypot(SURFACE_X - RULES_X, y1 - y0) * 1.05;
+      return {
+        path: center(RULES_X, surf.branchMid + d.lane * 6, SURFACE_X, y1),
+        dur: dist / SPEED / CYCLE,
+      };
+    }),
   };
 }
 
 function JourneyDot({ j }: { j: DotJourney }) {
   if (REDUCED_MOTION) return null;
-  const { path, keyTimes, keyPoints, start, amberAt, greenAt, arrival } = j;
+  const { path, keyTimes, keyPoints, start, amberAt, greenAt, arrival, branches } = j;
 
   return (
-    <circle className="lsk-dot" r="2.6" fill="#78716c" opacity="0">
-      <animateMotion
-        dur={`${CYCLE}s`}
-        repeatCount="indefinite"
-        path={path}
-        calcMode="linear"
-        keyPoints={keyPoints}
-        keyTimes={keyTimes}
-      />
-      <animate
-        attributeName="opacity"
-        dur={`${CYCLE}s`}
-        repeatCount="indefinite"
-        values="0;0;1;1;0;0"
-        keyTimes={`0;${start};${Math.min(start + 0.015, arrival)};${Math.max(Math.min(arrival + 0.01, 0.97), arrival)};${Math.max(Math.min(arrival + 0.025, 0.985), arrival + 0.005)};1`}
-      />
-      <animate
-        attributeName="fill"
-        dur={`${CYCLE}s`}
-        repeatCount="indefinite"
-        calcMode="discrete"
-        values="#78716c;#92400e;#166534"
-        keyTimes={`0;${amberAt};${greenAt}`}
-      />
-    </circle>
+    <g>
+      {/* the trunk: source → corpus → gates → the rulebook bar */}
+      <circle className="lsk-dot" r="2.6" fill="#78716c" opacity="0">
+        <animateMotion
+          dur={`${CYCLE}s`}
+          repeatCount="indefinite"
+          path={path}
+          calcMode="linear"
+          keyPoints={keyPoints}
+          keyTimes={keyTimes}
+        />
+        <animate
+          attributeName="opacity"
+          dur={`${CYCLE}s`}
+          repeatCount="indefinite"
+          values="0;0;1;1;0;0"
+          keyTimes={`0;${start};${Math.min(start + 0.015, arrival)};${arrival + 0.002};${arrival + 0.008};1`}
+        />
+        <animate
+          attributeName="fill"
+          dur={`${CYCLE}s`}
+          repeatCount="indefinite"
+          calcMode="discrete"
+          values="#78716c;#92400e;#166534"
+          keyTimes={`0;${amberAt};${greenAt}`}
+        />
+      </circle>
+      {/* the broadcast: at the rulebook, the rule fans to ALL surfaces */}
+      {branches.map((b, k) => {
+        const t0 = arrival;
+        const t1 = Math.min(t0 + b.dur, 0.99);
+        return (
+          <circle className="lsk-dot lsk-dot--branch" r="2.2" key={k} opacity="0">
+            <animateMotion
+              dur={`${CYCLE}s`}
+              repeatCount="indefinite"
+              path={b.path}
+              calcMode="linear"
+              keyPoints="0;0;1;1"
+              keyTimes={`0;${t0};${t1};1`}
+            />
+            <animate
+              attributeName="opacity"
+              dur={`${CYCLE}s`}
+              repeatCount="indefinite"
+              values="0;0;1;1;0;0"
+              keyTimes={`0;${t0};${Math.min(t0 + 0.006, t1)};${t1};${Math.min(t1 + 0.01, 0.995)};1`}
+            />
+          </circle>
+        );
+      })}
+    </g>
   );
 }
 const SURFACE_LINKS = SURFACES.map((s, i) => {
@@ -695,8 +738,9 @@ const SURFACE_LINKS = SURFACES.map((s, i) => {
   const b0 = RULES_TOP + (70 / 3) * (i + 1);
   return {
     ...s,
-    d: link(RULES_X, t0, b0, SURFACE_X, s.c - 10, s.c + 10),
-    cd: center(RULES_X, (t0 + b0) / 2, SURFACE_X, s.c),
+    d: link(RULES_X, t0, b0, SURFACE_X, s.dock - 10, s.dock + 10),
+    cd: center(RULES_X, (t0 + b0) / 2, SURFACE_X, s.dock),
+    branchMid: (t0 + b0) / 2,
   };
 });
 
@@ -821,7 +865,7 @@ export function LaunchGraphic() {
             onClick={() => zoom && setZoom(null)}
             viewBox="0 0 1420 560"
             role="img"
-            aria-label="Flow chart: hundreds of official legal sources — federal, state, agency guidance, UK, Canada, Belgium — merge into a corpus of 1.7M+ provisions; a narrower stream is drafted into rules, passes four verification gates (failures loop back for redrafting), emerges as 3,000+ verified signed rules re-tested weekly, and fans out to the web, APIs, and AI agents."
+            aria-label="Flow chart: hundreds of official legal sources — federal, state, agency guidance, UK, Canada, Belgium — merge into a corpus of 1.7M+ provisions. The whole corpus flows to the web, browsable today. A growing stream is additionally encoded into rules, passes four verification gates (failures loop back for redrafting), and lands in the rulebook as 3,000+ verified signed rules — each broadcast to every surface at once: web, APIs, and AI agents."
           >
             <defs>
               <filter id="lsk-doc-shadow" x="-40%" y="-40%" width="180%" height="180%">
@@ -905,14 +949,37 @@ export function LaunchGraphic() {
               </text>
             </g>
 
-            {/* corpus → encoding (the working slice) */}
+            {/* corpus → web: EVERYTHING is browsable today, encoded or not.
+                 This is the flow that would otherwise read as "dropped". */}
+            <g className="lsk__stage lsk__stage--2">
+              <path className="lsk-ribbon lsk-ribbon--browse" d={BROWSE_BAND} />
+              <text className="lsk-band-label" x="820" y="185" textAnchor="middle">
+                the whole corpus, browsable today
+              </text>
+              {!REDUCED_MOTION &&
+                [0, 1].map((i) => (
+                  <circle key={i} className="lsk-dot lsk-dot--raw" r="2.4" opacity="0.7">
+                    <animateMotion
+                      dur="9s"
+                      begin={`${-4.5 * i - 1}s`}
+                      repeatCount="indefinite"
+                      path={center(412, 168 + i * 16, 1300, 180 + i * 14)}
+                    />
+                  </circle>
+                ))}
+            </g>
+
+            {/* corpus → encoding (the executable frontier) */}
             <g className="lsk__stage lsk__stage--3">
               <path
                 className="lsk-ribbon lsk-ribbon--draft"
-                d={link(412, 262, 342, 650, 240, 340)}
+                d={link(412, 272, 312, 650, 240, 340)}
               >
                 <Pulse w={WIN.draft} />
               </path>
+              <text className="lsk-band-label lsk-band-label--frontier" x="520" y="234" textAnchor="middle">
+                encoded so far · growing weekly
+              </text>
               <rect className="lsk-bar lsk-bar--encode" x="650" y="240" width="12" height="100" rx="3" />
               <text className="lsk-name" x="656" y="207" textAnchor="middle">
                 Encoding
@@ -1025,7 +1092,7 @@ export function LaunchGraphic() {
 
             {/* ── stage: the application layer ───────────────── */}
             <g className="lsk__stage lsk__stage--6">
-              <text className="lsk-eyebrow" x="1300" y="172">
+              <text className="lsk-eyebrow" x="1300" y="158">
                 where it&apos;s used
               </text>
               {SURFACE_LINKS.map((s) => (
@@ -1036,9 +1103,9 @@ export function LaunchGraphic() {
                   <rect
                     className="lsk-stub"
                     x={SURFACE_X}
-                    y={s.c - 10}
+                    y={s.stubTop}
                     width="8"
-                    height="20"
+                    height={s.stubH}
                     rx="2"
                   />
                   <text className="lsk-srclabel" x={SURFACE_X + 16} y={s.c - 1}>
@@ -1049,6 +1116,9 @@ export function LaunchGraphic() {
                   </text>
                 </g>
               ))}
+              <text className="lsk-band-label" x="1180" y="428" textAnchor="middle">
+                every rule, on every surface
+              </text>
             </g>
 
             {/* ── the cohort: a random batch enters together, each dot

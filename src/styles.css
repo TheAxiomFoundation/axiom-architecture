@@ -1616,3 +1616,23 @@ body::before {
   pointer-events: none;
   animation: launch-fade 0.5s var(--ease-out) 0.2s both;
 }
+
+/* the browsable-corpus band + honest-flow labels */
+.lsk-ribbon--browse {
+  fill: rgba(120, 113, 108, 0.13);
+}
+
+.lsk-band-label {
+  font-family: var(--f-mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  fill: var(--color-ink-muted);
+}
+
+.lsk-band-label--frontier {
+  fill: var(--color-accent);
+}
+
+.lsk-dot--branch {
+  fill: #166534;
+}

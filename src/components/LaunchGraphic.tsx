@@ -98,7 +98,7 @@ function Pulse({ w }: { w: readonly [number, number] }) {
 // become dots; mid-wave the document flips and page 2 emits while page 1
 // is crossing the gates — the chart always has material in flight.
 const EMIT_AT = 0.028; // first line highlight, as fraction of cycle
-const LINE_STEP = 0.02; // between line highlights
+const LINE_STEP = 0.016; // between line highlights
 const PAGE2_AT = 0.175; // page-two emission offset
 const FLIP_AT = 0.16; // the page turn
 
@@ -118,20 +118,16 @@ type WaveDoc = { srcIdx: number; delay: number; pages: [number[], number[]] };
 const dotStart = (d: Pick<WaveDot, "delay" | "page" | "line" | "jit">) =>
   EMIT_AT + d.delay + d.page * PAGE2_AT + d.line * LINE_STEP + d.jit;
 
-function pickLines(n: number): number[] {
-  const all = [0, 1, 2, 3].sort(() => Math.random() - 0.5);
-  return all.slice(0, n).sort((a, b) => a - b);
-}
-
 function makeWave(): { dots: WaveDot[]; docs: WaveDoc[] } {
-  // One document from EVERY publisher, arriving staggered; each page
-  // highlights 1–2 of its lines, and each highlighted line becomes a dot.
+  // One document from EVERY publisher, arriving staggered. EVERY line of
+  // every page becomes a node — the document fully converts into its
+  // provisions, line by line.
   const docs: WaveDoc[] = SOURCES.map((_, srcIdx) => ({
     srcIdx,
     delay: Math.random() * 0.05,
     pages: [
-      pickLines(1 + (Math.random() < 0.6 ? 1 : 0)),
-      pickLines(1 + (Math.random() < 0.6 ? 1 : 0)),
+      [0, 1, 2, 3],
+      [0, 1, 2, 3],
     ] as [number[], number[]],
   }));
 
@@ -154,14 +150,15 @@ function makeWave(): { dots: WaveDot[]; docs: WaveDoc[] } {
       });
     });
   }
-  // Every wave redrafts at least one provision; 30% of waves a second.
-  // Failures come from the first few departers (skipping the very first)
-  // so the loop detour still finishes comfortably inside the cycle.
-  const fails = 1 + (Math.random() < 0.3 ? 1 : 0);
+  // Every wave redrafts several provisions (2–4), drawn from the early
+  // departers (skipping the very first) so every loop detour resolves
+  // comfortably inside the cycle — the failures trail each other around
+  // the loop instead of one straggler ending the wave.
+  const fails = 2 + Math.floor(Math.random() * 3);
   const byDeparture = [...dots.keys()].sort(
     (a, b) => dotStart(dots[a]) - dotStart(dots[b]),
   );
-  const earlyPool = byDeparture.slice(1, 6).sort(() => Math.random() - 0.5);
+  const earlyPool = byDeparture.slice(1, 11).sort(() => Math.random() - 0.5);
   for (const idx of earlyPool.slice(0, fails)) dots[idx].loops = true;
   return { dots, docs };
 }
@@ -360,7 +357,7 @@ function JourneyDot({ d, loops }: { d: WaveDot; loops: boolean }) {
   const arrival = times[times.length - 1];
 
   return (
-    <circle className="lsk-dot" r="3" fill="#78716c" opacity="0">
+    <circle className="lsk-dot" r="2.6" fill="#78716c" opacity="0">
       <animateMotion
         dur={`${CYCLE}s`}
         repeatCount="indefinite"

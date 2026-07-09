@@ -1415,6 +1415,10 @@ body::before {
   font-family: var(--f-mono);
   font-size: 10px;
   fill: var(--color-success);
+  stroke: var(--color-paper);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+  paint-order: stroke;
 }
 
 /* a line of the document, highlighted before it detaches as a dot */
@@ -1627,6 +1631,12 @@ body::before {
   font-size: 9px;
   letter-spacing: 0.08em;
   fill: var(--color-ink-muted);
+  /* paper halo: dashed envelope edges, ribbons, and passing dots are
+     masked behind the text instead of crossing it */
+  stroke: var(--color-paper);
+  stroke-width: 3.5px;
+  stroke-linejoin: round;
+  paint-order: stroke;
 }
 
 .lsk-band-label--frontier {

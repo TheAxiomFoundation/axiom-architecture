@@ -256,9 +256,10 @@ function BreakingDocument({ doc }: { doc: WaveDoc }) {
         />
       </rect>
       <DocPage doc={doc} page={0} top={top} />
-      {/* the page turn: a NEW sheet drops in from above the old one,
-           hovers offset for a beat (two outlines, own shadow), then
-           settles exactly on top — page two lives on this sheet */}
+      {/* the page turn: a NEW sheet arrives tilted from above the old
+           one and slowly lays down onto the stack — two outlines and its
+           own shadow while it hovers — then settles flat exactly on top.
+           Page two lives on this sheet. */}
       <g filter="url(#lsk-doc-shadow)">
         <rect x={DOC_X} y={top} width={DOC_W} height={DOC_H} rx="3">
           <animate
@@ -266,7 +267,7 @@ function BreakingDocument({ doc }: { doc: WaveDoc }) {
             dur={`${CYCLE}s`}
             repeatCount="indefinite"
             values="0;0;1;1;0;0"
-            keyTimes={`0;${flip - 0.016};${flip - 0.01};${0.34 + d};${0.375 + d};1`}
+            keyTimes={`0;${flip - 0.038};${flip - 0.03};${0.34 + d};${0.375 + d};1`}
           />
           <animateTransform
             attributeName="transform"
@@ -274,9 +275,20 @@ function BreakingDocument({ doc }: { doc: WaveDoc }) {
             dur={`${CYCLE}s`}
             repeatCount="indefinite"
             calcMode="spline"
-            keySplines="0 0 1 1;0.2 0.8 0.2 1;0 0 1 1"
-            values="4 -11;4 -11;0 0;0 0"
-            keyTimes={`0;${flip - 0.014};${flip};1`}
+            keySplines="0 0 1 1;0.25 0.7 0.3 1;0 0 1 1"
+            values="7 -16;7 -16;0 0;0 0"
+            keyTimes={`0;${flip - 0.036};${flip};1`}
+          />
+          <animateTransform
+            attributeName="transform"
+            type="rotate"
+            additive="sum"
+            dur={`${CYCLE}s`}
+            repeatCount="indefinite"
+            calcMode="spline"
+            keySplines="0 0 1 1;0.25 0.7 0.3 1;0 0 1 1"
+            values={`-9 ${DOC_X} ${top + DOC_H};-9 ${DOC_X} ${top + DOC_H};0 ${DOC_X} ${top + DOC_H};0 ${DOC_X} ${top + DOC_H}`}
+            keyTimes={`0;${flip - 0.036};${flip};1`}
           />
         </rect>
       </g>

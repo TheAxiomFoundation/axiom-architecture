@@ -167,7 +167,7 @@ const REGIONS: Region[] = [
   },
   {
     id: "drafting",
-    box: [385, 185, 310, 170],
+    box: [385, 185, 310, 230],
     hit: [420, 170, 250, 180],
     side: "right",
     kicker: "03 · encoding",
@@ -865,7 +865,7 @@ export function LaunchGraphic() {
             onClick={() => zoom && setZoom(null)}
             viewBox="0 0 1420 560"
             role="img"
-            aria-label="Flow chart: hundreds of official legal sources — federal, state, agency guidance, UK, Canada, Belgium — merge into a corpus of 1.7M+ provisions. The whole corpus flows to the web, browsable today. A growing stream is additionally encoded into rules, passes four verification gates (failures loop back for redrafting), and lands in the rulebook as 3,000+ verified signed rules — each broadcast to every surface at once: web, APIs, and AI agents."
+            aria-label="Flow chart: hundreds of official legal sources — federal, state, agency guidance, UK, Canada, Belgium — merge into a corpus of 1.7M+ provisions. The whole corpus flows to the web, browsable today. A growing stream is additionally encoded into rules (the goal: every provision, executable), passes four verification gates (failures loop back for redrafting), and lands in the rulebook as 3,000+ verified signed rules — each broadcast to every surface at once: web, APIs, and AI agents."
           >
             <defs>
               <filter id="lsk-doc-shadow" x="-40%" y="-40%" width="180%" height="180%">
@@ -969,8 +969,15 @@ export function LaunchGraphic() {
                 ))}
             </g>
 
-            {/* corpus → encoding (the executable frontier) */}
+            {/* corpus → encoding (the executable frontier). The dashed
+                 envelope is the GOAL: the entire corpus, executable — the
+                 solid stream grows to fill it. Actual vs target, in chart
+                 grammar. */}
             <g className="lsk__stage lsk__stage--3">
+              <path
+                className="lsk-goal"
+                d={link(412, 200, 472, 650, 240, 340)}
+              />
               <path
                 className="lsk-ribbon lsk-ribbon--draft"
                 d={link(412, 272, 312, 650, 240, 340)}
@@ -979,6 +986,9 @@ export function LaunchGraphic() {
               </path>
               <text className="lsk-band-label lsk-band-label--frontier" x="520" y="234" textAnchor="middle">
                 encoded so far · growing weekly
+              </text>
+              <text className="lsk-band-label lsk-band-label--goal" x="505" y="400" textAnchor="middle">
+                the goal: every provision, executable
               </text>
               <rect className="lsk-bar lsk-bar--encode" x="650" y="240" width="12" height="100" rx="3" />
               <text className="lsk-name" x="656" y="207" textAnchor="middle">

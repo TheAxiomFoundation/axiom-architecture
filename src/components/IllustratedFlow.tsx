@@ -619,10 +619,10 @@ function sectionOrigin(i: number): [number, number] {
 
 function RulespecFile({ f, i }: { f: (typeof FILES)[number]; i: number }) {
   const origin = sectionOrigin(i);
-  const lane: [number, number] = [712, 245];
-  const exit: [number, number] = [1012, 245];
+  const lane: [number, number] = [712, 274];
+  const exit: [number, number] = [1012, 274];
   const stops: ReadonlyArray<readonly [number, number]> = f.flawed
-    ? [origin, origin, f.slot, f.slot, lane, [ARCHES[2], 245], [ARCHES[2], 245], exit, f.bookSlot, f.bookSlot]
+    ? [origin, origin, f.slot, f.slot, lane, [ARCHES[2], 274], [ARCHES[2], 274], exit, f.bookSlot, f.bookSlot]
     : [origin, origin, f.slot, f.slot, lane, exit, f.bookSlot, f.bookSlot];
   const times = f.flawed
     ? [0, f.spawn, f.spawn + 0.022, f.depart, f.depart + 0.015, 0.577, REDRAFT.resume, REDRAFT.review, f.bookAt, 1]
@@ -808,10 +808,10 @@ function SealedBook() {
 
 // ── act six: everywhere ───────────────────────────────────────────────
 
-const DEVICES: Array<{ tx: number; ty: number; anchor: [number, number]; fly: number }> = [
-  { tx: 1226, ty: 78, anchor: [1272, 112], fly: 0.795 }, // browser
-  { tx: 1312, ty: 230, anchor: [1358, 256], fly: 0.815 }, // terminal
-  { tx: 1222, ty: 362, anchor: [1256, 392], fly: 0.835 }, // agent
+const DEVICES: Array<{ tx: number; ty: number; anchor: [number, number]; badge: [number, number]; fly: number }> = [
+  { tx: 1226, ty: 78, anchor: [1272, 112], badge: [1314, 138], fly: 0.795 }, // browser
+  { tx: 1312, ty: 230, anchor: [1358, 256], badge: [1400, 278], fly: 0.815 }, // terminal
+  { tx: 1222, ty: 362, anchor: [1256, 392], badge: [1284, 404], fly: 0.835 }, // agent
 ];
 
 function Devices() {
@@ -892,8 +892,8 @@ function Devices() {
       })}
 
       {/* arrival marks: a tiny amber rosette stamps each surface */}
-      {DEVICES.map(({ anchor: [ax, ay], fly }, i) => (
-        <g key={i} opacity="0" transform={`translate(${ax}, ${ay})`}>
+      {DEVICES.map(({ badge: [bx, by], fly }, i) => (
+        <g key={i} opacity="0" transform={`translate(${bx}, ${by})`}>
           <animate
             attributeName="opacity"
             dur={`${CYCLE}s`}

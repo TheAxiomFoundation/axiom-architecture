@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { IllustratedFlow } from "./IllustratedFlow";
 import { PosterFrame } from "./PosterFrame";
 
 // External process graphic as a real chart: a hand-drawn Sankey flow.
@@ -782,7 +781,7 @@ export function LaunchGraphic() {
     });
   }, [journeys]);
   const svgRef = useRef<SVGSVGElement | null>(null);
-  const [view, setView] = useState<"chart" | "illustrated" | "poster">("chart");
+  const [view, setView] = useState<"poster" | "chart">("poster");
 
   // ── zoom into a pathway ─────────────────────────────────────────
   const [zoom, setZoom] = useState<Region | null>(null);
@@ -844,23 +843,31 @@ export function LaunchGraphic() {
   }, []);
 
   return (
-    <div className="launch">
+    <div className={`launch ${view === "poster" ? "launch--dark-ok" : ""}`}>
       <div className="launch__poster">
         <header className="launch__header">
           <div className="launch__eyebrow">The Axiom Foundation</div>
           <h1 className="launch__headline">
             From published law to a rule you can <em>trust.</em>
           </h1>
-          <p className="launch__sub">
-            The whole process in one flow: what we capture, what we encode,
-            what survives the gates — and where it goes. Widths are
-            illustrative; the counts are real.{" "}
-            <strong className="launch__sub-hint">
-              Click any stage to look under the hood.
-            </strong>
-          </p>
+          {view === "poster" ? (
+            <p className="launch__sub">
+              One provision of one law, followed end to end — segmented,
+              filed, encoded, checked, sealed, and cited. The counts, the
+              hashes, and the dollar figure are real, from the rulebook.
+            </p>
+          ) : (
+            <p className="launch__sub">
+              The whole process in one flow: what we capture, what we encode,
+              what survives the gates — and where it goes. Widths are
+              illustrative; the counts are real.{" "}
+              <strong className="launch__sub-hint">
+                Click any stage to look under the hood.
+              </strong>
+            </p>
+          )}
           <div className="launch__viewtoggle" role="group" aria-label="View">
-            {(["chart", "illustrated", "poster"] as const).map((v) => (
+            {(["poster", "chart"] as const).map((v) => (
               <button
                 key={v}
                 type="button"
@@ -875,8 +882,6 @@ export function LaunchGraphic() {
 
         {view === "poster" ? (
           <PosterFrame />
-        ) : view === "illustrated" ? (
-          <IllustratedFlow />
         ) : (
         <div className="lsk__wrap">
           <svg

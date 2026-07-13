@@ -47,10 +47,10 @@ const T = {
   xref: [0.235, 0.26],
   enc: [
     { lead: 0.315, text: 0.335, checks: [0.375, 0.39, 0.405, 0.42] },
-    { lead: 0.455, text: 0.475, checks: [0.515, 0.53, 0.605, 0.625] },
-    { lead: 0.645, text: 0.665, checks: [0.7, 0.715, 0.73, 0.745] },
+    { lead: 0.455, text: 0.475, checks: [0.515, 0.53, 0.618, 0.638] },
+    { lead: 0.66, text: 0.675, checks: [0.705, 0.72, 0.735, 0.75] },
   ],
-  redraft: { flag: 0.545, strike: 0.558, gone: 0.578, fixed: 0.585 },
+  redraft: { flag: 0.545, strike: 0.56, gone: 0.588, fixed: 0.596 },
   mod: { head: 0.775, lines: [0.795, 0.81, 0.825], seal: 0.845 },
   down: { head: 0.87, rows: [0.885, 0.905, 0.925] },
   ghostCorpus: 0.34,
@@ -63,7 +63,7 @@ const PHASES = [
   { at: 0.13, name: "Filed in the corpus", sub: "fingerprinted · cross-referenced by other sources · 1.7M+ provisions" },
   { at: 0.315, name: "Encoded, node by node", sub: "statute · regulation · guidance — many sources, one rulespec" },
   { at: 0.505, name: "Validated, encoding by encoding", sub: "run · checks · compare · review — failures redrafted" },
-  { at: 0.775, name: "Composed & sealed", sub: "the rules assemble into a signed module — joining 3,112 others" },
+  { at: 0.775, name: "Composed & sealed", sub: "the rules assemble into a signed module — joining 3,323 others" },
   { at: 0.87, name: "Used downstream", sub: "web · API · AI agents — the same rule, cited" },
 ];
 
@@ -116,6 +116,34 @@ function Between({ a, b }: { a: number; b: number }) {
 }
 
 const O = (visibleWhenStatic = true) => (STATIC ? (visibleWhenStatic ? 1 : 0) : 0);
+
+// faint from the opening beat, full ink when the act arrives
+function Fore({ at, ghost = 0.16 }: { at: number; ghost?: number }) {
+  if (STATIC) return null;
+  return (
+    <animate
+      attributeName="opacity"
+      dur={`${CYCLE}s`}
+      repeatCount="indefinite"
+      calcMode="spline"
+      keySplines="0 0 1 1;0.3 0 0.2 1;0 0 1 1;0.3 0 0.2 1;0 0 1 1;0.3 0 0.2 1;0 0 1 1"
+      values={`0;0;${ghost};${ghost};1;1;0;0`}
+      keyTimes={`0;0.028;0.05;${at};${Math.min(at + 0.016, END)};${END};${CLEAR};1`}
+    />
+  );
+}
+
+function ColumnHead({ x, w, label, at }: { x: number; w: number; label: string; at: number }) {
+  return (
+    <g opacity={O()}>
+      <Fore at={at} />
+      <text style={MONO(11, MUTED)} x={x} y="108" letterSpacing="0.08em">
+        {label}
+      </text>
+      <line x1={x} y1="118" x2={x + w} y2="118" stroke={INK} strokeWidth="0.75" opacity="0.5" />
+    </g>
+  );
+}
 
 // a leader line that draws itself at `at`
 function Leader({ d, at, dim }: { d: string; at: number; dim?: number }) {
@@ -231,9 +259,9 @@ function TheLaw() {
 const C_X = 640;
 const C_W = 200;
 const FILED = [
-  { y: 182, id: "§ 2017(a)", hash: "9f2c…41ab" },
-  { y: 206, id: "§ 2017(b)", hash: "3d84…c210" },
-  { y: 230, id: "§ 2017(c)", hash: "b7a1…0f4e" },
+  { y: 182, id: "§ 2017(a)", hash: "61e0…ac85" },
+  { y: 206, id: "§ 2017(b)", hash: "118e…706a" },
+  { y: 230, id: "§ 2017(c)", hash: "d4df…b72e" },
 ];
 const CTX = [
   { y: 134, t: "§ 2016(g) · 22c8…9d10" },
@@ -246,10 +274,6 @@ function TheCorpus() {
   return (
     <g opacity={O()}>
       <In a={T.corpusHead} dim={T.ghostCorpus} />
-      <text style={MONO(11, MUTED)} x={C_X} y="108" letterSpacing="0.08em">
-        {"THE CORPUS — 1,742,391"}
-      </text>
-      <line x1={C_X} y1="118" x2={C_X + C_W} y2="118" stroke={INK} strokeWidth="0.75" opacity="0.5" />
       {/* the ledger it joins: neighbours already filed */}
       <g opacity={STATIC ? 0.45 : 1}>
         {!STATIC && <In a={T.corpusCtx} max={0.45} />}
@@ -356,6 +380,12 @@ function Rulespecs() {
   return (
     <g opacity={O()}>
       <In a={T.enc[0].lead} dim={T.ghostStubs} rest={0.5} />
+      <g opacity={O()}>
+        <In a={0.63} />
+        <text style={MONO(9.5, MUTED)} x={R_X} y="428">
+          {"compare gate: agrees with PolicyEngine to ±$0.01"}
+        </text>
+      </g>
       {STUBS.map((stub, i) => (
         <g key={stub.name} opacity={O()}>
           <In a={T.enc[i].text} />
@@ -462,13 +492,6 @@ const M_W = 176;
 function TheModule() {
   return (
     <g>
-      <g opacity={O()}>
-        <In a={T.mod.head} />
-        <text style={MONO(11, MUTED)} x={M_X} y="108" letterSpacing="0.08em">
-          {"SNAP — MODULE"}
-        </text>
-        <line x1={M_X} y1="118" x2={M_X + M_W} y2="118" stroke={INK} strokeWidth="0.75" opacity="0.5" />
-      </g>
       {["allotment", "eligibility", "rounding"].map((name, i) => (
         <g key={name} opacity={O()}>
           <In a={T.mod.lines[i]} />
@@ -483,7 +506,7 @@ function TheModule() {
         <In a={T.mod.seal} />
         <line x1={M_X} y1="234" x2={M_X + M_W} y2="234" stroke={INK} strokeWidth="0.75" opacity="0.5" />
         <text style={MONO(9.5, MUTED)} x={M_X} y="256">
-          {"sealed · 9f2c…41ab"}
+          {"sealed · 0c86…8c89"}
         </text>
         <text style={MONO(9.5, MUTED)} x={M_X} y="274">
           {"3 rules · signed · citable"}
@@ -498,8 +521,8 @@ function TheModule() {
         <line x1={M_X} y1="340" x2={M_X + M_W} y2="340" stroke={INK} strokeWidth="0.75" opacity="0.5" />
       </g>
       {[
-        { pre: "web", body: "“Your allotment: $291/mo.”", serif: true },
-        { pre: "api", body: "> snap(hh) → 291", serif: false },
+        { pre: "web", body: "“Your allotment: $478/mo.”", serif: true },
+        { pre: "api", body: "> snap(hh) → 478", serif: false },
         { pre: "agent", body: "…per 7 U.S.C. § 2017(a) ✓", serif: false },
       ].map(({ pre, body, serif }, i) => (
         <g key={pre} opacity={O()}>
@@ -527,9 +550,8 @@ function TheModule() {
 const SHELF_AT = 0.858;
 
 const SHELF_ITEMS = [
-  "· · ·", "liheap 12", "wic 9", "chip 14", "medicaid 96", "ssi 52",
-  "snap 3 ✓", "tanf 44", "eitc 41", "ctc 18", "ptc 11", "uc · uk 74",
-  "ei · ca 23", "· · ·",
+  "· · ·", "uk 156", "nz 36", "be 90", "us-ca 367", "us-co 362",
+  "snap 3 ✓", "us-nc 491", "us-ma 224", "us-fl 123", "us-al 108", "· · ·",
 ];
 const SHELF_Y = 470;
 const SHELF_XS = (() => {
@@ -575,13 +597,33 @@ function RulebookIndex() {
         );
       })}
       <text style={MONO(9.5)} x="1360" y={SHELF_Y} textAnchor="end">
-        {"3,112 rules · growing weekly"}
+        {"3,323 rules · 59 programs · growing weekly"}
       </text>
     </g>
   );
 }
 
 // ── captions & chapter rail ───────────────────────────────────────────
+
+// paper halo so the callout stays legible over the caption underneath
+const HALO: React.CSSProperties = {
+  paintOrder: "stroke",
+  stroke: "var(--color-paper)",
+  strokeWidth: 5,
+  strokeLinejoin: "round",
+};
+
+function RedraftCallout() {
+  if (STATIC) return null;
+  return (
+    <g opacity="0">
+      <Between a={0.548} b={0.652} />
+      <text style={{ ...MONO(9.5, WAX), ...HALO }} x="710" y="524" textAnchor="middle">
+        {"✗ eligibility cites § 2015 — caught by compare · redrafted · re-checked"}
+      </text>
+    </g>
+  );
+}
 
 function Captions() {
   if (STATIC) {
@@ -698,6 +740,9 @@ export function PosterFrame() {
           ONE LAW, ENCODED END TO END
         </text>
         <TheLaw />
+        <ColumnHead x={C_X} w={C_W} label={"THE CORPUS — 1,742,391"} at={T.corpusHead} />
+        <ColumnHead x={R_X} w={240} label={"RULESPECS — ONE PER PROVISION"} at={T.enc[0].lead} />
+        <ColumnHead x={M_X} w={M_W} label={"SNAP — MODULE"} at={T.mod.head} />
         <TheCorpus />
         <EncodeLeaders />
         <SourceFeeds />
@@ -705,6 +750,7 @@ export function PosterFrame() {
         <TheModule />
         <RulebookIndex />
         <Captions />
+        <RedraftCallout />
         {!STATIC && <Chapters onJump={jump} paused={paused} onToggle={toggle} />}
       </svg>
     </div>

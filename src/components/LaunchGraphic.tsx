@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { IllustratedFlow } from "./IllustratedFlow";
+import { PosterFrame } from "./PosterFrame";
 
 // External process graphic as a real chart: a hand-drawn Sankey flow.
 // Ribbon widths carry the story — hundreds of official sources merge into
@@ -781,7 +782,7 @@ export function LaunchGraphic() {
     });
   }, [journeys]);
   const svgRef = useRef<SVGSVGElement | null>(null);
-  const [view, setView] = useState<"chart" | "illustrated">("chart");
+  const [view, setView] = useState<"chart" | "illustrated" | "poster">("chart");
 
   // ── zoom into a pathway ─────────────────────────────────────────
   const [zoom, setZoom] = useState<Region | null>(null);
@@ -859,7 +860,7 @@ export function LaunchGraphic() {
             </strong>
           </p>
           <div className="launch__viewtoggle" role="group" aria-label="View">
-            {(["chart", "illustrated"] as const).map((v) => (
+            {(["chart", "illustrated", "poster"] as const).map((v) => (
               <button
                 key={v}
                 type="button"
@@ -872,7 +873,9 @@ export function LaunchGraphic() {
           </div>
         </header>
 
-        {view === "illustrated" ? (
+        {view === "poster" ? (
+          <PosterFrame />
+        ) : view === "illustrated" ? (
           <IllustratedFlow />
         ) : (
         <div className="lsk__wrap">

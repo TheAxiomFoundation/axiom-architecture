@@ -61,7 +61,7 @@ const T = {
 const PHASES = [
   { at: 0.012, name: "The law, in sections", sub: "a statute is broken into provisions" },
   { at: 0.13, name: "Filed in the corpus", sub: "fingerprinted · cross-referenced by other sources · 1.7M+ provisions" },
-  { at: 0.315, name: "Encoded, node by node", sub: "each provision becomes a rulespec" },
+  { at: 0.315, name: "Encoded, node by node", sub: "statute · regulation · guidance — many sources, one rulespec" },
   { at: 0.505, name: "Validated, encoding by encoding", sub: "run · checks · compare · review — failures redrafted" },
   { at: 0.775, name: "Composed & sealed", sub: "the rules assemble into a signed module" },
   { at: 0.87, name: "Used downstream", sub: "web · API · AI agents — the same rule, cited" },
@@ -229,7 +229,7 @@ const FILED = [
 const CTX = [
   { y: 134, t: "§ 2016(g) · 22c8…9d10" },
   { y: 158, t: "§ 2016(h) · e01f…77b4" },
-  { y: 254, t: "§ 2018(a) · 51d6…08ce" },
+  { y: 254, t: "USDA · TFP 2026 · 4c19…d803" },
   { y: 278, t: "7 C.F.R. 273.10 · 88ac…f532" },
 ];
 
@@ -414,6 +414,33 @@ function EncodeLeaders() {
           : `M ${ax + 6} ${ay} H ${mids[i]} V ${by} H ${bx - 6}`;
         return <Leader key={i} d={d} at={T.enc[i].lead} dim={T.ghostStubs} />;
       })}
+    </g>
+  );
+}
+
+// sources interacting: the corpus lines a rule draws on light up and
+// send their own leaders, converging with the provision's leader at the
+// stub's node — statute + regulation + guidance, combined into one rule.
+const SOURCE_FEEDS = [
+  { from: [808, 250] as const, d: "M 808 250 H 852 V 156 H 864", enc: 0, text: "USDA · TFP 2026 · 4c19…d803", y: 254 },
+  { from: [808, 274] as const, d: "M 808 274 H 860 V 256 H 864", enc: 1, text: "7 C.F.R. 273.10 · 88ac…f532", y: 278 },
+];
+
+function SourceFeeds() {
+  return (
+    <g>
+      {SOURCE_FEEDS.map(({ from, d, enc, text, y }) => (
+        <g key={d}>
+          <Leader d={d} at={T.enc[enc].lead + 0.012} dim={T.ghostStubs} />
+          <g opacity={O(false)}>
+            {!STATIC && <Between a={T.enc[enc].lead + 0.012} b={T.enc[enc].checks[3] + 0.03} />}
+            <text style={MONO(10, WAX)} x={C_X} y={y}>{text}</text>
+          </g>
+          <circle cx={from[0]} cy={from[1]} r="2" fill={INK} opacity={STATIC ? 0.55 : 0}>
+            {!STATIC && <In a={T.enc[enc].lead + 0.012} dim={T.ghostStubs} max={0.55} />}
+          </circle>
+        </g>
+      ))}
     </g>
   );
 }
@@ -604,6 +631,7 @@ export function PosterFrame() {
         <TheLaw />
         <TheCorpus />
         <EncodeLeaders />
+        <SourceFeeds />
         <Rulespecs />
         <TheModule />
         <Captions />

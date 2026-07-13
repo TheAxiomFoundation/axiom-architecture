@@ -1,165 +1,613 @@
-// Option A key-frame — "the document is the interface."
+// "The document is the interface" — the full pipeline in the poster's
+// typographic language. Four columns on a strict grid, one SMIL clock:
 //
-// One real provision of law, rubricated and annotated into its rulespec,
-// the way a fine type specimen annotates a glyph. The law is set as a
-// justified serif block with the operative phrases picked out in chancery
-// amber; hairline leaders carry each phrase across the gutter to the token
-// it becomes in the rule. Beneath the rule: the four gates as a spec-sheet
-// verification row, and the ledger line that makes it citable.
+//   I    the law: a real statute, visibly segmented into provisions
+//   II   the corpus: a ledger the provisions are filed into — where other
+//        sources (amendments, regulations) cross-reference the same lines
+//   III  the rulespecs: each provision encoded node by node, and each
+//        encoding validated before the next (one fails compare and is
+//        redrafted in place)
+//   IV   the composed module, sealed — then quoted downstream on the
+//        web, the API, and by AI agents
 //
-// Static on purpose — this is the poster test. Motion comes later, and
-// only as seasoning.
+// Everything is type, hairline rules, and leader lines. Two typefaces,
+// one amber accent, green only for verdicts. Finished acts recede to
+// ghost opacity; the film ends as one complete, quiet broadsheet.
+
+import { useRef, useState } from "react";
+
+const CYCLE = 32;
+const END = 0.955;
+const CLEAR = 0.982;
+
+const REDUCED_MOTION =
+  typeof window !== "undefined" &&
+  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const STATIC = REDUCED_MOTION;
 
 const INK = "var(--color-ink)";
 const MUTED = "var(--color-ink-muted)";
 const WAX = "var(--color-accent)";
 const OK = "var(--color-success)";
 
-const SERIF: React.CSSProperties = { fontFamily: "var(--f-serif)", fontSize: "17px", fill: INK };
+const SERIF: React.CSSProperties = { fontFamily: "var(--f-serif)", fontSize: "15.5px", fill: INK };
 const MONO = (size: number, fill: string = INK): React.CSSProperties => ({
   fontFamily: "var(--f-mono)",
   fontSize: `${size}px`,
   fill,
 });
 
-// the statute, 7 U.S.C. § 2017(a), broken for a 500px justified measure.
-// Amber = the phrases that become tokens.
-const LINES: Array<Array<{ t: string; rubric?: boolean }>> = [
-  [{ t: "The value of the allotment which State agencies" }],
-  [{ t: "shall be authorized to issue to any households" }],
-  [{ t: "certified as eligible", rubric: true }, { t: " to participate in the" }],
-  [{ t: "supplemental nutrition assistance program shall" }],
-  [{ t: "be equal to the cost to such households of the" }],
-  [{ t: "thrifty food plan", rubric: true }, { t: " reduced by an amount equal" }],
-  [{ t: "to " }, { t: "30 per centum of the household’s income", rubric: true }, { t: "," }],
-  [{ t: "rounded to the nearest lower whole-dollar" }],
-  [{ t: "increment." }],
-];
-const L_X = 90;
-const L_W = 500;
-const L_TOP = 150;
-const LEAD = 30;
+// ── the score ─────────────────────────────────────────────────────────
+const T = {
+  law: 0.012,
+  seg: [0.055, 0.075, 0.095],
+  corpusHead: 0.13,
+  corpusCtx: 0.145,
+  filed: [0.165, 0.185, 0.205],
+  xref: [0.235, 0.26],
+  enc: [
+    { lead: 0.315, text: 0.335, checks: [0.375, 0.39, 0.405, 0.42] },
+    { lead: 0.455, text: 0.475, checks: [0.515, 0.53, 0.605, 0.625] },
+    { lead: 0.645, text: 0.665, checks: [0.7, 0.715, 0.73, 0.745] },
+  ],
+  redraft: { flag: 0.545, strike: 0.558, gone: 0.578, fixed: 0.585 },
+  mod: { head: 0.775, lines: [0.795, 0.81, 0.825], seal: 0.845 },
+  down: { head: 0.87, rows: [0.885, 0.905, 0.925] },
+  ghostCorpus: 0.34,
+  ghostLaw: 0.76,
+  ghostStubs: 0.86,
+};
 
-// leaders: statute line → code token. Orthogonal, hairline, node at each end.
-const LEADERS = [
-  { d: "M 602 204 H 700 V 269 H 792", a: [602, 204], b: [792, 269] }, // eligible
-  { d: "M 602 294 H 756 V 235 H 792", a: [602, 294], b: [792, 235] }, // tfp
-  { d: "M 602 324 H 1160 V 256", a: [602, 324], b: [1160, 256] }, // 30% income
-];
-
-const CHECKS = [
-  { name: "run", detail: "12,408 households" },
-  { name: "checks", detail: "214 assertions" },
-  { name: "compare", detail: "USDA tables · exact" },
-  { name: "review", detail: "2 maintainers" },
+const PHASES = [
+  { at: 0.012, name: "The law, in sections", sub: "a statute is broken into provisions" },
+  { at: 0.13, name: "Filed in the corpus", sub: "fingerprinted · cross-referenced by other sources · 1.7M+ provisions" },
+  { at: 0.315, name: "Encoded, node by node", sub: "each provision becomes a rulespec" },
+  { at: 0.505, name: "Validated, encoding by encoding", sub: "run · checks · compare · review — failures redrafted" },
+  { at: 0.775, name: "Composed & sealed", sub: "the rules assemble into a signed module" },
+  { at: 0.87, name: "Used downstream", sub: "web · API · AI agents — the same rule, cited" },
 ];
 
-export function PosterFrame() {
+// ── SMIL helpers (static-aware) ───────────────────────────────────────
+
+// appear at `a`, optionally recede to ghost at `dim`, hold to END
+function In({ a, dim, rest = 0.45, max = 1 }: { a: number; dim?: number; rest?: number; max?: number }) {
+  if (STATIC) return null;
+  if (dim !== undefined) {
+    const g = max * rest;
+    return (
+      <animate
+        attributeName="opacity"
+        dur={`${CYCLE}s`}
+        repeatCount="indefinite"
+        values={`0;0;${max};${max};${g};${g};0;0`}
+        keyTimes={`0;${a};${Math.min(a + 0.014, dim)};${dim};${Math.min(dim + 0.03, END)};${END};${CLEAR};1`}
+      />
+    );
+  }
   return (
-    <div className="ill__wrap">
-      <svg
-        className="ill"
-        viewBox="0 0 1420 540"
-        role="img"
-        aria-label="One provision, encoded: the text of 7 U.S.C. § 2017(a) with its operative phrases highlighted, each connected by a hairline leader to the token it becomes in the snap.allotment rulespec — allotment = tfp_cost minus 0.30 times net income, applies if the household is eligible. Below the rule, the four verification gates report their checks, and a ledger line records the sealed, citable rule."
-      >
-        {/* kicker */}
-        <text style={{ ...MONO(9.5, MUTED), letterSpacing: "0.28em" }} x="710" y="64" textAnchor="middle">
-          ONE PROVISION, ENCODED
-        </text>
+    <animate
+      attributeName="opacity"
+      dur={`${CYCLE}s`}
+      repeatCount="indefinite"
+      values={`0;0;${max};${max};0;0`}
+      keyTimes={`0;${a};${Math.min(a + 0.014, END)};${END};${CLEAR};1`}
+    />
+  );
+}
 
-        {/* ── the law ── */}
+// visible only inside [a, b]
+function Between({ a, b }: { a: number; b: number }) {
+  if (STATIC) return null;
+  return (
+    <animate
+      attributeName="opacity"
+      dur={`${CYCLE}s`}
+      repeatCount="indefinite"
+      values="0;0;1;1;0;0"
+      keyTimes={`0;${a};${a + 0.01};${b};${b + 0.01};1`}
+    />
+  );
+}
+
+const O = (visibleWhenStatic = true) => (STATIC ? (visibleWhenStatic ? 1 : 0) : 0);
+
+// a leader line that draws itself at `at`
+function Leader({ d, at, dim }: { d: string; at: number; dim?: number }) {
+  return (
+    <g opacity={O()}>
+      <In a={at} dim={dim} />
+      <path d={d} fill="none" stroke={INK} strokeWidth="0.75" opacity="0.45" pathLength={1}
+        strokeDasharray="1" strokeDashoffset={STATIC ? 0 : 1}>
+        {!STATIC && (
+          <animate
+            attributeName="stroke-dashoffset"
+            dur={`${CYCLE}s`}
+            repeatCount="indefinite"
+            calcMode="linear"
+            values="1;1;0;0"
+            keyTimes={`0;${at};${at + 0.025};1`}
+          />
+        )}
+      </path>
+    </g>
+  );
+}
+
+// ── column I: the law ─────────────────────────────────────────────────
+
+const L_X = 70;
+const L_W = 470;
+
+type Span = { t: string; rubric?: boolean };
+const SEGMENTS: Array<{ id: string; lines: Array<{ y: number; spans: Span[]; justify: boolean }>; sepY?: number; chipY: number }> = [
+  {
+    id: "(a)",
+    chipY: 146,
+    sepY: 220,
+    lines: [
+      { y: 146, justify: true, spans: [{ t: "(a) The value of the allotment shall be equal to" }] },
+      { y: 174, justify: true, spans: [{ t: "the cost of the " }, { t: "thrifty food plan", rubric: true }, { t: " reduced by" }] },
+      { y: 202, justify: false, spans: [{ t: "30 per centum of the household’s income", rubric: true }, { t: " …" }] },
+    ],
+  },
+  {
+    id: "(b)",
+    chipY: 246,
+    sepY: 292,
+    lines: [
+      { y: 246, justify: true, spans: [{ t: "(b) Allotments shall issue to any household" }] },
+      { y: 274, justify: false, spans: [{ t: "certified as eligible", rubric: true }, { t: " under section 2014 …" }] },
+    ],
+  },
+  {
+    id: "(c)",
+    chipY: 318,
+    lines: [
+      { y: 318, justify: true, spans: [{ t: "(c) … " }, { t: "rounded to the nearest lower", rubric: true }] },
+      { y: 346, justify: false, spans: [{ t: "whole-dollar increment." }] },
+    ],
+  },
+];
+
+function TheLaw() {
+  return (
+    <g>
+      <g opacity={O()}>
+        <In a={T.law} dim={T.ghostLaw} />
         <text style={MONO(11, MUTED)} x={L_X} y="108" letterSpacing="0.08em">
-          {"7 U.S.C. § 2017(a) — VALUE OF ALLOTMENT"}
+          {"7 U.S.C. § 2017 — VALUE OF ALLOTMENT"}
         </text>
-        <line x1={L_X} y1="118" x2={L_X + L_W} y2="118" stroke={INK} strokeWidth="0.75" opacity="0.5" />
-
-        {LINES.map((spans, i) => {
-          const last = i === LINES.length - 1;
-          return (
+        <line x1={L_X} y1="118" x2={L_X + L_W + 20} y2="118" stroke={INK} strokeWidth="0.75" opacity="0.5" />
+        {SEGMENTS.flatMap((seg) =>
+          seg.lines.map((ln, k) => (
             <text
-              key={i}
+              key={`${seg.id}${k}`}
               style={SERIF}
               x={L_X}
-              y={L_TOP + i * LEAD}
-              textLength={last ? undefined : L_W}
+              y={ln.y}
+              textLength={ln.justify ? L_W : undefined}
               lengthAdjust="spacing"
             >
-              {spans.map((s, k) => (
-                <tspan key={k} fill={s.rubric ? WAX : INK}>
+              {ln.spans.map((s, j) => (
+                <tspan key={j} fill={s.rubric ? WAX : INK}>
                   {s.t}
                 </tspan>
               ))}
             </text>
-          );
-        })}
-
+          ))
+        )}
         <text style={MONO(10.5, MUTED)} x={L_X} y="448">
           {"as published · 124 Stat. 3359 · amended through 2026"}
         </text>
+      </g>
+      {/* segmentation: separators + provision chips */}
+      {SEGMENTS.map((seg, i) => (
+        <g key={seg.id} opacity={O()}>
+          <In a={T.seg[i]} dim={T.ghostLaw} />
+          {seg.sepY && (
+            <line x1={L_X} y1={seg.sepY} x2={L_X + L_W + 20} y2={seg.sepY} stroke={INK} strokeWidth="0.5" opacity="0.35" />
+          )}
+          <circle cx={L_X + L_W + 42} cy={seg.chipY - 5} r="2.2" fill={WAX} />
+          <text style={MONO(10, WAX)} x={L_X + L_W + 50} y={seg.chipY}>
+            {seg.id}
+          </text>
+        </g>
+      ))}
+    </g>
+  );
+}
 
-        {/* ── the leaders ── */}
-        {LEADERS.map(({ d, a, b }) => (
-          <g key={d}>
-            <path d={d} fill="none" stroke={INK} strokeWidth="0.75" opacity="0.45" />
-            <circle cx={a[0]} cy={a[1]} r="2.2" fill={INK} opacity="0.55" />
-            <circle cx={b[0]} cy={b[1]} r="2.2" fill={WAX} />
-          </g>
+// ── column II: the corpus ledger ──────────────────────────────────────
+
+const C_X = 640;
+const C_W = 200;
+const FILED = [
+  { y: 182, id: "§ 2017(a)", hash: "9f2c…41ab" },
+  { y: 206, id: "§ 2017(b)", hash: "3d84…c210" },
+  { y: 230, id: "§ 2017(c)", hash: "b7a1…0f4e" },
+];
+const CTX = [
+  { y: 134, t: "§ 2016(g) · 22c8…9d10" },
+  { y: 158, t: "§ 2016(h) · e01f…77b4" },
+  { y: 254, t: "§ 2018(a) · 51d6…08ce" },
+  { y: 278, t: "7 C.F.R. 273.10 · 88ac…f532" },
+];
+
+function TheCorpus() {
+  return (
+    <g opacity={O()}>
+      <In a={T.corpusHead} dim={T.ghostCorpus} />
+      <text style={MONO(11, MUTED)} x={C_X} y="108" letterSpacing="0.08em">
+        {"THE CORPUS — 1,742,391"}
+      </text>
+      <line x1={C_X} y1="118" x2={C_X + C_W} y2="118" stroke={INK} strokeWidth="0.75" opacity="0.5" />
+      {/* the ledger it joins: neighbours already filed */}
+      <g opacity={STATIC ? 0.45 : 1}>
+        {!STATIC && <In a={T.corpusCtx} max={0.45} />}
+        {CTX.map(({ y, t }) => (
+          <text key={y} style={MONO(10, MUTED)} x={C_X} y={y}>
+            {t}
+          </text>
         ))}
+      </g>
+      {/* the three provisions, filed and fingerprinted */}
+      {FILED.map(({ y, id, hash }, i) => (
+        <g key={id} opacity={O()}>
+          <In a={T.filed[i]} />
+          <text style={MONO(10.5)} x={C_X} y={y}>
+            {id}
+            <tspan fill={MUTED}>{"  ·  "}</tspan>
+            <tspan fill={MUTED}>{hash}</tspan>
+          </text>
+        </g>
+      ))}
+      {/* other sources reach into the same ledger lines */}
+      <g opacity={O()}>
+        <In a={T.xref[0]} />
+        <text style={MONO(9.5, WAX)} x={C_X} y="330">
+          {"↳ amended by P.L. 117-2 § 1101"}
+        </text>
+        <path d={`M ${C_X - 10} 326 V ${FILED[0].y - 4} H ${C_X - 4}`} fill="none" stroke={WAX} strokeWidth="0.7" strokeDasharray="2 3" opacity="0.7" />
+      </g>
+      <g opacity={O()}>
+        <In a={T.xref[1]} />
+        <text style={MONO(9.5, WAX)} x={C_X} y="354">
+          {"↳ interpreted by 7 C.F.R. § 273.10(e)"}
+        </text>
+        <path d={`M ${C_X - 16} 350 V ${FILED[1].y - 4} H ${C_X - 4}`} fill="none" stroke={WAX} strokeWidth="0.7" strokeDasharray="2 3" opacity="0.7" />
+      </g>
+    </g>
+  );
+}
 
-        {/* ── the rule ── */}
-        <text style={MONO(11, MUTED)} x="810" y="108" letterSpacing="0.08em">
-          {"SNAP / ALLOTMENT.RULESPEC"}
-        </text>
-        <line x1="810" y1="118" x2="1330" y2="118" stroke={INK} strokeWidth="0.75" opacity="0.5" />
+// ── column III: the rulespecs, encoded and validated ──────────────────
 
-        <text style={MONO(13)} x="810" y="152">
-          <tspan fill={MUTED}>{"rule      "}</tspan>
-          <tspan fill={INK}>snap.allotment</tspan>
-        </text>
-        <text style={MONO(13)} x="810" y="182">
-          <tspan fill={MUTED}>{"source    "}</tspan>
-          <tspan fill={INK}>{"7 U.S.C. § 2017(a)"}</tspan>
-        </text>
+const R_X = 890;
+const STUBS = [
+  {
+    name: "snap/allotment.rulespec",
+    top: 140,
+    parts: [
+      { t: "allotment = ", fill: INK },
+      { t: "tfp", fill: WAX },
+      { t: " − ", fill: INK },
+      { t: "0.30 × net_inc", fill: WAX },
+    ],
+  },
+  {
+    name: "snap/eligibility.rulespec",
+    top: 240,
+    parts: [
+      { t: "eligible = certified(", fill: INK },
+      // token + ")" placed explicitly (the token is the redraft overlay)
+    ],
+  },
+  {
+    name: "snap/rounding.rulespec",
+    top: 340,
+    parts: [
+      { t: "payment = ", fill: INK },
+      { t: "floor(allotment, $1)", fill: WAX },
+    ],
+  },
+];
+const CHECK_NAMES = ["run", "checks", "compare", "review"];
+// x of the flawed token: after "eligible = certified(" at 11.5px mono
+const TOKEN_X = R_X + 21 * 6.92;
 
-        <text style={MONO(16)} x="810" y="240">
-          <tspan fill={INK}>{"allotment = "}</tspan>
-          <tspan fill={WAX}>tfp_cost</tspan>
-          <tspan fill={INK}>{" − "}</tspan>
-          <tspan fill={WAX}>{"0.30 × net_income"}</tspan>
-        </text>
-        <text style={MONO(16)} x="810" y="274">
-          <tspan fill={MUTED}>{"applies_if  "}</tspan>
-          <tspan fill={WAX}>household.eligible</tspan>
-        </text>
+function CheckStrip({ stub, i }: { stub: (typeof STUBS)[number]; i: number }) {
+  const y = stub.top + 46;
+  const flawed = i === 1;
+  return (
+    <g>
+      {CHECK_NAMES.map((name, j) => {
+        const x = R_X + j * 64;
+        const at = T.enc[i].checks[j];
+        return (
+          <g key={name} opacity={O()}>
+            <In a={at} />
+            <text style={MONO(9.5, OK)} x={x} y={y}>✓</text>
+            <text style={MONO(9.5, MUTED)} x={x + 10} y={y}>{name}</text>
+          </g>
+        );
+      })}
+      {/* the compare failure, before its eventual ✓ */}
+      {flawed && !STATIC && (
+        <g opacity="0">
+          <Between a={T.redraft.flag} b={T.redraft.gone} />
+          <text style={MONO(9.5, WAX)} x={R_X + 2 * 64} y={y}>✗</text>
+          <text style={MONO(9.5, WAX)} x={R_X + 2 * 64 + 10} y={y}>compare</text>
+        </g>
+      )}
+    </g>
+  );
+}
 
-        {/* ── the gates, as a spec sheet ── */}
-        <line x1="810" y1="340" x2="1330" y2="340" stroke={INK} strokeWidth="0.75" opacity="0.5" />
-        {CHECKS.map(({ name, detail }, i) => {
-          const x = 810 + i * 140;
-          return (
-            <g key={name}>
-              <text style={MONO(11.5, OK)} x={x} y="368">
-                ✓
+function Rulespecs() {
+  return (
+    <g opacity={O()}>
+      <In a={T.enc[0].lead} dim={T.ghostStubs} rest={0.5} />
+      {STUBS.map((stub, i) => (
+        <g key={stub.name} opacity={O()}>
+          <In a={T.enc[i].text} />
+          <circle cx={R_X - 14} cy={stub.top + 16} r="2.2" fill={WAX} />
+          <text style={MONO(9.5, MUTED)} x={R_X} y={stub.top}>
+            {stub.name}
+          </text>
+          <text style={MONO(11.5)} x={R_X} y={stub.top + 22}>
+            {stub.parts.map((p, k) =>
+              p.t ? (
+                <tspan key={k} fill={p.fill}>
+                  {p.t}
+                </tspan>
+              ) : null
+            )}
+          </text>
+          {/* the flawed token: § 2015, caught, struck, redrafted to § 2014 */}
+          {i === 1 && (
+            <>
+              <text style={MONO(11.5)} x={TOKEN_X + 43} y={stub.top + 22}>{")"}</text>
+              {!STATIC && (
+                <text style={MONO(11.5, WAX)} x={TOKEN_X} y={stub.top + 22} opacity="0">
+                  {"§ 2015"}
+                  <Between a={T.enc[1].text} b={T.redraft.gone} />
+                </text>
+              )}
+              {!STATIC && (
+                <line
+                  x1={TOKEN_X - 2}
+                  y1={stub.top + 18}
+                  x2={TOKEN_X + 44}
+                  y2={stub.top + 18}
+                  stroke={WAX}
+                  strokeWidth="1.8"
+                  opacity="0"
+                >
+                  <Between a={T.redraft.strike} b={T.redraft.gone} />
+                </line>
+              )}
+              <text style={MONO(11.5, WAX)} x={TOKEN_X} y={stub.top + 22} opacity={O()}>
+                {"§ 2014"}
+                <In a={T.redraft.fixed} />
               </text>
-              <text style={MONO(11.5)} x={x + 14} y="368">
-                {name}
-              </text>
-              <text style={MONO(9.5, MUTED)} x={x} y="386">
-                {detail}
-              </text>
-            </g>
-          );
-        })}
+            </>
+          )}
+          <CheckStrip stub={stub} i={i} />
+        </g>
+      ))}
+    </g>
+  );
+}
 
-        {/* ── the ledger line ── */}
-        <line x1="810" y1="424" x2="1330" y2="424" stroke={INK} strokeWidth="0.75" opacity="0.5" />
-        <text style={MONO(10.5, MUTED)} x="810" y="448">
-          {"sealed · sha-256 9f2c…41ab"}
+// segment → rulespec leaders (drawn at each encode beat)
+function EncodeLeaders() {
+  const from = SEGMENTS.map((s) => [L_X + L_W + 42, s.chipY - 5] as const);
+  const to = STUBS.map((s) => [R_X - 14, s.top + 16] as const);
+  const mids = [612, 860, 868];
+  return (
+    <g>
+      {SEGMENTS.map((_, i) => {
+        const [ax, ay] = from[i];
+        const [bx, by] = to[i];
+        const d = i === 0
+          ? `M ${ax + 6} ${ay} H ${mids[0]} V 70 H ${bx - 24} V ${by} H ${bx - 6}`
+          : `M ${ax + 6} ${ay} H ${mids[i]} V ${by} H ${bx - 6}`;
+        return <Leader key={i} d={d} at={T.enc[i].lead} dim={T.ghostStubs} />;
+      })}
+    </g>
+  );
+}
+
+// ── column IV: the module, sealed — then downstream ───────────────────
+
+const M_X = 1180;
+const M_W = 176;
+
+function TheModule() {
+  return (
+    <g>
+      <g opacity={O()}>
+        <In a={T.mod.head} />
+        <text style={MONO(11, MUTED)} x={M_X} y="108" letterSpacing="0.08em">
+          {"SNAP — MODULE"}
         </text>
-        <text style={MONO(10.5, MUTED)} x="1330" y="448" textAnchor="end">
-          {"rule 2,847 of 3,112 · citable anywhere"}
+        <line x1={M_X} y1="118" x2={M_X + M_W} y2="118" stroke={INK} strokeWidth="0.75" opacity="0.5" />
+      </g>
+      {["allotment", "eligibility", "rounding"].map((name, i) => (
+        <g key={name} opacity={O()}>
+          <In a={T.mod.lines[i]} />
+          <text style={MONO(10.5)} x={M_X} y={148 + i * 24}>
+            <tspan fill={MUTED}>{"· "}</tspan>
+            {name}
+            <tspan fill={OK}>{"  ✓"}</tspan>
+          </text>
+        </g>
+      ))}
+      <g opacity={O()}>
+        <In a={T.mod.seal} />
+        <line x1={M_X} y1="234" x2={M_X + M_W} y2="234" stroke={INK} strokeWidth="0.75" opacity="0.5" />
+        <text style={MONO(9.5, MUTED)} x={M_X} y="256">
+          {"sealed · 9f2c…41ab"}
         </text>
+        <text style={MONO(9.5, MUTED)} x={M_X} y="274">
+          {"3 rules · signed · citable"}
+        </text>
+      </g>
+
+      <g opacity={O()}>
+        <In a={T.down.head} />
+        <text style={MONO(11, MUTED)} x={M_X} y="330" letterSpacing="0.08em">
+          {"DOWNSTREAM"}
+        </text>
+        <line x1={M_X} y1="340" x2={M_X + M_W} y2="340" stroke={INK} strokeWidth="0.75" opacity="0.5" />
+      </g>
+      {[
+        { pre: "web", body: "“Your allotment: $291/mo.”", serif: true },
+        { pre: "api", body: "> snap(hh) → 291", serif: false },
+        { pre: "agent", body: "…per 7 U.S.C. § 2017(a) ✓", serif: false },
+      ].map(({ pre, body, serif }, i) => (
+        <g key={pre} opacity={O()}>
+          <In a={T.down.rows[i]} />
+          <text style={MONO(9, MUTED)} x={M_X} y={368 + i * 26}>
+            {pre}
+          </text>
+          <text
+            style={serif ? { fontFamily: "var(--f-serif)", fontSize: "12.5px", fill: INK } : MONO(10.5)}
+            x={M_X + 42}
+            y={368 + i * 26}
+          >
+            {body}
+          </text>
+          <circle cx={M_X + 34} cy={364 + i * 26} r="1.8" fill={OK} />
+        </g>
+      ))}
+    </g>
+  );
+}
+
+// ── captions & chapter rail ───────────────────────────────────────────
+
+function Captions() {
+  if (STATIC) {
+    return (
+      <g>
+        <text className="ill-name" style={{ fontSize: "18px" }} x="710" y="490" textAnchor="middle">
+          From published law to a rule you can trust
+        </text>
+        <text style={MONO(9.5, MUTED)} x="710" y="510" textAnchor="middle">
+          {"segment · file · encode node by node · validate each encoding · compose · deliver"}
+        </text>
+      </g>
+    );
+  }
+  return (
+    <g>
+      {PHASES.map(({ at, name, sub }, i) => {
+        const until = i < PHASES.length - 1 ? PHASES[i + 1].at : END;
+        return (
+          <g key={name} opacity="0">
+            <Between a={at} b={until} />
+            <text className="ill-name" style={{ fontSize: "18px" }} x="710" y="490" textAnchor="middle">
+              {name}
+            </text>
+            <text style={MONO(9.5, MUTED)} x="710" y="510" textAnchor="middle">
+              {sub}
+            </text>
+          </g>
+        );
+      })}
+    </g>
+  );
+}
+
+function Chapters({ onJump, paused, onToggle }: { onJump: (i: number) => void; paused: boolean; onToggle: () => void }) {
+  const px = 710 + 92;
+  return (
+    <g>
+      {PHASES.map(({ at, name }, i) => {
+        const x = 710 - 60 + i * 24;
+        return (
+          <g
+            key={i}
+            role="button"
+            tabIndex={0}
+            aria-label={`Jump to “${name}”`}
+            style={{ cursor: "pointer", outline: "none" }}
+            onClick={() => onJump(i)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") onJump(i);
+            }}
+          >
+            <title>{name}</title>
+            <circle cx={x} cy={524} r={9} fill="transparent" />
+            <circle stroke={INK} strokeWidth="0.9" cx={x} cy="524" r="3" fill="none" opacity="0.5" />
+            <circle cx={x} cy="524" r="3" fill={WAX} opacity="0">
+              <In a={at} />
+            </circle>
+          </g>
+        );
+      })}
+      <g
+        role="button"
+        tabIndex={0}
+        aria-label={paused ? "Play" : "Pause"}
+        style={{ cursor: "pointer", outline: "none" }}
+        onClick={onToggle}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") onToggle();
+        }}
+      >
+        <title>{paused ? "Play" : "Pause"}</title>
+        <circle cx={px} cy={524} r={8} fill="var(--color-paper)" stroke={INK} strokeWidth="0.7" opacity="0.75" />
+        {paused ? (
+          <path d={`M ${px - 2.2} 520.8 L ${px - 2.2} 527.2 L ${px + 3.4} 524 Z`} fill={INK} opacity="0.8" />
+        ) : (
+          <>
+            <rect x={px - 3} y={520.9} width="2.2" height="6.2" fill={INK} opacity="0.8" />
+            <rect x={px + 1} y={520.9} width="2.2" height="6.2" fill={INK} opacity="0.8" />
+          </>
+        )}
+      </g>
+    </g>
+  );
+}
+
+// ── assembly ──────────────────────────────────────────────────────────
+
+export function PosterFrame() {
+  const svgRef = useRef<SVGSVGElement | null>(null);
+  const [paused, setPaused] = useState(false);
+
+  const jump = (i: number) => {
+    svgRef.current?.setCurrentTime((PHASES[i].at + 0.02) * CYCLE);
+  };
+  const toggle = () => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    if (paused) svg.unpauseAnimations();
+    else svg.pauseAnimations();
+    setPaused(!paused);
+  };
+
+  return (
+    <div className="ill__wrap">
+      <svg
+        ref={svgRef}
+        className="ill"
+        viewBox="0 0 1420 552"
+        role="img"
+        aria-label="From published law to a rule you can trust: the text of 7 U.S.C. § 2017 is segmented into provisions (a), (b), (c); each is filed and fingerprinted in the corpus ledger, where other sources — an amending public law and an interpreting regulation — cross-reference the same lines. Each provision is then encoded into its own rulespec and validated by four gates; one encoding cites the wrong section, is caught by compare, and is redrafted. The three rules compose into a sealed, signed module, quoted downstream on the web, via the API, and by AI agents with citations."
+      >
+        <text style={{ ...MONO(9.5, MUTED), letterSpacing: "0.28em" }} x="710" y="56" textAnchor="middle" opacity={STATIC ? 1 : 0.9}>
+          ONE LAW, ENCODED END TO END
+        </text>
+        <TheLaw />
+        <TheCorpus />
+        <EncodeLeaders />
+        <Rulespecs />
+        <TheModule />
+        <Captions />
+        {!STATIC && <Chapters onJump={jump} paused={paused} onToggle={toggle} />}
       </svg>
     </div>
   );

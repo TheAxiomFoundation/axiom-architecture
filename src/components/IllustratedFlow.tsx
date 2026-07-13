@@ -81,7 +81,7 @@ const H = {
 
 // engraved ground shadow: a hatched ellipse, the way stamps sit on hatching
 function Ground({ cx, cy, rx, ry }: { cx: number; cy: number; rx: number; ry?: number }) {
-  return <ellipse cx={cx} cy={cy} rx={rx} ry={ry ?? rx * 0.22} fill={H.horiz} opacity="0.55" />;
+  return <ellipse cx={cx} cy={cy} rx={rx} ry={ry ?? rx * 0.22} fill={H.horiz} opacity="0.35" />;
 }
 
 // an engraved rosette — the guilloché medallion of the piece
@@ -160,10 +160,38 @@ function Vis({ a, b, r = 0.012, max = 1 }: { a: number; b: number; r?: number; m
   );
 }
 
-// hold-to-end visibility: fade in over [a, a+r], then stay at max until the
-// global END, then clear by CLEAR. Use this for anything that should remain
-// visible as the story builds up into one end-to-end graph.
-function VisHold({ a, r = 0.014, max = 1 }: { a: number; r?: number; max?: number }) {
+// hold-to-end visibility: fade in over [a, a+r], then stay until the global
+// END, then clear by CLEAR. Use this for anything that should remain visible
+// as the story builds up into one end-to-end graph.
+//
+// `dim` marks the moment this actor's act ends: it recedes to `rest` opacity
+// so the stage accumulates as a ghosted history while the current act keeps
+// the full ink. This is the clutter valve.
+function VisHold({
+  a,
+  r = 0.014,
+  max = 1,
+  dim,
+  rest = 0.35,
+}: {
+  a: number;
+  r?: number;
+  max?: number;
+  dim?: number;
+  rest?: number;
+}) {
+  if (dim !== undefined) {
+    const restV = max * rest;
+    return (
+      <animate
+        attributeName="opacity"
+        dur={`${CYCLE}s`}
+        repeatCount="indefinite"
+        values={`0;0;${max};${max};${restV};${restV};0;0`}
+        keyTimes={`0;${a};${Math.min(a + r, dim)};${dim};${Math.min(dim + 0.03, END)};${END};${CLEAR};1`}
+      />
+    );
+  }
   return (
     <animate
       attributeName="opacity"
@@ -248,7 +276,6 @@ function Sheet({
 }) {
   return (
     <g>
-      <Ground cx={x + w / 2 + 3} cy={y + h + 6} rx={w * 0.54} ry={w * 0.1} />
       <rect x={x} y={y} width={w} height={h} fill="var(--color-paper-elevated)" stroke={INK} strokeWidth="1.1" />
       <rect x={x + 3.5} y={y + 3.5} width={w - 7} height={h - 7} fill="none" stroke={INK} strokeWidth="0.45" opacity="0.55" />
       {children}
@@ -271,18 +298,18 @@ function Legislature() {
       {cols.map((cx) => (
         <g key={cx}>
           <rect x={cx} y={-36} width={15} height={43} fill="var(--color-paper-elevated)" stroke={INK} strokeWidth="0.9" />
-          <rect x={cx + 8} y={-36} width={7} height={43} fill={H.vert} opacity="0.75" />
+          <rect x={cx + 8} y={-36} width={7} height={43} fill={H.vert} opacity="0.5" />
           <line x1={cx - 2} y1={-36} x2={cx + 17} y2={-36} stroke={INK} strokeWidth="1.1" />
           <line x1={cx - 2} y1={7} x2={cx + 17} y2={7} stroke={INK} strokeWidth="1.1" />
         </g>
       ))}
       {/* interior shade behind the columns */}
-      <rect x={-38} y={-33} width={76} height={38} fill={H.cross} opacity="0.35" />
+      <rect x={-38} y={-33} width={76} height={38} fill={H.cross} opacity="0.18" />
       {/* entablature + pediment with crosshatch shadow under the raking cornice */}
       <rect x={-52} y={-47} width={104} height={11} fill="var(--color-paper-elevated)" stroke={INK} strokeWidth="0.9" />
       <path d="M -58 -47 L 0 -79 L 58 -47 Z" fill="var(--color-paper-elevated)" stroke={INK} strokeWidth="1.1" strokeLinejoin="round" />
       <path d="M -46 -50 L 0 -75 L 46 -50 Z" fill="none" stroke={INK} strokeWidth="0.5" opacity="0.7" />
-      <path d="M -46 -50 L 0 -75 L 46 -50 Z" fill={H.fine} opacity="0.5" />
+      <path d="M -46 -50 L 0 -75 L 46 -50 Z" fill={H.fine} opacity="0.3" />
       <text className="ill-caption" x="2" y="44" textAnchor="middle">legislature</text>
     </g>
   );
@@ -294,14 +321,14 @@ function Agency() {
       <Ground cx={2} cy={26} rx={56} />
       {/* block with a shaded right flank */}
       <rect x={-40} y={-72} width={80} height={92} fill="var(--color-paper-elevated)" stroke={INK} strokeWidth="1.1" />
-      <rect x={22} y={-72} width={18} height={92} fill={H.vert} opacity="0.7" />
+      <rect x={22} y={-72} width={18} height={92} fill={H.vert} opacity="0.45" />
       {/* cornice */}
       <line x1={-45} y1={-72} x2={45} y2={-72} stroke={INK} strokeWidth="1.4" />
       {/* windows: hatched panes in ruled rows */}
-      {[0, 1, 2, 3].map((r) =>
+      {[0, 1, 2].map((r) =>
         [0, 1, 2].map((c) => (
           <g key={`${r}${c}`}>
-            <rect x={-30 + c * 22} y={-62 + r * 17} width={13} height={10} fill={H.fine} stroke={INK} strokeWidth="0.55" opacity="0.9" />
+            <rect x={-30 + c * 22} y={-58 + r * 20} width={13} height={10} fill={H.fine} stroke={INK} strokeWidth="0.55" opacity="0.8" />
           </g>
         ))
       )}
@@ -340,7 +367,7 @@ function Register() {
 function Sources() {
   return (
     <g opacity="0">
-      <VisHold a={0.004} r={0.02} />
+      <VisHold a={0.004} r={0.02} dim={0.13} />
       <Legislature />
       <Agency />
       <Register />
@@ -355,11 +382,11 @@ function Sources() {
 function Corpus() {
   return (
     <g opacity="0" transform="translate(265, 252)">
-      <VisHold a={0.108} r={0.018} />
+      <VisHold a={0.108} r={0.018} dim={0.29} rest={0.4} />
       <Ground cx={0} cy={68} rx={62} />
       {/* chest */}
       <rect x={-46} y={-58} width={92} height={118} fill="var(--color-paper-elevated)" stroke={INK} strokeWidth="1.2" />
-      <rect x={30} y={-58} width={16} height={118} fill={H.vert} opacity="0.65" />
+      <rect x={30} y={-58} width={16} height={118} fill={H.vert} opacity="0.4" />
       {/* drawer rules + pulls */}
       {[-30, 2, 34].map((y) => (
         <g key={y}>
@@ -369,7 +396,7 @@ function Corpus() {
       ))}
       {/* the open drawer: pulled tray with ruled hanging files */}
       <rect x={-54} y={-22} width={108} height={26} fill="var(--color-paper-elevated)" stroke={INK} strokeWidth="1.1" />
-      <rect x={-54} y={-22} width={108} height={5} fill={H.fine} opacity="0.6" />
+      <rect x={-54} y={-22} width={108} height={5} fill={H.fine} opacity="0.4" />
       {[-40, -12, 16, 40].map((x) => (
         <line key={x} x1={x} y1={-14} x2={x + 12} y2={-14} stroke={INK} strokeWidth="1.2" />
       ))}
@@ -408,7 +435,7 @@ function Intake() {
   ];
   return (
     <g opacity="0">
-      <VisHold a={0.02} r={0.02} max={0.45} />
+      <VisHold a={0.02} r={0.02} max={0.45} dim={0.25} rest={0.4} />
       {paths.map((d) => (
         <path
           key={d}
@@ -519,7 +546,7 @@ function TheDocument() {
         scales={[0.16, 0.16, 1, 1]}
         times={[0, 0.24, 0.275, 1]}
       />
-      <VisHold a={0.24} r={0.014} />
+      <VisHold a={0.24} r={0.014} dim={0.45} rest={0.4} />
 
       <Ground cx={4} cy={116} rx={98} ry={16} />
       {/* the certificate page: double-ruled like the frame it lives in */}
@@ -636,7 +663,6 @@ function RulespecFile({ f, i }: { f: (typeof FILES)[number]; i: number }) {
       <Vis a={f.spawn} b={gone} r={0.012} />
       <Ride stops={stops} scales={scales} times={times} />
       {/* the card: a small bordered certificate with a name tab */}
-      <Ground cx={2} cy={30} rx={50} ry={9} />
       <rect x={-46} y={-24} width={92} height={48} fill="var(--color-paper-elevated)" stroke={INK} strokeWidth="1" />
       <rect x={-43} y={-21} width={86} height={42} fill="none" stroke={INK} strokeWidth="0.45" opacity="0.55" />
       <rect x={-46} y={-36} width={64} height={12} fill={H.fine} stroke={INK} strokeWidth="0.8" />
@@ -691,8 +717,8 @@ function Gate({ cx }: { cx: number }) {
       {/* piers */}
       <rect x={cx - 27} y={252} width={13} height={46} fill="var(--color-paper-elevated)" stroke={INK} strokeWidth="1" />
       <rect x={cx + 14} y={252} width={13} height={46} fill="var(--color-paper-elevated)" stroke={INK} strokeWidth="1" />
-      <rect x={cx - 21} y={252} width={7} height={46} fill={H.vert} opacity="0.6" />
-      <rect x={cx + 20} y={252} width={7} height={46} fill={H.vert} opacity="0.6" />
+      <rect x={cx - 21} y={252} width={7} height={46} fill={H.vert} opacity="0.4" />
+      <rect x={cx + 20} y={252} width={7} height={46} fill={H.vert} opacity="0.4" />
       {/* arch */}
       <path
         d={`M ${cx - 27} 252 A 27 26 0 0 1 ${cx + 27} 252`}
@@ -705,7 +731,7 @@ function Gate({ cx }: { cx: number }) {
         fill={H.cross}
         stroke={INK}
         strokeWidth="0.8"
-        opacity="0.75"
+        opacity="0.5"
       />
       {/* voussoir hairlines + keystone */}
       <path d={`M ${cx - 21} 247 A 21 20 0 0 1 ${cx + 21} 247`} fill="none" stroke={INK} strokeWidth="0.5" opacity="0.7" />
@@ -729,7 +755,7 @@ function Gates() {
   const labels = ["run", "checks", "compare", "review"];
   return (
     <g opacity="0">
-      <VisHold a={0.415} r={0.016} />
+      <VisHold a={0.415} r={0.016} dim={0.672} rest={0.45} />
       {ARCHES.map((cx, i) => (
         <g key={cx}>
           <Gate cx={cx} />
@@ -765,7 +791,7 @@ function SealedBook() {
       <Ground cx={4} cy={76} rx={64} />
       {/* the bound volume: cover, hatched spine, ruled page block */}
       <rect x={-52} y={-68} width={104} height={136} fill="var(--color-paper-elevated)" stroke={INK} strokeWidth="1.3" />
-      <rect x={-52} y={-68} width={13} height={136} fill={H.cross} stroke={INK} strokeWidth="0.8" opacity="0.85" />
+      <rect x={-52} y={-68} width={13} height={136} fill={H.cross} stroke={INK} strokeWidth="0.8" opacity="0.6" />
       {/* page block on the fore-edge */}
       {[44, 46.5, 49].map((x) => (
         <line key={x} x1={x} y1={-64} x2={x} y2={64} stroke={INK} strokeWidth="0.5" opacity="0.6" />
@@ -823,7 +849,7 @@ function Devices() {
         <Ground cx={46} cy={70} rx={50} ry={9} />
         <rect x={0} y={0} width={92} height={64} rx={3} fill="var(--color-paper-elevated)" stroke={INK} strokeWidth="1.1" />
         <path d="M 0 16 L 92 16" stroke={INK} strokeWidth="0.8" />
-        <rect x={0} y={0} width={92} height={16} rx={3} fill={H.fine} opacity="0.6" />
+        <rect x={0} y={0} width={92} height={16} rx={3} fill={H.fine} opacity="0.4" />
         <circle cx="9" cy="8" r="1.8" fill="none" stroke={INK} strokeWidth="0.6" />
         <circle cx="16" cy="8" r="1.8" fill="none" stroke={INK} strokeWidth="0.6" />
         <rect x="26" y="5" width="58" height="6" rx="3" fill="none" stroke={INK} strokeWidth="0.5" opacity="0.6" />
@@ -998,16 +1024,16 @@ function EngraveDefs() {
   return (
     <defs>
       <pattern id="e-hatch-fine" width="3.2" height="3.2" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-        <line x1="0" y1="0" x2="0" y2="3.2" stroke={INK} strokeWidth="0.55" opacity="0.38" />
+        <line x1="0" y1="0" x2="0" y2="3.2" stroke={INK} strokeWidth="0.55" opacity="0.26" />
       </pattern>
       <pattern id="e-hatch-cross" width="3" height="3" patternUnits="userSpaceOnUse">
-        <path d="M 0 3 L 3 0 M 0 0 L 3 3" stroke={INK} strokeWidth="0.5" opacity="0.42" />
+        <path d="M 0 3 L 3 0 M 0 0 L 3 3" stroke={INK} strokeWidth="0.5" opacity="0.3" />
       </pattern>
       <pattern id="e-hatch-vert" width="2.8" height="2.8" patternUnits="userSpaceOnUse">
-        <line x1="1.4" y1="0" x2="1.4" y2="2.8" stroke={INK} strokeWidth="0.55" opacity="0.4" />
+        <line x1="1.4" y1="0" x2="1.4" y2="2.8" stroke={INK} strokeWidth="0.55" opacity="0.28" />
       </pattern>
       <pattern id="e-hatch-horiz" width="2.8" height="2.8" patternUnits="userSpaceOnUse">
-        <line x1="0" y1="1.4" x2="2.8" y2="1.4" stroke={INK} strokeWidth="0.5" opacity="0.35" />
+        <line x1="0" y1="1.4" x2="2.8" y2="1.4" stroke={INK} strokeWidth="0.5" opacity="0.24" />
       </pattern>
       <marker id="ill-ref-arr" viewBox="0 0 8 8" refX="6" refY="4" markerWidth="5.5" markerHeight="5.5" orient="auto">
         <path d="M0,0 L8,4 L0,8 z" fill="rgba(163,91,20,0.75)" />

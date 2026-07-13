@@ -63,7 +63,7 @@ const PHASES = [
   { at: 0.13, name: "Filed in the corpus", sub: "fingerprinted · cross-referenced by other sources · 1.7M+ provisions" },
   { at: 0.315, name: "Encoded, node by node", sub: "statute · regulation · guidance — many sources, one rulespec" },
   { at: 0.505, name: "Validated, encoding by encoding", sub: "run · checks · compare · review — failures redrafted" },
-  { at: 0.775, name: "Composed & sealed", sub: "the rules assemble into a signed module" },
+  { at: 0.775, name: "Composed & sealed", sub: "the rules assemble into a signed module — joining 3,112 others" },
   { at: 0.87, name: "Used downstream", sub: "web · API · AI agents — the same rule, cited" },
 ];
 
@@ -176,6 +176,9 @@ function TheLaw() {
         <In a={T.law} dim={T.ghostLaw} />
         <text style={MONO(11, MUTED)} x={L_X} y="108" letterSpacing="0.08em">
           {"7 U.S.C. § 2017 — VALUE OF ALLOTMENT"}
+        </text>
+        <text style={MONO(9, MUTED)} x={L_X + L_W + 20} y="108" textAnchor="end" opacity="0.75">
+          {"chapter 51 · one section of many"}
         </text>
         <line x1={L_X} y1="118" x2={L_X + L_W + 20} y2="118" stroke={INK} strokeWidth="0.75" opacity="0.5" />
         {SEGMENTS.flatMap((seg) =>
@@ -512,16 +515,76 @@ function TheModule() {
   );
 }
 
+// the rulebook, as an index row: the sealed module takes its place in a
+// shelf of modules that continues past both edges. snap flashes amber as
+// it registers, then holds in full ink among its muted neighbours.
+const SHELF_AT = 0.858;
+
+const SHELF_ITEMS = [
+  "· · ·", "liheap 12", "wic 9", "chip 14", "medicaid 96", "ssi 52",
+  "snap 3 ✓", "tanf 44", "eitc 41", "ctc 18", "ptc 11", "uc · uk 74",
+  "ei · ca 23", "· · ·",
+];
+const SHELF_Y = 470;
+const SHELF_XS = (() => {
+  const xs: number[] = [];
+  let x = 70;
+  for (const t of SHELF_ITEMS) {
+    xs.push(x);
+    x += t.length * 5.72 + 18;
+  }
+  return xs;
+})();
+
+function RulebookIndex() {
+  return (
+    <g opacity={O()}>
+      <In a={SHELF_AT} />
+      {SHELF_ITEMS.map((t, i) => {
+        const snap = t.startsWith("snap");
+        return (
+          <g key={i}>
+            <text
+              style={MONO(9.5, snap ? INK : MUTED)}
+              x={SHELF_XS[i]}
+              y={SHELF_Y}
+              opacity={snap ? 1 : 0.8}
+            >
+              {snap ? (
+                <>
+                  {"snap 3"}
+                  <tspan fill={OK}>{" ✓"}</tspan>
+                </>
+              ) : (
+                t
+              )}
+            </text>
+            {snap && !STATIC && (
+              <text style={MONO(9.5, WAX)} x={SHELF_XS[i]} y={SHELF_Y} opacity="0">
+                {"snap 3 ✓"}
+                <Between a={SHELF_AT} b={SHELF_AT + 0.045} />
+              </text>
+            )}
+          </g>
+        );
+      })}
+      <text style={MONO(9.5)} x="1360" y={SHELF_Y} textAnchor="end">
+        {"3,112 rules · growing weekly"}
+      </text>
+    </g>
+  );
+}
+
 // ── captions & chapter rail ───────────────────────────────────────────
 
 function Captions() {
   if (STATIC) {
     return (
       <g>
-        <text className="ill-name" style={{ fontSize: "18px" }} x="710" y="490" textAnchor="middle">
+        <text className="ill-name" style={{ fontSize: "18px" }} x="710" y="504" textAnchor="middle">
           From published law to a rule you can trust
         </text>
-        <text style={MONO(9.5, MUTED)} x="710" y="510" textAnchor="middle">
+        <text style={MONO(9.5, MUTED)} x="710" y="524" textAnchor="middle">
           {"segment · file · encode node by node · validate each encoding · compose · deliver"}
         </text>
       </g>
@@ -534,10 +597,10 @@ function Captions() {
         return (
           <g key={name} opacity="0">
             <Between a={at} b={until} />
-            <text className="ill-name" style={{ fontSize: "18px" }} x="710" y="490" textAnchor="middle">
+            <text className="ill-name" style={{ fontSize: "18px" }} x="710" y="504" textAnchor="middle">
               {name}
             </text>
-            <text style={MONO(9.5, MUTED)} x="710" y="510" textAnchor="middle">
+            <text style={MONO(9.5, MUTED)} x="710" y="524" textAnchor="middle">
               {sub}
             </text>
           </g>
@@ -566,9 +629,9 @@ function Chapters({ onJump, paused, onToggle }: { onJump: (i: number) => void; p
             }}
           >
             <title>{name}</title>
-            <circle cx={x} cy={524} r={9} fill="transparent" />
-            <circle stroke={INK} strokeWidth="0.9" cx={x} cy="524" r="3" fill="none" opacity="0.5" />
-            <circle cx={x} cy="524" r="3" fill={WAX} opacity="0">
+            <circle cx={x} cy={538} r={9} fill="transparent" />
+            <circle stroke={INK} strokeWidth="0.9" cx={x} cy="538" r="3" fill="none" opacity="0.5" />
+            <circle cx={x} cy="538" r="3" fill={WAX} opacity="0">
               <In a={at} />
             </circle>
           </g>
@@ -585,13 +648,13 @@ function Chapters({ onJump, paused, onToggle }: { onJump: (i: number) => void; p
         }}
       >
         <title>{paused ? "Play" : "Pause"}</title>
-        <circle cx={px} cy={524} r={8} fill="var(--color-paper)" stroke={INK} strokeWidth="0.7" opacity="0.75" />
+        <circle cx={px} cy={538} r={8} fill="var(--color-paper)" stroke={INK} strokeWidth="0.7" opacity="0.75" />
         {paused ? (
-          <path d={`M ${px - 2.2} 520.8 L ${px - 2.2} 527.2 L ${px + 3.4} 524 Z`} fill={INK} opacity="0.8" />
+          <path d={`M ${px - 2.2} 534.8 L ${px - 2.2} 541.2 L ${px + 3.4} 538 Z`} fill={INK} opacity="0.8" />
         ) : (
           <>
-            <rect x={px - 3} y={520.9} width="2.2" height="6.2" fill={INK} opacity="0.8" />
-            <rect x={px + 1} y={520.9} width="2.2" height="6.2" fill={INK} opacity="0.8" />
+            <rect x={px - 3} y={534.9} width="2.2" height="6.2" fill={INK} opacity="0.8" />
+            <rect x={px + 1} y={534.9} width="2.2" height="6.2" fill={INK} opacity="0.8" />
           </>
         )}
       </g>
@@ -621,7 +684,7 @@ export function PosterFrame() {
       <svg
         ref={svgRef}
         className="ill"
-        viewBox="0 0 1420 552"
+        viewBox="0 0 1420 568"
         role="img"
         aria-label="From published law to a rule you can trust: the text of 7 U.S.C. § 2017 is segmented into provisions (a), (b), (c); each is filed and fingerprinted in the corpus ledger, where other sources — an amending public law and an interpreting regulation — cross-reference the same lines. Each provision is then encoded into its own rulespec and validated by four gates; one encoding cites the wrong section, is caught by compare, and is redrafted. The three rules compose into a sealed, signed module, quoted downstream on the web, via the API, and by AI agents with citations."
       >
@@ -634,6 +697,7 @@ export function PosterFrame() {
         <SourceFeeds />
         <Rulespecs />
         <TheModule />
+        <RulebookIndex />
         <Captions />
         {!STATIC && <Chapters onJump={jump} paused={paused} onToggle={toggle} />}
       </svg>

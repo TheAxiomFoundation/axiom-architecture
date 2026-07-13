@@ -79,6 +79,8 @@ function In({ a, dim, rest = 0.45, max = 1 }: { a: number; dim?: number; rest?: 
         attributeName="opacity"
         dur={`${CYCLE}s`}
         repeatCount="indefinite"
+        calcMode="spline"
+        keySplines="0 0 1 1;0.3 0 0.2 1;0 0 1 1;0.3 0 0.2 1;0 0 1 1;0.3 0 0.2 1;0 0 1 1"
         values={`0;0;${max};${max};${g};${g};0;0`}
         keyTimes={`0;${a};${Math.min(a + 0.014, dim)};${dim};${Math.min(dim + 0.03, END)};${END};${CLEAR};1`}
       />
@@ -89,6 +91,8 @@ function In({ a, dim, rest = 0.45, max = 1 }: { a: number; dim?: number; rest?: 
       attributeName="opacity"
       dur={`${CYCLE}s`}
       repeatCount="indefinite"
+      calcMode="spline"
+      keySplines="0 0 1 1;0.3 0 0.2 1;0 0 1 1;0.3 0 0.2 1;0 0 1 1"
       values={`0;0;${max};${max};0;0`}
       keyTimes={`0;${a};${Math.min(a + 0.014, END)};${END};${CLEAR};1`}
     />
@@ -103,6 +107,8 @@ function Between({ a, b }: { a: number; b: number }) {
       attributeName="opacity"
       dur={`${CYCLE}s`}
       repeatCount="indefinite"
+      calcMode="spline"
+      keySplines="0 0 1 1;0.3 0 0.2 1;0 0 1 1;0.3 0 0.2 1;0 0 1 1"
       values="0;0;1;1;0;0"
       keyTimes={`0;${a};${a + 0.01};${b};${b + 0.01};1`}
     />
@@ -123,9 +129,10 @@ function Leader({ d, at, dim }: { d: string; at: number; dim?: number }) {
             attributeName="stroke-dashoffset"
             dur={`${CYCLE}s`}
             repeatCount="indefinite"
-            calcMode="linear"
+            calcMode="spline"
+            keySplines="0 0 1 1;0.25 0 0.15 1;0 0 1 1"
             values="1;1;0;0"
-            keyTimes={`0;${at};${at + 0.025};1`}
+            keyTimes={`0;${at};${at + 0.03};1`}
           />
         )}
       </path>
@@ -143,28 +150,27 @@ const SEGMENTS: Array<{ id: string; lines: Array<{ y: number; spans: Span[]; jus
   {
     id: "(a)",
     chipY: 146,
-    sepY: 220,
+    sepY: 224,
     lines: [
-      { y: 146, justify: true, spans: [{ t: "(a) The value of the allotment shall be equal to" }] },
-      { y: 174, justify: true, spans: [{ t: "the cost of the " }, { t: "thrifty food plan", rubric: true }, { t: " reduced by" }] },
+      { y: 146, justify: true, spans: [{ t: "(a) The value of the allotment shall be equal to the cost" }] },
+      { y: 174, justify: true, spans: [{ t: "of the " }, { t: "thrifty food plan", rubric: true }, { t: " reduced by an amount equal to" }] },
       { y: 202, justify: false, spans: [{ t: "30 per centum of the household’s income", rubric: true }, { t: " …" }] },
     ],
   },
   {
     id: "(b)",
-    chipY: 246,
-    sepY: 292,
+    chipY: 250,
+    sepY: 300,
     lines: [
-      { y: 246, justify: true, spans: [{ t: "(b) Allotments shall issue to any household" }] },
-      { y: 274, justify: false, spans: [{ t: "certified as eligible", rubric: true }, { t: " under section 2014 …" }] },
+      { y: 250, justify: true, spans: [{ t: "(b) Allotments shall be issued to any household that is" }] },
+      { y: 278, justify: false, spans: [{ t: "certified as eligible", rubric: true }, { t: " under section 2014 of this title …" }] },
     ],
   },
   {
     id: "(c)",
-    chipY: 318,
+    chipY: 326,
     lines: [
-      { y: 318, justify: true, spans: [{ t: "(c) … " }, { t: "rounded to the nearest lower", rubric: true }] },
-      { y: 346, justify: false, spans: [{ t: "whole-dollar increment." }] },
+      { y: 326, justify: false, spans: [{ t: "(c) … " }, { t: "rounded to the nearest lower whole-dollar increment", rubric: true }, { t: "." }] },
     ],
   },
 ];
@@ -199,7 +205,7 @@ function TheLaw() {
             </text>
           ))
         )}
-        <text style={MONO(10.5, MUTED)} x={L_X} y="448">
+        <text style={MONO(10.5, MUTED)} x={L_X} y="392">
           {"as published · 124 Stat. 3359 · amended through 2026"}
         </text>
       </g>
@@ -593,7 +599,7 @@ function Captions() {
   return (
     <g>
       {PHASES.map(({ at, name, sub }, i) => {
-        const until = i < PHASES.length - 1 ? PHASES[i + 1].at : END;
+        const until = (i < PHASES.length - 1 ? PHASES[i + 1].at : END) - 0.014;
         return (
           <g key={name} opacity="0">
             <Between a={at} b={until} />

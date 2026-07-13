@@ -1792,25 +1792,23 @@ polygon.ill-line {
 }
 
 
-/* ── dark scheme, poster view only ─────────────────────────────────
-   The poster is built entirely from the ink/paper/accent tokens, so a
-   scoped re-mapping is all dark mode needs. The chart keeps its own
-   literal colors and stays light. */
-@media (prefers-color-scheme: dark) {
-  .launch--dark-ok {
-    --color-paper: #16130f;
-    --color-paper-elevated: #211d18;
-    --color-ink: #e9e4da;
-    --color-ink-secondary: #b9b1a4;
-    --color-ink-muted: #948b7e;
-    --color-rule: #37322b;
-    --color-rule-subtle: #262220;
-    --color-rule-strong: #948b7e;
-    --color-accent: #d98a3d;
-    --color-accent-hover: #e29b55;
-    --color-accent-light: rgba(217, 138, 61, 0.1);
-    --color-success: #7cc294;
-    background: var(--color-paper);
-    color: var(--color-ink);
-  }
+/* ── night preview, poster view only ───────────────────────────────
+   Explicitly toggled from the header — never OS-driven. The poster is
+   built entirely from the ink/paper/accent tokens, so a scoped
+   re-mapping is all dark paper needs. */
+.launch--night {
+  --color-paper: #16130f;
+  --color-paper-elevated: #211d18;
+  --color-ink: #e9e4da;
+  --color-ink-secondary: #b9b1a4;
+  --color-ink-muted: #948b7e;
+  --color-rule: #37322b;
+  --color-rule-subtle: #262220;
+  --color-rule-strong: #948b7e;
+  --color-accent: #d98a3d;
+  --color-accent-hover: #e29b55;
+  --color-accent-light: rgba(217, 138, 61, 0.1);
+  --color-success: #7cc294;
+  background: var(--color-paper);
+  color: var(--color-ink);
 }

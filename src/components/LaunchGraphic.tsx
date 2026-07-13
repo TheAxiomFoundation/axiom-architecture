@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { IllustratedFlow } from "./IllustratedFlow";
 import { PosterFrame } from "./PosterFrame";
 
 // External process graphic as a real chart: a hand-drawn Sankey flow.
@@ -781,7 +782,8 @@ export function LaunchGraphic() {
     });
   }, [journeys]);
   const svgRef = useRef<SVGSVGElement | null>(null);
-  const [view, setView] = useState<"poster" | "chart">("poster");
+  const [view, setView] = useState<"poster" | "chart" | "illustrated">("poster");
+  const [night, setNight] = useState(false);
 
   // ── zoom into a pathway ─────────────────────────────────────────
   const [zoom, setZoom] = useState<Region | null>(null);
@@ -843,7 +845,7 @@ export function LaunchGraphic() {
   }, []);
 
   return (
-    <div className={`launch ${view === "poster" ? "launch--dark-ok" : ""}`}>
+    <div className={`launch ${view === "poster" && night ? "launch--night" : ""}`}>
       <div className="launch__poster">
         <header className="launch__header">
           <div className="launch__eyebrow">The Axiom Foundation</div>
@@ -867,7 +869,7 @@ export function LaunchGraphic() {
             </p>
           )}
           <div className="launch__viewtoggle" role="group" aria-label="View">
-            {(["poster", "chart"] as const).map((v) => (
+            {(["poster", "chart", "illustrated"] as const).map((v) => (
               <button
                 key={v}
                 type="button"
@@ -877,11 +879,24 @@ export function LaunchGraphic() {
                 {v}
               </button>
             ))}
+            {view === "poster" && (
+              <button
+                type="button"
+                className={`launch__viewtoggle-btn ${night ? "launch__viewtoggle-btn--active" : ""}`}
+                onClick={() => setNight(!night)}
+                aria-pressed={night}
+                title="Preview the poster on dark paper"
+              >
+                {night ? "◐ night" : "◑ night"}
+              </button>
+            )}
           </div>
         </header>
 
         {view === "poster" ? (
           <PosterFrame />
+        ) : view === "illustrated" ? (
+          <IllustratedFlow />
         ) : (
         <div className="lsk__wrap">
           <svg

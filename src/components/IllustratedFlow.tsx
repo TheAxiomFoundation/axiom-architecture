@@ -203,13 +203,24 @@ function VisHold({
   );
 }
 
-// repeated-flash helper: opacity pulses at each time in `ts`
+// repeated-flash helper: opacity pulses at each time in `ts`. Overlapping
+// pulses are merged into one window — keyTimes must be monotonic or SMIL
+// rejects the whole animation.
 function Flash({ ts, hold = 0.022 }: { ts: number[]; hold?: number }) {
+  const sorted = [...ts].sort((a, b) => a - b);
+  const windows: Array<[number, number]> = [];
+  for (const t of sorted) {
+    const end = t + hold;
+    const last = windows[windows.length - 1];
+    if (last && t <= last[1] + 0.012) last[1] = Math.max(last[1], end);
+    else windows.push([t, end]);
+  }
   const vals: number[] = [0];
   const times: number[] = [0];
-  for (const t of ts) {
+  for (const [a, b] of windows) {
+    if (b + 0.01 >= 0.999) break;
     vals.push(0, 1, 1, 0);
-    times.push(t, t + 0.006, t + hold, t + hold + 0.01);
+    times.push(a, a + 0.006, b, b + 0.01);
   }
   vals.push(0);
   times.push(1);

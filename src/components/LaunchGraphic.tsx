@@ -862,10 +862,12 @@ export function LaunchGraphic() {
             <p className="launch__sub">
               The whole process in one flow: what we capture, what we encode,
               what survives the gates — and where it goes. Widths are
-              illustrative; the counts are real.{" "}
-              <strong className="launch__sub-hint">
-                Click any stage to look under the hood.
-              </strong>
+              illustrative; the counts are real.
+              {view === "chart" && (
+                <strong className="launch__sub-hint">
+                  {" "}Click any stage to look under the hood.
+                </strong>
+              )}
             </p>
           )}
           <div className="launch__viewtoggle" role="group" aria-label="View">

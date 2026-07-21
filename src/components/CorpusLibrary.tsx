@@ -36,7 +36,10 @@ const PAPER_EL = "var(--color-paper-elevated)";
 
 // night tokens (the launch night ramp, hard values — the finale is
 // always night regardless of theme)
-const NIGHT = { paper: "#16130f", rule: "#37322b", ink: "#948b7e", green: "#7cc294", amber: "#d98a3d", dim: "#241f19" };
+const NIGHT = { paper: "#16130f", rule: "#37322b", ink: "#948b7e", green: "#7cc294", amber: "#d98a3d", dim: "#20231e" };
+// the digital library's wireframe strokes and on-spine "screen" detail
+const WIRE = "rgba(124, 194, 148, 0.16)";
+const SCREEN_INK = "#0b2114";
 
 const PREVIEWS = [
   { src: previewApp, t: "axiom app", s: "every rule, executable" },
@@ -192,7 +195,7 @@ function Spine({ p, shelfY, dark, lit }: { p: Piece; shelfY: number; dark?: bool
             key={i}
             x={p.x + (i % 2) * 3} y={shelfY - slab * (i + 1) - i} width={p.w - (i % 2) * 5} height={slab} rx="1"
             fill={dark ? (lit ? NIGHT.green : NIGHT.dim) : TONES[(p.tone + i) % TONES.length]}
-            stroke={dark ? (lit ? "none" : NIGHT.rule) : "rgba(28,25,23,0.35)"} strokeWidth="0.5"
+            stroke={dark ? (lit ? "none" : WIRE) : "rgba(28,25,23,0.35)"} strokeWidth="0.5"
             opacity={dark && lit ? 0.85 : 1}
           />
         ))}
@@ -204,9 +207,17 @@ function Spine({ p, shelfY, dark, lit }: { p: Piece; shelfY: number; dark?: bool
     <rect
       x={p.x} y={top} width={p.w} height={p.h} rx="1"
       fill={dark ? (lit ? NIGHT.green : NIGHT.dim) : TONES[p.tone]}
-      stroke={dark ? (lit ? "none" : NIGHT.rule) : "rgba(28,25,23,0.3)"} strokeWidth="0.5"
+      stroke={dark ? (lit ? "none" : WIRE) : "rgba(28,25,23,0.3)"} strokeWidth="0.5"
       opacity={dark && lit ? 0.85 : 1}
     />
+  );
+  // lit spines read like slivers of screen: a couple of dark micro-rules,
+  // the way a terminal line renders at spine width
+  const screen = dark && lit && p.w > 8 && (
+    <>
+      <line x1={p.x + 2} y1={top + p.h * 0.16} x2={p.x + p.w - 2} y2={top + p.h * 0.16} stroke={SCREEN_INK} strokeWidth="1" opacity="0.4" />
+      <line x1={p.x + 2} y1={top + p.h * 0.26} x2={p.x + p.w - 2} y2={top + p.h * 0.26} stroke={SCREEN_INK} strokeWidth="0.7" opacity="0.28" />
+    </>
   );
   const detail = !dark && (
     <>
@@ -225,6 +236,7 @@ function Spine({ p, shelfY, dark, lit }: { p: Piece; shelfY: number; dark?: bool
     return (
       <g transform={`rotate(${p.lean} ${p.x} ${shelfY})`}>
         {body}
+        {screen}
         {detail}
       </g>
     );
@@ -232,6 +244,7 @@ function Spine({ p, shelfY, dark, lit }: { p: Piece; shelfY: number; dark?: bool
   return (
     <g>
       {body}
+      {screen}
       {detail}
     </g>
   );
@@ -255,7 +268,12 @@ function TitleSpine({ i, dark, lit, hideT7 }: { i: number; dark?: boolean; lit?:
       : TONES[TITLE_TONE[i]];
   return (
     <g>
-      <rect x={x} y={top} width="15" height={h} rx="1" fill={fill} stroke={dark ? (lit ? "none" : NIGHT.rule) : "rgba(28,25,23,0.35)"} strokeWidth="0.5" opacity={dark && lit ? (isT7 ? 1 : 0.85) : 1} />
+      <rect x={x} y={top} width="15" height={h} rx="1" fill={fill} stroke={dark ? (lit ? "none" : WIRE) : "rgba(28,25,23,0.35)"} strokeWidth="0.5" opacity={dark && lit ? (isT7 ? 1 : 0.85) : 1} />
+      {dark && lit && (
+        <text x={x + 7.5} y={top + 13} textAnchor="middle" style={{ fill: SCREEN_INK, fontSize: "7px" }} opacity="0.55">
+          ✓
+        </text>
+      )}
       {!dark && (
         <>
           <line x1={x + 1.5} y1={top + 8} x2={x + 13.5} y2={top + 8} stroke={isT7 ? "#e6c893" : "#b08d57"} strokeWidth="0.8" opacity="0.65" />
@@ -277,24 +295,24 @@ function TitleSpine({ i, dark, lit, hideT7 }: { i: number; dark?: boolean; lit?:
 function Wall({ dark, lit, rows = SHELVES.length, hideT7 }: { dark?: boolean; lit?: boolean; rows?: number; hideT7?: boolean }) {
   return (
     <g>
-      {/* cornice */}
-      <line x1="30" y1="40" x2="1390" y2="40" stroke={dark ? NIGHT.rule : INK} strokeWidth="1" opacity={dark ? 1 : 0.5} />
-      <line x1="30" y1="43.5" x2="1390" y2="43.5" stroke={dark ? NIGHT.rule : INK} strokeWidth="0.5" opacity={dark ? 0.7 : 0.25} />
+      {/* cornice — wireframe when digital */}
+      <line x1="30" y1="40" x2="1390" y2="40" stroke={dark ? NIGHT.green : INK} strokeWidth="1" opacity={dark ? 0.22 : 0.5} />
+      <line x1="30" y1="43.5" x2="1390" y2="43.5" stroke={dark ? NIGHT.green : INK} strokeWidth="0.5" opacity={dark ? 0.12 : 0.25} />
       {BAYS.map((b, bi) => (
         <g key={b.name}>
           {/* backboards + shelves */}
           {SHELVES.slice(0, rows).map((sy, ri) => (
             <g key={ri}>
-              <rect x={b.x} y={sy - 106} width={b.w} height="106" fill={dark ? "rgba(233,228,218,0.015)" : "rgba(28,25,23,0.025)"} />
-              <line x1={b.x} y1={sy} x2={b.x + b.w} y2={sy} stroke={dark ? NIGHT.rule : INK} strokeWidth="1.4" opacity={dark ? 1 : 0.55} />
-              <line x1={b.x} y1={sy + 3} x2={b.x + b.w} y2={sy + 3} stroke={dark ? NIGHT.rule : INK} strokeWidth="0.5" opacity={dark ? 0.6 : 0.25} />
+              <rect x={b.x} y={sy - 106} width={b.w} height="106" fill={dark ? "rgba(124,194,148,0.02)" : "rgba(28,25,23,0.025)"} />
+              <line x1={b.x} y1={sy} x2={b.x + b.w} y2={sy} stroke={dark ? NIGHT.green : INK} strokeWidth="1.4" opacity={dark ? 0.26 : 0.55} />
+              <line x1={b.x} y1={sy + 3} x2={b.x + b.w} y2={sy + 3} stroke={dark ? NIGHT.green : INK} strokeWidth="0.5" opacity={dark ? 0.12 : 0.25} />
             </g>
           ))}
           {/* pilasters */}
           {bi > 0 && (
             <>
-              <line x1={b.x - 6} y1="40" x2={b.x - 6} y2={SHELVES[rows - 1] + 3} stroke={dark ? NIGHT.rule : INK} strokeWidth="0.9" opacity={dark ? 1 : 0.4} />
-              <line x1={b.x - 3} y1="40" x2={b.x - 3} y2={SHELVES[rows - 1] + 3} stroke={dark ? NIGHT.rule : INK} strokeWidth="0.5" opacity={dark ? 0.6 : 0.2} />
+              <line x1={b.x - 6} y1="40" x2={b.x - 6} y2={SHELVES[rows - 1] + 3} stroke={dark ? NIGHT.green : INK} strokeWidth="0.9" opacity={dark ? 0.18 : 0.4} />
+              <line x1={b.x - 3} y1="40" x2={b.x - 3} y2={SHELVES[rows - 1] + 3} stroke={dark ? NIGHT.green : INK} strokeWidth="0.5" opacity={dark ? 0.1 : 0.2} />
             </>
           )}
           {/* the books */}
@@ -325,10 +343,12 @@ BAYS.forEach((_, bi) =>
 const litHoldout = (bi: number, ri: number, i: number) => holdouts.has(`${bi}:${ri}:${i}`);
 
 function Plaques({ dark }: { dark?: boolean }) {
+  // in the digital library the plaques become durable corpus IDs —
+  // the addressing scheme every citation resolves through
   const label = (bi: number) =>
     !dark
       ? BAYS[bi].name
-      : ["state codes · in progress", "united states code · 3,323 rules", "united kingdom · next", "canada · next", "belgium · pilot"][bi];
+      : ["us:states · in progress", "us:statutes · 3,323 rules", "uk:legislation · next", "ca:laws-lois · next", "be:codes · pilot"][bi];
   return (
     <g>
       {BAYS.map((b, bi) => (
@@ -579,6 +599,9 @@ function Defs() {
         <stop offset="50%" stopColor="#1c1917" stopOpacity="0.5" />
         <stop offset="100%" stopColor="#1c1917" stopOpacity="0" />
       </linearGradient>
+      <pattern id="clib-grid" width="26" height="26" patternUnits="userSpaceOnUse">
+        <circle cx="1" cy="1" r="0.9" fill={NIGHT.green} opacity="0.06" />
+      </pattern>
       <filter id="clib-softshadow" x="-30%" y="-30%" width="160%" height="160%">
         <feDropShadow dx="0" dy="4" stdDeviation="7" floodColor="#1c1917" floodOpacity="0.22" />
       </filter>
@@ -836,6 +859,8 @@ function ActFinale() {
     >
       <Defs />
       <rect x="0" y="0" width="1420" height="620" fill={NIGHT.paper} />
+      {/* the substrate: this space is a screen, not a room */}
+      <rect x="0" y="0" width="1420" height="620" fill="url(#clib-grid)" />
       <Wall dark rows={3} />
       <g clipPath="url(#clib-sweepclip)">
         <g filter="url(#clib-glow)" opacity="0.5">
@@ -855,6 +880,26 @@ function ActFinale() {
           <DigitalVolume />
         </g>
       )}
+
+      {/* the bus: once lit, the bottom shelf carries the flow that
+          feeds the surfaces */}
+      <g opacity={REDUCED ? 0.6 : 0}>
+        {!REDUCED && <FadeIn at={6.2} r={0.8} to={0.6} />}
+        <line x1="40" y1="433" x2="1390" y2="433" stroke={NIGHT.green} strokeWidth="1" strokeDasharray="2 16" opacity="0.5">
+          {!REDUCED && <animate attributeName="stroke-dashoffset" from="18" to="0" dur="1.4s" repeatCount="indefinite" />}
+        </line>
+      </g>
+
+      {/* the runtime, live */}
+      <g opacity={REDUCED ? 1 : 0}>
+        {!REDUCED && <FadeIn at={5.6} r={0.6} />}
+        <circle cx="1192" cy="26.5" r="3" fill={NIGHT.green} opacity="0.9">
+          {!REDUCED && <animate attributeName="opacity" values="0.9;0.35;0.9" dur="2s" repeatCount="indefinite" />}
+        </circle>
+        <text className="clib-cap clib-cap--light" x="1390" y="30" textAnchor="end">
+          runtime: live · 7.7M checks
+        </text>
+      </g>
 
       {/* the shelves feed the surfaces */}
       {PREVIEWS.map(({ src, t, s }, i) => {
@@ -889,6 +934,12 @@ function ActFinale() {
       <text className="clib-cap clib-cap--light" x="36" y="612" opacity={REDUCED ? 1 : 0}>
         {!REDUCED && <FadeIn at={4.6} r={0.6} />}
         the digital library · every volume executable · 3,323 rules certified
+        {!REDUCED && (
+          <tspan dx="6" fill={NIGHT.green}>
+            ▊
+            <animate attributeName="fill-opacity" values="1;1;0;0" keyTimes="0;0.5;0.5;1" dur="1.1s" repeatCount="indefinite" />
+          </tspan>
+        )}
       </text>
     </svg>
   );

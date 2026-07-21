@@ -63,7 +63,7 @@ function VDuct({ x, y0, y1 }: { x: number; y0: number; y1: number }) {
 export function FlatPipeline() {
   const IN = { x: 80, y: 40, w: 440, h: 196 };
   const CO = { x: 600, y: 40, w: 640, h: 196 };
-  const SC = { x: 950, y: 76, w: 260, h: 130 }; // § 2017, pulled forward
+  const SC = { x: 950, y: 76, w: 260, h: 104 }; // § 2017, pulled forward
   const DROP1 = 1080;
   const M = { x: 560, y: 292, w: 680, h: 196 }; // the machine's plate
   const FX = 1050; // fleet base
@@ -156,8 +156,6 @@ export function FlatPipeline() {
         <text className="fp-serifq" x={SC.x + 14} y={SC.y + 86}>
           “…reduced by <tspan fill={WAX}>30 per centum</tspan> of income…”
         </text>
-        <line x1={SC.x + 14} y1={SC.y + 100} x2={SC.x + SC.w - 100} y2={SC.y + 100} stroke={INK} strokeWidth="0.6" opacity="0.3" />
-        <text className="fp-mono fp-mono--node" x={SC.x + 14} y={SC.y + 118} opacity="0.6">stored verbatim, every word</text>
 
         {/* ↓ one provision at a time */}
         <line x1={DROP1} y1={SC.y + SC.h} x2={DROP1} y2={CO.y + CO.h} stroke={INK} strokeWidth="1" opacity="0.45" />
@@ -235,10 +233,11 @@ export function FlatPipeline() {
           {!REDUCED && <animate attributeName="stroke-dashoffset" from="0" to="-16" dur="1.3s" repeatCount="indefinite" />}
         </path>
         <path d={`M ${FX + 68.5} ${458} L ${FX + 73} ${449} L ${FX + 77.5} ${457.5}`} fill="none" stroke={WAX} strokeWidth="1.1" />
-        <text className="fp-mono fp-mono--wax" x={M.x + 130} y={434} textAnchor="middle">✗ caught → redrafted</text>
-        <text className="fp-capq" x={M.x + 130} y={456} textAnchor="middle">every catch teaches the encoder</text>
+        <text className="fp-mono fp-mono--wax" x={RAIL.x - 10} y={462} textAnchor="end">✗ caught → redrafted</text>
+        <text className="fp-capq" x={RAIL.x - 10} y={480} textAnchor="end">every catch teaches the encoder</text>
         {/* out: the spec leaves the machine */}
         <Duct x0={SPEC.x + SPEC.w + 6} x1={RAIL.x - 4} y={380} rtl />
+        <text className="fp-mono fp-mono--sm" x={475} y={372} textAnchor="middle" opacity="0.65">the finished spec</text>
 
         {/* ═══ ROW 2 · RULESPEC ═══ */}
         <g filter="url(#fp-shadow)">
@@ -313,12 +312,12 @@ export function FlatPipeline() {
 
         {/* ═══ ROW 3 · WHO IT POWERS — plugged into the sealed program ═══ */}
         <path
-          d={`M ${SEAL.x + 21} ${SEAL.y} C ${SEAL.x + 44} ${SEAL.y}, ${SEAL.x + 56} ${640}, ${SEAL.x + 56} ${682}`}
+          d={`M ${SEAL.x + 21} ${SEAL.y} C ${SEAL.x + 52} ${SEAL.y}, ${SEAL.x + 74} ${644}, ${SEAL.x + 74} ${682}`}
           fill="none" stroke={INK} strokeWidth="1" opacity="0.45"
         />
-        <line x1={SEAL.x + 56} y1={682} x2={1276} y2={682} stroke={INK} strokeWidth="1" opacity="0.45" />
+        <line x1={SEAL.x + 74} y1={682} x2={1276} y2={682} stroke={INK} strokeWidth="1" opacity="0.45" />
         {!REDUCED && (
-          <line x1={SEAL.x + 56} y1={682} x2={1276} y2={682} stroke={WAX} strokeWidth="1.2" strokeDasharray="2 9" opacity="0.8">
+          <line x1={SEAL.x + 74} y1={682} x2={1276} y2={682} stroke={WAX} strokeWidth="1.2" strokeDasharray="2 9" opacity="0.8">
             <animate attributeName="stroke-dashoffset" from="0" to="-11" dur="1.6s" repeatCount="indefinite" />
           </line>
         )}

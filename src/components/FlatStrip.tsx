@@ -161,6 +161,13 @@ export function FlatStrip() {
           <rect x={(CO.x + CO.w + EN.fleet) / 2 - 13} y={238} width="19" height="25" rx="2" fill="var(--color-paper)" stroke={INK} strokeWidth="0.8" />
         </g>
         <text className="fp-mono fp-mono--node" x={(CO.x + CO.w + EN.fleet) / 2 - 3.5} y={252} textAnchor="middle" fill={WAX}>§</text>
+        <text
+          className="fp-mono fp-mono--tiny"
+          transform="rotate(-90 434 360)"
+          x={434} y={360} textAnchor="middle" opacity="0.6"
+        >
+          one provision at a time
+        </text>
 
         {/* THE ENCODING LOOP */}
         <Eyebrow x={EN.fleet - 12} t="the encoding loop" y={158} />

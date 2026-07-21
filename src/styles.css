@@ -2518,6 +2518,102 @@ polygon.ill-line {
   color: var(--color-ink);
 }
 
+/* ── the corpus library (stacks → volume → digital library) ─── */
+
+.clib-svg {
+  display: block;
+  width: 100%;
+  min-width: 960px;
+  height: auto;
+}
+
+.clib-cap {
+  font-family: var(--f-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  fill: var(--color-ink-muted);
+}
+
+.clib-cap--light { fill: #948b7e; }
+
+.clib-plaque {
+  font-family: var(--f-mono);
+  font-size: 8px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  fill: var(--color-ink-muted);
+}
+
+.clib-plaque--light { fill: #948b7e; }
+
+.clib-spinelabel {
+  font-family: var(--f-mono);
+  font-size: 5.5px;
+  letter-spacing: 0.05em;
+  fill: rgba(250, 249, 246, 0.85);
+}
+
+.clib-titlepage {
+  font-family: var(--f-serif);
+  font-size: 15px;
+  letter-spacing: 0.14em;
+  fill: var(--color-ink);
+}
+
+.clib-titlepage-italic {
+  font-family: var(--f-serif);
+  font-style: italic;
+  font-size: 21px;
+  fill: var(--color-ink);
+}
+
+.clib-chapter {
+  font-family: var(--f-serif);
+  font-size: 13px;
+  fill: var(--color-ink);
+}
+
+.clib-toc {
+  font-family: var(--f-serif);
+  font-size: 10.5px;
+  fill: var(--color-ink);
+}
+
+.clib-cover-eyebrow {
+  font-family: var(--f-mono);
+  font-size: 7px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  fill: #e6c893;
+}
+
+.clib-cover-title {
+  font-family: var(--f-serif);
+  font-size: 26px;
+  letter-spacing: 0.1em;
+  fill: #efd7ae;
+}
+
+.clib-cover-sub {
+  font-family: var(--f-serif);
+  font-style: italic;
+  font-size: 14px;
+  fill: #e6c893;
+}
+
+.clib-toollabel {
+  font-family: var(--f-mono);
+  font-size: 10px;
+  fill: #e9e4da;
+}
+
+.clib-toolsub {
+  font-family: var(--f-mono);
+  font-size: 8px;
+  fill: #948b7e;
+}
+
 /* ── the flat pipeline (one screen, one dimension) ───────────── */
 
 .fp-eyebrow {

@@ -1,20 +1,21 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { CorpusMap } from "./CorpusMap";
+import { CorpusLibrary } from "./CorpusLibrary";
 import { JourneyFilm } from "./JourneyFilm";
 
 // The full demo cycle, tied together:
 //
-//   THE GLOBE     the real Earth turns; the camera dives through the
-//                 unroll into the United States, T7 Agriculture, ch. 51,
-//                 and lands on the § 2017 card — real geography, the
-//                 map engine flying itself.
+//   THE STACKS    the corpus as a law library: five bays of cloth
+//                 spines under lamplight. The camera pushes into the
+//                 titles shelf; TITLE 7 · AGRICULTURE pulls off the
+//                 shelf, opens, riffles to chapter 51, and settles on
+//                 the § 2017 page.
 //   THE FILM      picks up at the statute page: segmentation, the
 //                 encoding workbench, the four gates, the graph, the
 //                 certified program, and every surface the answer
 //                 reaches.
-//   THE LIT WORLD the globe returns with every jurisdiction stippled
-//                 green, feeding the tools row — then the cycle begins
-//                 again.
+//   THE DIGITAL   the same shelves at night — every spine a sliver of
+//   LIBRARY       light, lit green by the sweep, T7 still amber —
+//                 feeding the tools row. Then the cycle begins again.
 //
 // Pause (or the arrow keys) drops into manual mode: step through the
 // tableaux one at a time; play resumes the automation from wherever
@@ -24,22 +25,22 @@ const CYCLE = 56;
 const FILM_START = 0.207 * CYCLE; // the statute page, settled
 const FILM_END = 0.752 * CYCLE; // the program starts shrinking back into the world
 
-type Step = { label: string; kind: "globe" | "landed" | "film" | "finale"; t?: number };
+type Step = { label: string; kind: "stacks" | "landed" | "film" | "finale"; t?: number };
 const STEPS: Step[] = [
-  { label: "the globe", kind: "globe" },
-  { label: "landed · § 2017", kind: "landed" },
+  { label: "the stacks", kind: "stacks" },
+  { label: "the book · § 2017", kind: "landed" },
   { label: "the wall", kind: "film", t: 0.09 },
   { label: "the encoding", kind: "film", t: 0.37 },
   { label: "the gates, passed", kind: "film", t: 0.44 },
   { label: "the graph", kind: "film", t: 0.56 },
   { label: "the program", kind: "film", t: 0.66 },
-  { label: "the lit world", kind: "finale" },
+  { label: "the digital library", kind: "finale" },
 ];
 const AUTO_LABEL = {
-  map: "the dive",
+  map: "the pull",
   film: "the film",
   outro: "the pull-back",
-  finale: "the lit world",
+  finale: "the digital library",
 } as const;
 
 export function JourneyDemo() {
@@ -153,12 +154,12 @@ export function JourneyDemo() {
         <div key={cycle} className="jdemo__stage">
           {(phase === "map" || phase === "film") && (
             <div className="jdemo__layer">
-              <CorpusMap autopilot onArrived={toFilm} />
+              <CorpusLibrary autopilot onArrived={toFilm} />
             </div>
           )}
           {(phase === "outro" || phase === "finale") && (
             <div className="jdemo__layer">
-              <CorpusMap finale onArrived={toMap} />
+              <CorpusLibrary finale onArrived={toMap} />
             </div>
           )}
           {(phase === "film" || phase === "outro") && (
@@ -170,10 +171,10 @@ export function JourneyDemo() {
       )}
       {manual && (
         <div key={`step-${step}`} className="jdemo__layer">
-          {s.kind === "globe" && <CorpusMap />}
-          {s.kind === "landed" && <CorpusMap pose="landed" />}
+          {s.kind === "stacks" && <CorpusLibrary />}
+          {s.kind === "landed" && <CorpusLibrary pose="landed" />}
           {s.kind === "film" && <JourneyFilm startOffset={offset ?? s.t! * CYCLE} paused />}
-          {s.kind === "finale" && <CorpusMap finale />}
+          {s.kind === "finale" && <CorpusLibrary finale />}
         </div>
       )}
       <div className="jdemo__ctrl">

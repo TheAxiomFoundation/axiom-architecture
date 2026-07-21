@@ -48,13 +48,18 @@ const CAPTIONS = [
 
 function Vis({ a, b, r = 0.016, max = 1 }: { a: number; b: number; r?: number; max?: number }) {
   if (STATIC) return null;
+  // clamp: a must precede b, and the ramps must not cross the window
+  // midpoint — otherwise the keyTimes go non-monotonic and SMIL rejects
+  // the whole animation
+  const a2 = Math.min(a, b - 0.002);
+  const m = (a2 + b) / 2;
   return (
     <animate
       attributeName="opacity"
       dur={`${CYCLE}s`}
       repeatCount="indefinite"
       values={`0;0;${max};${max};0;0`}
-      keyTimes={`0;${a};${Math.min(a + r, b)};${Math.max(b - r, a)};${Math.min(b, 0.999)};1`}
+      keyTimes={`0;${a2};${Math.min(a2 + r, m)};${Math.max(b - r, m)};${Math.min(b, 0.999)};1`}
     />
   );
 }

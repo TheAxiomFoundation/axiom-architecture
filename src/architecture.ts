@@ -1804,7 +1804,7 @@ export const LAYOUTS: Layout[] = [
   {
     id: "sources",
     title: "Where the corpus begins",
-    eyebrow: "§ 01 · Sources",
+    eyebrow: "Sources",
     description:
       "Five categories of official publishers. We snapshot — never modify the source.",
     nodes: placeAll(SOURCES_VISIBLE),
@@ -1817,7 +1817,7 @@ export const LAYOUTS: Layout[] = [
   {
     id: "ingest",
     title: "Add the ingest layer",
-    eyebrow: "§ 02 · Ingest",
+    eyebrow: "Ingest",
     description:
       "Bytes from each publisher flow through a fetcher → parser → " +
       "source-first adapter, ending in a local JSONL artifact tree that becomes " +
@@ -1832,7 +1832,7 @@ export const LAYOUTS: Layout[] = [
   {
     id: "storage",
     title: "Add the storage tier",
-    eyebrow: "§ 03 · Storage",
+    eyebrow: "Storage",
     description:
       "The same JSONL produces a durable R2 mirror and a live Supabase snapshot. " +
       "corpus.provisions is the source of truth for legal text; navigation_nodes, " +
@@ -1849,7 +1849,7 @@ export const LAYOUTS: Layout[] = [
   {
     id: "encoding",
     title: "Add encoding + execution",
-    eyebrow: "§ 04 · Encoding",
+    eyebrow: "Encoding",
     description:
       "axiom-encode reads the corpus and writes RuleSpec YAML into the country " +
       "monorepos — rulespec-us (federal + 32 states + programs/, ~3,040 modules " +
@@ -1868,7 +1868,7 @@ export const LAYOUTS: Layout[] = [
   {
     id: "end-to-end",
     title: "Add the consumers",
-    eyebrow: "§ 05 · Pipeline",
+    eyebrow: "Pipeline",
     description:
       "axiom-foundation.org (corpus browser, search, and the /ops dashboard), " +
       "finbot, dashboard-builder, and axiom-microsim read from Supabase and call " +
@@ -1886,7 +1886,7 @@ export const LAYOUTS: Layout[] = [
   {
     id: "platform",
     title: "Add the platform surface",
-    eyebrow: "§ 06 · Platform",
+    eyebrow: "Platform",
     description:
       "axiom-api is the rule-native HTTP contract layer: search, retrieval, and " +
       "household calculation over API keys, with vendored TypeScript + Python SDKs " +

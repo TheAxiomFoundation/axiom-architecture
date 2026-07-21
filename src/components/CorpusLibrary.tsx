@@ -15,10 +15,11 @@ import previewOracles from "../assets/preview-oracles.png";
 //                and glides to the exact spot where the film's statute
 //                page lives. The film crossfades in over it.
 //   THE FILM     (JourneyFilm, unchanged) picks up at the statute page.
-//   THE DIGITAL  the same wall — same seeds, same silhouette — at
-//   LIBRARY      night: every spine a sliver of light, lit green by a
-//                sweep, T7 alone still amber; the shelves feed the four
-//                live surfaces below.
+//   THE DIGITAL  the program returns as a digital edition of the same
+//   LIBRARY      volume and slides home into its slot; from that spine,
+//                light spreads across the night shelves — every volume
+//                a sliver of green, T7 amber — feeding the four live
+//                surfaces below.
 //
 // One 11-second SMIL clock, fill=freeze — remounting restarts the act.
 
@@ -497,6 +498,47 @@ function CoverFace({ stampAnim }: { stampAnim?: boolean }) {
   );
 }
 
+// the program, bound: the same volume in its encoded edition — dark
+// boards, luminous edges, the certification on the cover
+function DigitalVolume() {
+  const x = 567.5;
+  const y = 130;
+  const w = 285;
+  const h = 332;
+  const cx = x + w / 2;
+  return (
+    <g>
+      <rect x={x} y={y} width={w} height={h} rx="3" fill="none" stroke={NIGHT.amber} strokeWidth="2" filter="url(#clib-glow)" opacity="0.5">
+        {!REDUCED && <animate attributeName="opacity" values="0.35;0.6;0.35" dur="2.6s" repeatCount="indefinite" />}
+      </rect>
+      <rect x={x} y={y} width={w} height={h} rx="3" fill="#1d1914" stroke={NIGHT.amber} strokeWidth="1.2" />
+      <rect x={x} y={y} width="7" height={h} fill="rgba(0,0,0,0.5)" />
+      <rect x={x + 12} y={y + 12} width={w - 24} height={h - 24} fill="none" stroke={NIGHT.amber} strokeWidth="0.5" opacity="0.4" />
+      {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
+        <line key={i} x1={x + 14} y1={y + 26 + i * 40} x2={x + w - 14} y2={y + 26 + i * 40} stroke={NIGHT.green} strokeWidth="0.5" opacity="0.06" />
+      ))}
+      <text className="clib-cover-eyebrow" x={cx} y={y + 82} textAnchor="middle" style={{ fill: NIGHT.green }}>
+        united states code · encoded edition
+      </text>
+      <text className="clib-cover-title" x={cx} y={y + 138} textAnchor="middle">
+        TITLE 7
+      </text>
+      <line x1={cx - 52} y1={y + 158} x2={cx + 52} y2={y + 158} stroke={NIGHT.amber} strokeWidth="0.9" opacity="0.75" />
+      <text className="clib-cover-sub" x={cx} y={y + 188} textAnchor="middle">
+        Agriculture
+      </text>
+      <circle cx={cx} cy={y + 242} r="16" fill="none" stroke={NIGHT.green} strokeWidth="1.3" />
+      <circle cx={cx} cy={y + 242} r="11.5" fill="none" stroke={NIGHT.green} strokeWidth="0.6" opacity="0.7" />
+      <text x={cx} y={y + 247} textAnchor="middle" style={{ fill: NIGHT.green, fontSize: "12px" }}>
+        ✓
+      </text>
+      <text className="clib-cover-eyebrow" x={cx} y={y + h - 42} textAnchor="middle" style={{ fill: NIGHT.green }}>
+        3,323 rules · certified · signed
+      </text>
+    </g>
+  );
+}
+
 // board rim + gutter shade behind the open spread
 function SpreadBacking() {
   return (
@@ -537,21 +579,21 @@ function Defs() {
         <stop offset="50%" stopColor="#1c1917" stopOpacity="0.5" />
         <stop offset="100%" stopColor="#1c1917" stopOpacity="0" />
       </linearGradient>
-      <linearGradient id="clib-sweepband" x1="0" x2="1" y1="0" y2="0">
-        <stop offset="0%" stopColor="#e9e4da" stopOpacity="0" />
-        <stop offset="60%" stopColor="#e9e4da" stopOpacity="0.09" />
-        <stop offset="100%" stopColor="#e9e4da" stopOpacity="0" />
-      </linearGradient>
       <filter id="clib-softshadow" x="-30%" y="-30%" width="160%" height="160%">
         <feDropShadow dx="0" dy="4" stdDeviation="7" floodColor="#1c1917" floodOpacity="0.22" />
       </filter>
       <filter id="clib-glow" x="-60%" y="-60%" width="220%" height="220%">
         <feGaussianBlur stdDeviation="2.6" />
       </filter>
+      {/* the finale's light spreads outward from the returned volume's
+          shelf slot, not left-to-right */}
       <clipPath id="clib-sweepclip">
-        <rect x="0" y="0" width={REDUCED ? 1420 : 0} height="620">
+        <rect x={REDUCED ? -642 : T7X - 2} y="0" width={REDUCED ? 2064 : 0} height="620">
           {!REDUCED && (
-            <animate attributeName="width" dur={`${DUR}s`} repeatCount="1" fill="freeze" values="0;0;1420;1420" keyTimes={kt([0, 0.5, 5.0, DUR])} calcMode="spline" keySplines="0 0 1 1;0.3 0 0.7 1;0 0 1 1" />
+            <>
+              <animate attributeName="x" dur={`${DUR}s`} repeatCount="1" fill="freeze" values={`${T7X - 2};${T7X - 2};-642;-642`} keyTimes={kt([0, 4.2, 8.0, DUR])} calcMode="spline" keySplines="0 0 1 1;0.25 0 0.75 1;0 0 1 1" />
+              <animate attributeName="width" dur={`${DUR}s`} repeatCount="1" fill="freeze" values="0;0;2064;2064" keyTimes={kt([0, 4.2, 8.0, DUR])} calcMode="spline" keySplines="0 0 1 1;0.25 0 0.75 1;0 0 1 1" />
+            </>
           )}
         </rect>
       </clipPath>
@@ -642,46 +684,52 @@ function ActStacks({ auto }: { auto: boolean }) {
                   {/* a fresh blank page stays beneath — the riffle must
                       never expose the bare board */}
                   <rect x="0" y="0" width={PAGE.w} height={PAGE.h} fill={PAPER_EL} stroke={INK} strokeWidth="0.5" opacity="0.98" />
-                  <g opacity="1">
-                    <FadeOut at={8.35} r={0.3} />
-                    <ContentsPage />
+                  {/* the § page waits at the bottom of the stack */}
+                  <g transform="scale(0.95)">
+                    <StatutePage />
                   </g>
-                </g>
-              </g>
-
-              {/* riffle: two leaves fall toward the gutter */}
-              {[
-                { a: 8.2, b: 8.6 },
-                { a: 8.55, b: 8.95 },
-              ].map(({ a, b }, i) => (
-                <g key={i} transform={`translate(${GUT} ${PAGE.y})`}>
-                  <g opacity="0">
-                    <F a="opacity" v={[0, 0, 1, 1, 0, 0]} t={[0, a - 0.05, a, b - 0.04, b, DUR]} />
+                  {/* leaf B: a blank sheet — the riffle's second turn.
+                      Each leaf turns fully over the gutter (scaleX through
+                      0 to −1) and lands beneath the left page; the face
+                      swaps to its blank back at the crossover, where the
+                      sheet is edge-on and the swap is invisible */}
+                  <g>
+                    <TF type="scale" v={["1 1", "1 1", "-0.98 1", "-0.98 1"]} t={[0, 8.5, 9.15, DUR]} s="0 0 1 1;0.45 0 0.55 1;0 0 1 1" />
+                    <Leaf />
+                  </g>
+                  {/* leaf A: the contents page itself is the first turn */}
+                  <g>
+                    <TF type="scale" v={["1 1", "1 1", "-0.98 1", "-0.98 1"]} t={[0, 8.15, 8.8, DUR]} s="0 0 1 1;0.45 0 0.55 1;0 0 1 1" />
                     <g>
-                      <TF type="scale" v={["1 1", "1 1", "0.02 1", "0.02 1"]} t={[0, a, b, DUR]} s="0 0 1 1;0.55 0 0.8 1;0 0 1 1" />
+                      <F a="opacity" v={[1, 1, 0, 0]} t={[0, 8.46, 8.5, DUR]} />
+                      <ContentsPage />
+                    </g>
+                    <g opacity="0">
+                      <F a="opacity" v={[0, 0, 1, 1]} t={[0, 8.46, 8.5, DUR]} />
                       <Leaf />
                     </g>
                   </g>
                 </g>
-              ))}
+              </g>
 
               {/* the title page swings open (the back of the cover) */}
               <g transform={`translate(${GUT} ${PAGE.y})`}>
                 <g opacity="0">
-                  <FadeIn at={7.5} r={0.05} />
+                  <FadeIn at={7.55} r={0.05} />
                   <g>
-                    <TF type="scale" v={["0.02 1", "0.02 1", "1 1", "1 1"]} t={[0, 7.5, 8.0, DUR]} s="0 0 1 1;0.1 0 0.25 1;0 0 1 1" />
+                    <TF type="scale" v={["0.02 1", "0.02 1", "1 1", "1 1"]} t={[0, 7.55, 8.2, DUR]} s="0 0 1 1;0.2 0 0.25 1;0 0 1 1" />
                     <TitlePage />
                   </g>
                 </g>
               </g>
 
-              {/* the front cover — closed until 7.05, then swings away */}
+              {/* the front cover — closed until 7.0, then swings away in
+                  one continuous motion that the title page completes */}
               <g>
-                <F a="opacity" v={[1, 1, 0, 0]} t={[0, 7.48, 7.52, DUR]} />
+                <F a="opacity" v={[1, 1, 0, 0]} t={[0, 7.53, 7.57, DUR]} />
                 <g transform={`translate(${GUT} ${PAGE.y})`}>
                   <g>
-                    <TF type="scale" v={["1 1", "1 1", "0.02 1", "0.02 1"]} t={[0, 7.05, 7.5, DUR]} s="0 0 1 1;0.6 0 0.9 1;0 0 1 1" />
+                    <TF type="scale" v={["1 1", "1 1", "0.02 1", "0.02 1"]} t={[0, 7.0, 7.55, DUR]} s="0 0 1 1;0.5 0 0.75 1;0 0 1 1" />
                     <g transform={`translate(${-GUT} ${-PAGE.y})`}>
                       <CoverFace stampAnim />
                     </g>
@@ -696,10 +744,13 @@ function ActStacks({ auto }: { auto: boolean }) {
           <rect x="0" y="0" width="1420" height="620" fill={PAPER} opacity="0">
             <FadeIn at={9.6} r={0.9} />
           </rect>
+          {/* the glide copy appears over its identical twin in the
+              spread, travels, and is at rest BEFORE the film fades in —
+              the crossfade then blends two matching stills */}
           <g opacity="0" filter="url(#clib-softshadow)">
-            <FadeIn at={8.6} r={0.3} />
-            <TF type="translate" v={[`${GUT} ${PAGE.y}`, `${GUT} ${PAGE.y}`, `${FILM_PAGE.x} ${FILM_PAGE.y}`, `${FILM_PAGE.x} ${FILM_PAGE.y}`]} t={[0, 9.5, 10.9, DUR]} s="0 0 1 1;0.4 0 0.2 1;0 0 1 1" />
-            <TF type="scale" add v={["0.95", "0.95", "1", "1"]} t={[0, 9.5, 10.9, DUR]} s="0 0 1 1;0.4 0 0.2 1;0 0 1 1" />
+            <FadeIn at={9.35} r={0.15} />
+            <TF type="translate" v={[`${GUT} ${PAGE.y}`, `${GUT} ${PAGE.y}`, `${FILM_PAGE.x} ${FILM_PAGE.y}`, `${FILM_PAGE.x} ${FILM_PAGE.y}`]} t={[0, 9.55, 10.55, DUR]} s="0 0 1 1;0.45 0 0.18 1;0 0 1 1" />
+            <TF type="scale" add v={["0.95", "0.95", "1", "1"]} t={[0, 9.55, 10.55, DUR]} s="0 0 1 1;0.45 0 0.18 1;0 0 1 1" />
             <StatutePage />
           </g>
 
@@ -781,7 +832,7 @@ function ActFinale() {
       className="clib-svg"
       viewBox="0 0 1420 620"
       role="img"
-      aria-label="The same library at night: every spine now a sliver of light. A sweep passes across the shelves and the volumes light up green — encoded and verified — with Title 7 still amber and a few grey holdouts next in line. The shelves feed four live surfaces: the Axiom app, FinBot, the rule graph, and the oracles."
+      aria-label="The program returns as a digital edition of the same volume — dark boards, luminous edges, 3,323 rules certified — and slides back into its slot on the night shelves. From that spine, light spreads across the whole library: every volume a sliver of green light, Title 7 amber, a few grey holdouts next in line. The shelves feed four live surfaces: the Axiom app, FinBot, the rule graph, and the oracles."
     >
       <Defs />
       <rect x="0" y="0" width="1420" height="620" fill={NIGHT.paper} />
@@ -792,19 +843,25 @@ function ActFinale() {
         </g>
         <Wall dark lit rows={3} />
       </g>
-      {!REDUCED && (
-        <rect x="-90" y="40" width="90" height="396" fill="url(#clib-sweepband)">
-          <animateTransform attributeName="transform" type="translate" dur={`${DUR}s`} repeatCount="1" fill="freeze" values="0 0;0 0;1510 0;1510 0" keyTimes={kt([0, 0.5, 5.0, DUR])} calcMode="spline" keySplines="0 0 1 1;0.3 0 0.7 1;0 0 1 1" />
-        </rect>
-      )}
       <Plaques dark />
+
+      {/* the program, bound — it holds a beat, then slides home into the
+          T7 slot; the moment it lands, the light starts spreading */}
+      {!REDUCED && (
+        <g opacity="0">
+          <F a="opacity" v={[0, 0, 1, 1, 0, 0]} t={[0, 0.4, 1.0, 4.12, 4.32, DUR]} />
+          <TF type="translate" v={["0 0", "0 0", "360.13 160.84", "360.13 160.84"]} t={[0, 3.0, 4.2, DUR]} s="0 0 1 1;0.5 0 0.22 1;0 0 1 1" />
+          <TF type="scale" add v={["1 1", "1 1", "0.0526 0.3012", "0.0526 0.3012"]} t={[0, 3.0, 4.2, DUR]} s="0 0 1 1;0.5 0 0.22 1;0 0 1 1" />
+          <DigitalVolume />
+        </g>
+      )}
 
       {/* the shelves feed the surfaces */}
       {PREVIEWS.map(({ src, t, s }, i) => {
         const w = 260;
         const x = 136 + i * (w + 36);
         const cx = x + w / 2;
-        const at = 4.7 + i * 0.35;
+        const at = 6.6 + i * 0.3;
         return (
           <g key={t} opacity={REDUCED ? 1 : 0}>
             {!REDUCED && <FadeIn at={at} r={0.55} />}
@@ -823,8 +880,14 @@ function ActFinale() {
         );
       })}
 
+      {!REDUCED && (
+        <text className="clib-cap clib-cap--light" x="36" y="612" opacity="0">
+          <Window a={0.7} b={3.9} r={0.4} />
+          the volume returns · encoded, certified, signed
+        </text>
+      )}
       <text className="clib-cap clib-cap--light" x="36" y="612" opacity={REDUCED ? 1 : 0}>
-        {!REDUCED && <FadeIn at={1.2} r={0.6} />}
+        {!REDUCED && <FadeIn at={4.6} r={0.6} />}
         the digital library · every volume executable · 3,323 rules certified
       </text>
     </svg>
@@ -846,7 +909,7 @@ export function CorpusLibrary({
 }) {
   useEffect(() => {
     if (!onArrived) return;
-    const ms = finale ? 9000 : autopilot ? (REDUCED ? 2600 : 9800) : 0;
+    const ms = finale ? (REDUCED ? 9000 : 10500) : autopilot ? (REDUCED ? 2600 : 10300) : 0;
     if (!ms) return;
     const t = window.setTimeout(() => onArrived(), ms);
     return () => window.clearTimeout(t);

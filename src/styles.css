@@ -2547,6 +2547,11 @@ polygon.ill-line {
 
 .clib-plaque--light { fill: #948b7e; }
 
+.clib-plaque--digital {
+  fill: var(--color-success);
+  opacity: 0.75;
+}
+
 .clib-spinelabel {
   font-family: var(--f-mono);
   font-size: 5.5px;

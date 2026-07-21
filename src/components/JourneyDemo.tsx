@@ -15,7 +15,7 @@ import { JourneyFilm } from "./JourneyFilm";
 //                 reaches.
 //   THE DIGITAL   the program returns as a digital edition of the same
 //   LIBRARY       volume, slides home into its shelf slot, and light
-//                 spreads from that spine across the night shelves —
+//                 spreads from that spine across the blueprint shelves —
 //                 feeding the tools row. Then the cycle begins again.
 //
 // Pause (or the arrow keys) drops into manual mode: step through the

@@ -386,6 +386,90 @@ function Sources() {
   );
 }
 
+// ── the field of sources ──────────────────────────────────────────────
+// the three vignettes are exemplars, not the census. Around them, a
+// constellation of satellite site-marks pops in one by one — each a tiny
+// engraved sheet, with stipple dots suggesting more beyond the plate —
+// so "hundreds of official sites" is something you see, not just read.
+
+const SITE_SHEETS: ReadonlyArray<readonly [number, number]> = [
+  // around the legislature
+  [40, 40], [62, 30], [172, 40], [192, 76], [34, 88], [38, 148], [184, 118],
+  // the gap between legislature and agency
+  [46, 196], [90, 204], [176, 206],
+  // around the agency
+  [34, 240], [36, 288], [190, 262],
+  // the gap between agency and register
+  [50, 330], [96, 336], [156, 322], [190, 330],
+  // around the register
+  [34, 380], [38, 420], [172, 366], [188, 400],
+];
+
+const SITE_DOTS: ReadonlyArray<readonly [number, number]> = [
+  [52, 58], [80, 36], [160, 26], [198, 96], [30, 116], [56, 176],
+  [120, 200], [198, 186], [30, 264], [48, 308], [74, 348], [140, 342],
+  [198, 354], [30, 404], [60, 442], [150, 446], [196, 428], [88, 26],
+];
+
+function SourceField() {
+  return (
+    <g>
+      {SITE_SHEETS.map(([x, y], i) => (
+        <g key={`s${i}`} opacity="0" transform={`translate(${x}, ${y})`}>
+          <VisHold a={0.008 + (i % 8) * 0.009} r={0.012} max={0.85} dim={0.185} rest={0.35} />
+          <rect x={-3.5} y={-4.5} width={7} height={9} fill="var(--color-paper-elevated)" stroke={INK} strokeWidth="0.7" />
+          <line x1={-1.8} y1={-1.5} x2={1.8} y2={-1.5} stroke={INK} strokeWidth="0.5" opacity="0.7" />
+          <line x1={-1.8} y1={0.8} x2={1} y2={0.8} stroke={INK} strokeWidth="0.5" opacity="0.7" />
+        </g>
+      ))}
+      {SITE_DOTS.map(([x, y], i) => (
+        <circle key={`d${i}`} cx={x} cy={y} r="1.1" fill={INK} opacity="0">
+          <VisHold a={0.014 + (i % 9) * 0.008} r={0.012} max={0.5} dim={0.185} rest={0.35} />
+        </circle>
+      ))}
+      {/* the tally, engraved under the field */}
+      <g opacity="0">
+        <VisHold a={0.052} r={0.016} dim={0.185} rest={0.4} />
+        <text className="ill-caption" style={HALO} x="112" y="462" textAnchor="middle">hundreds of official sites</text>
+        <text className="ill-caption" style={HALO} x="112" y="476" textAnchor="middle">4 countries · 50 states + DC</text>
+      </g>
+    </g>
+  );
+}
+
+// the interaction, at scale: while the two hero documents trade their
+// "cites / amends" beat, fine amber citation threads criss-cross the
+// whole field — sites referencing each other's texts, everywhere at once.
+const WEB_ARCS = [
+  "M 192 80 C 200 120, 196 170, 178 202",
+  "M 46 200 C 38 226, 36 252, 36 282",
+  "M 190 266 C 184 288, 172 306, 158 318",
+  "M 94 340 C 74 352, 52 364, 40 376",
+  "M 66 30 C 100 22, 140 26, 168 38",
+  "M 38 152 C 40 166, 42 178, 45 190",
+];
+
+function CitationWeb() {
+  return (
+    <g>
+      {WEB_ARCS.map((d, i) => {
+        const on = 0.055 + i * 0.012;
+        return (
+          <path key={d} d={d} fill="none" stroke={WAX} strokeWidth="1.1" strokeDasharray="3 3" markerEnd="url(#ill-ref-arr)" opacity="0">
+            <animate
+              attributeName="opacity"
+              dur={`${CYCLE}s`}
+              repeatCount="indefinite"
+              values="0;0;0.7;0.7;0;0"
+              keyTimes={`0;${on};${on + 0.012};0.186;0.198;1`}
+            />
+          </path>
+        );
+      })}
+    </g>
+  );
+}
+
 // ── act two: the corpus and the sibling documents ─────────────────────
 
 // the corpus: an engraved archive chest — banded strongbox with one
@@ -444,20 +528,36 @@ function Intake() {
     "M 160 246 C 186 244, 202 242, 220 240", // agency
     "M 158 380 C 188 348, 202 292, 220 246", // register
   ];
+  // tributaries: satellite sites feed the same drawer — the corpus is
+  // fed by the whole field, not just the three exemplars.
+  const tribs = [
+    "M 176 44 C 210 100, 216 180, 220 234",
+    "M 190 208 C 206 220, 214 228, 220 238",
+    "M 192 332 C 208 310, 214 276, 220 245",
+    "M 176 402 C 208 372, 214 300, 220 248",
+  ];
   return (
-    <g opacity="0">
-      <VisHold a={0.02} r={0.02} max={0.45} dim={0.25} rest={0.4} />
-      {paths.map((d) => (
-        <path
-          key={d}
-          d={d}
-          fill="none"
-          stroke={INK}
-          strokeWidth="0.9"
-          strokeDasharray="1.5 4.5"
-          markerEnd="url(#ill-intake-arr)"
-        />
-      ))}
+    <g>
+      <g opacity="0">
+        <VisHold a={0.02} r={0.02} max={0.45} dim={0.25} rest={0.4} />
+        {paths.map((d) => (
+          <path
+            key={d}
+            d={d}
+            fill="none"
+            stroke={INK}
+            strokeWidth="0.9"
+            strokeDasharray="1.5 4.5"
+            markerEnd="url(#ill-intake-arr)"
+          />
+        ))}
+      </g>
+      <g opacity="0">
+        <VisHold a={0.034} r={0.02} max={0.28} dim={0.25} rest={0.4} />
+        {tribs.map((d) => (
+          <path key={d} d={d} fill="none" stroke={INK} strokeWidth="0.7" strokeDasharray="1.5 4.5" />
+        ))}
+      </g>
     </g>
   );
 }
@@ -1060,9 +1160,10 @@ function EngraveDefs() {
 
 function StaticStory() {
   return (
-    <svg className="ill" viewBox="0 0 1420 540" role="img" aria-label="The life of a rule: laws from many sources are captured into the corpus; each section of a document is encoded into its own rulespec file; the files pass four gates, are sealed into the rulebook, and delivered to the web, the API, and AI agents.">
+    <svg className="ill" viewBox="0 0 1420 540" role="img" aria-label="The life of a rule: laws from hundreds of official sites are captured into the corpus; each section of a document is encoded into its own rulespec file; the files pass four gates, are sealed into the rulebook, and delivered to the web, the API, and AI agents.">
       <EngraveDefs />
       <Frame />
+      <SourceField />
       <Sources />
       <Corpus />
       <g transform={`translate(${DOC.x}, ${DOC.y})`}>
@@ -1133,12 +1234,14 @@ export function IllustratedFlow() {
         className="ill"
         viewBox="0 0 1420 540"
         role="img"
-        aria-label="The life of a rule, as a looping film: documents from the legislature, an agency, and the register cross-reference each other and are filed into the corpus; the hero document is encoded section by section, each section producing its own rulespec file; the files pass through four gates — one failure is redrafted in place — then stack into the sealed rulebook, and copies fly out to the web, the API, and AI agents."
+        aria-label="The life of a rule, as a looping film: hundreds of official sites — a field of small marks around a legislature, an agency, and the register — publish documents that cite and amend each other, and everything funnels into the corpus; the hero document is encoded section by section, each section producing its own rulespec file; the files pass through four gates — one failure is redrafted in place — then stack into the sealed rulebook, and copies fly out to the web, the API, and AI agents."
       >
         <EngraveDefs />
         <Frame />
+        <SourceField />
         <Sources />
         <Intake />
+        <CitationWeb />
         <Corpus />
         {SIBLINGS.map((s, i) => (
           <SiblingDoc key={i} s={s} />

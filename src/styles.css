@@ -2552,6 +2552,34 @@ polygon.ill-line {
   opacity: 0.75;
 }
 
+/* the film's constellation scene */
+
+.jw-cluster {
+  font-family: var(--f-mono);
+  font-size: 6px;
+  letter-spacing: 0.05em;
+  fill: var(--color-ink-secondary);
+}
+
+.jw-clusterdoc {
+  font-family: var(--f-mono);
+  font-size: 2.6px;
+  fill: var(--color-ink-secondary);
+}
+
+.jw-chip1 {
+  font-family: var(--f-mono);
+  font-size: 12.5px;
+  fill: var(--color-ink);
+}
+
+.jw-chip2 {
+  font-family: var(--f-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.06em;
+  fill: var(--color-ink-muted);
+}
+
 .clib-spinelabel {
   font-family: var(--f-mono);
   font-size: 5.5px;

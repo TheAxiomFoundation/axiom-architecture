@@ -24,7 +24,7 @@ import { JourneyFilm } from "./JourneyFilm";
 
 const CYCLE = 56;
 const FILM_START = 0.207 * CYCLE; // the statute page, settled
-const FILM_END = 0.752 * CYCLE; // the program starts shrinking back into the world
+const FILM_END = 0.795 * CYCLE; // the constellation has settled, ledger stamped
 
 type Step = { label: string; kind: "stacks" | "landed" | "film" | "finale"; t?: number };
 const STEPS: Step[] = [
@@ -34,7 +34,7 @@ const STEPS: Step[] = [
   { label: "the encoding", kind: "film", t: 0.37 },
   { label: "the gates, passed", kind: "film", t: 0.44 },
   { label: "the graph", kind: "film", t: 0.56 },
-  { label: "the program", kind: "film", t: 0.66 },
+  { label: "the constellation", kind: "film", t: 0.78 },
   { label: "the digital library", kind: "finale" },
 ];
 const AUTO_LABEL = {

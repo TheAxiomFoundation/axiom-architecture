@@ -22,9 +22,9 @@ import previewOracles from "../assets/preview-oracles.png";
 //                a green sliver of screen, T7 amber — feeding the four
 //                live surfaces below.
 //
-// One 11-second SMIL clock, fill=freeze — remounting restarts the act.
+// One 13-second SMIL clock, fill=freeze — remounting restarts the act.
 
-const DUR = 11;
+const DUR = 13;
 
 const REDUCED =
   typeof window !== "undefined" &&
@@ -486,12 +486,12 @@ function SectionLeaf({ no, title }: { no: string; title: string }) {
 }
 
 // the thumb-through: the contents sheet turns first, then §§ 2011,
-// 2013, 2015 pass by at gathering speed before § 2017 is reached
+// 2013, 2015 — each turn unhurried enough to read the page going by
 const RIFFLE: Array<{ no?: string; title?: string; a: number; b: number }> = [
-  { a: 8.1, b: 8.7 },
-  { no: "2011", title: "Congressional declaration", a: 8.4, b: 8.9 },
-  { no: "2013", title: "Establishment of program", a: 8.65, b: 9.1 },
-  { no: "2015", title: "Eligibility disqualifications", a: 8.9, b: 9.3 },
+  { a: 8.3, b: 9.25 },
+  { no: "2011", title: "Congressional declaration", a: 8.9, b: 9.85 },
+  { no: "2013", title: "Establishment of program", a: 9.5, b: 10.45 },
+  { no: "2015", title: "Eligibility disqualifications", a: 10.1, b: 11.05 },
 ];
 
 // the statute page — drawn in the FILM's coordinates (300 × 350 at 0,0)
@@ -721,7 +721,7 @@ function ActStacks({ auto }: { auto: boolean }) {
               shelf, grows to the closed book (width expansion = the turn
               toward camera), tips as it leaves */}
           <ellipse cx={GUT + PAGE.w / 2} cy={PAGE.y + PAGE.h + 12} rx="170" ry="10" fill={INK} opacity="0">
-            <F a="opacity" v={[0, 0, 0.13, 0.13, 0]} t={[0, 6.3, 6.9, 9.6, 10.4]} />
+            <F a="opacity" v={[0, 0, 0.13, 0.13, 0]} t={[0, 6.3, 6.9, 11.4, 12.2]} />
             <F a="rx" v={[170, 170, 170, 310, 310]} t={[0, 6.9, 7.05, 8.0, DUR]} />
             <F a="cx" v={[GUT + PAGE.w / 2, GUT + PAGE.w / 2, GUT + PAGE.w / 2, GUT, GUT]} t={[0, 6.9, 7.05, 8.0, DUR]} />
           </ellipse>
@@ -742,7 +742,7 @@ function ActStacks({ auto }: { auto: boolean }) {
             <g opacity="0">
               {/* one window — competing fill-freeze opacity animations
                   would override each other */}
-              <F a="opacity" v={[0, 0, 1, 1, 0, 0]} t={[0, 4.9, 5.02, 9.6, 10.3, DUR]} />
+              <F a="opacity" v={[0, 0, 1, 1, 0, 0]} t={[0, 4.9, 5.02, 11.4, 12.15, DUR]} />
 
               {/* backing + right page appear the moment the cover opens */}
               <g opacity="0">
@@ -759,29 +759,6 @@ function ActStacks({ auto }: { auto: boolean }) {
                   <g transform="scale(0.95)">
                     <StatutePage />
                   </g>
-                  {/* the thumb-through. Each leaf turns fully over the
-                      gutter (scaleX through 0 to −1) and lands beneath
-                      the left page; its face swaps to a blank back at
-                      the crossover, where the sheet is edge-on and the
-                      swap is invisible. Deepest page first in DOM. */}
-                  {RIFFLE.slice()
-                    .reverse()
-                    .map(({ no, title, a, b }) => {
-                      const mid = (a + b) / 2;
-                      return (
-                        <g key={a}>
-                          <TF type="scale" v={["1 1", "1 1", "-0.98 1", "-0.98 1"]} t={[0, a, b, DUR]} s="0 0 1 1;0.45 0 0.55 1;0 0 1 1" />
-                          <g>
-                            <F a="opacity" v={[1, 1, 0, 0]} t={[0, mid - 0.02, mid + 0.02, DUR]} />
-                            {no ? <SectionLeaf no={no} title={title!} /> : <ContentsPage />}
-                          </g>
-                          <g opacity="0">
-                            <F a="opacity" v={[0, 0, 1, 1]} t={[0, mid - 0.02, mid + 0.02, DUR]} />
-                            <Leaf />
-                          </g>
-                        </g>
-                      );
-                    })}
                 </g>
               </g>
 
@@ -793,6 +770,36 @@ function ActStacks({ auto }: { auto: boolean }) {
                     <TF type="scale" v={["0.02 1", "0.02 1", "1 1", "1 1"]} t={[0, 7.55, 8.2, DUR]} s="0 0 1 1;0.2 0 0.25 1;0 0 1 1" />
                     <TitlePage />
                   </g>
+                </g>
+              </g>
+
+              {/* the thumb-through. Each leaf turns fully over the
+                  gutter (scaleX through 0 to −1) and comes to rest ON
+                  the left-hand stack — turned pages stay in view. The
+                  face swaps to its blank back around the crossover,
+                  where the sheet is edge-on and the swap reads as the
+                  page showing its other side. Deepest page first. */}
+              <g opacity="0">
+                <FadeIn at={7.15} r={0.1} />
+                <g transform={`translate(${GUT} ${PAGE.y})`}>
+                  {RIFFLE.slice()
+                    .reverse()
+                    .map(({ no, title, a, b }) => {
+                      const mid = (a + b) / 2;
+                      return (
+                        <g key={a}>
+                          <TF type="scale" v={["1 1", "1 1", "-0.98 1", "-0.98 1"]} t={[0, a, b, DUR]} s="0 0 1 1;0.4 0 0.6 1;0 0 1 1" />
+                          <g>
+                            <F a="opacity" v={[1, 1, 0, 0]} t={[0, mid - 0.05, mid + 0.05, DUR]} />
+                            {no ? <SectionLeaf no={no} title={title!} /> : <ContentsPage />}
+                          </g>
+                          <g opacity="0">
+                            <F a="opacity" v={[0, 0, 1, 1]} t={[0, mid - 0.05, mid + 0.05, DUR]} />
+                            <Leaf />
+                          </g>
+                        </g>
+                      );
+                    })}
                 </g>
               </g>
 
@@ -815,15 +822,15 @@ function ActStacks({ auto }: { auto: boolean }) {
           {/* everything settles to paper while the page glides to the
               film's opening position */}
           <rect x="0" y="0" width="1420" height="620" fill={PAPER} opacity="0">
-            <FadeIn at={9.6} r={0.9} />
+            <FadeIn at={11.4} r={0.9} />
           </rect>
           {/* the glide copy appears over its identical twin in the
               spread, travels, and is at rest BEFORE the film fades in —
               the crossfade then blends two matching stills */}
           <g opacity="0" filter="url(#clib-softshadow)">
-            <FadeIn at={9.35} r={0.15} />
-            <TF type="translate" v={[`${GUT} ${PAGE.y}`, `${GUT} ${PAGE.y}`, `${FILM_PAGE.x} ${FILM_PAGE.y}`, `${FILM_PAGE.x} ${FILM_PAGE.y}`]} t={[0, 9.55, 10.55, DUR]} s="0 0 1 1;0.45 0 0.18 1;0 0 1 1" />
-            <TF type="scale" add v={["0.95", "0.95", "1", "1"]} t={[0, 9.55, 10.55, DUR]} s="0 0 1 1;0.45 0 0.18 1;0 0 1 1" />
+            <FadeIn at={11.1} r={0.15} />
+            <TF type="translate" v={[`${GUT} ${PAGE.y}`, `${GUT} ${PAGE.y}`, `${FILM_PAGE.x} ${FILM_PAGE.y}`, `${FILM_PAGE.x} ${FILM_PAGE.y}`]} t={[0, 11.35, 12.35, DUR]} s="0 0 1 1;0.45 0 0.18 1;0 0 1 1" />
+            <TF type="scale" add v={["0.95", "0.95", "1", "1"]} t={[0, 11.35, 12.35, DUR]} s="0 0 1 1;0.45 0 0.18 1;0 0 1 1" />
             <StatutePage />
           </g>
 
@@ -836,10 +843,6 @@ function ActStacks({ auto }: { auto: boolean }) {
             <text className="clib-cap" x="36" y="604" opacity="0">
               <Window a={4.45} b={7.55} />
               one volume · title 7 — agriculture
-            </text>
-            <text className="clib-cap" x="36" y="604" opacity="0">
-              <Window a={7.8} b={10.4} />
-              one section · § 2017 — value of allotment
             </text>
           </g>
         </>
@@ -872,9 +875,6 @@ function StillSpread() {
           <StatutePage />
         </g>
       </g>
-      <text className="clib-cap" x="36" y="604">
-        one section · § 2017 — value of allotment
-      </text>
     </g>
   );
 }
@@ -1013,7 +1013,7 @@ export function CorpusLibrary({
 }) {
   useEffect(() => {
     if (!onArrived) return;
-    const ms = finale ? (REDUCED ? 9000 : 10500) : autopilot ? (REDUCED ? 2600 : 10300) : 0;
+    const ms = finale ? (REDUCED ? 9000 : 10500) : autopilot ? (REDUCED ? 2600 : 12400) : 0;
     if (!ms) return;
     const t = window.setTimeout(() => onArrived(), ms);
     return () => window.clearTimeout(t);

@@ -940,6 +940,19 @@ const DOC_TINT: Record<DocNode["kind"], string> = {
   policy: "#5c6470",
 };
 
+// every node in the constellation is the SAME card the graph scene
+// builds with — the pull-back never changes the material, only the
+// distance. w scales with how many rules the node carries.
+function MiniCard({ cx, cy, w, tint, o = 1 }: { cx: number; cy: number; w: number; tint: string; o?: number }) {
+  const h = w * 0.27 + 0.9;
+  return (
+    <g opacity={o}>
+      <rect x={cx - w / 2} y={cy - h / 2} width={w} height={h} rx={0.6} fill="var(--color-paper-elevated)" stroke="rgba(28,25,23,0.35)" strokeWidth="0.25" />
+      <rect x={cx - w / 2} y={cy - h / 2} width={w} height={Math.min(0.7, h * 0.22)} rx={0.3} fill={tint} />
+    </g>
+  );
+}
+
 // the dim field: everything the registry hasn't reached yet — visible
 // only once the camera is far enough out to see past the registry
 const DIM_DOTS = (() => {
@@ -983,17 +996,17 @@ function ClusterBlob({ c, i }: { c: Cluster; i: number }) {
             />
           );
         })}
-        {CO_SNAP_DOCS.map((d) => (
-          <g key={d.id}>
-            <circle
-              cx={c.x + d.dx} cy={c.y + d.dy} r={1.2 + 0.75 * Math.sqrt(d.count)}
-              fill={DOC_TINT[d.kind]} opacity={d.kind === "hub" ? 0.9 : 0.8}
-            />
-            <text className="jw-clusterdoc" x={c.x + d.dx} y={c.y + d.dy - (1.2 + 0.75 * Math.sqrt(d.count)) - 1.2} textAnchor="middle">
-              {d.label}
-            </text>
-          </g>
-        ))}
+        {CO_SNAP_DOCS.map((d) => {
+          const w = 3.4 + 2.1 * Math.sqrt(d.count);
+          return (
+            <g key={d.id}>
+              <MiniCard cx={c.x + d.dx} cy={c.y + d.dy} w={w} tint={DOC_TINT[d.kind]} />
+              <text className="jw-clusterdoc" x={c.x + d.dx} y={c.y + d.dy - (w * 0.27 + 0.9) / 2 - 1.2} textAnchor="middle">
+                {d.label}
+              </text>
+            </g>
+          );
+        })}
         <text className="jw-cluster" x={c.x} y={c.y + c.r + 12} textAnchor="middle">{label}</text>
       </g>
     );
@@ -1003,21 +1016,21 @@ function ClusterBlob({ c, i }: { c: Cluster; i: number }) {
   const dots: Array<[number, number, number]> = Array.from({ length: n }, () => {
     const u = rng() * Math.PI * 2;
     const rad = c.r * (0.2 + 0.68 * Math.sqrt(rng()));
-    return [c.x + Math.cos(u) * rad, c.y + Math.sin(u) * rad * 0.9, 1.3 + rng() * 1.4];
+    return [c.x + Math.cos(u) * rad, c.y + Math.sin(u) * rad * 0.9, 4.6 + rng() * 4.2];
   });
   return (
     <g opacity={O2()}>
       <Vis a={at} b={W.s4[1] - 0.004} r={0.012} />
-      <circle cx={c.x} cy={c.y} r={c.r * 1.25} fill={OK} opacity="0.06" />
+      <circle cx={c.x} cy={c.y} r={c.r * 1.25} fill={OK} opacity="0.05" />
       {dots.map(([x, y], k) =>
         k % 3 === 0 ? null : (
-          <line key={`e${k}`} x1={c.x} y1={c.y} x2={x} y2={y} stroke="rgba(22,101,52,0.22)" strokeWidth="0.4" />
+          <line key={`e${k}`} x1={c.x} y1={c.y} x2={x} y2={y} stroke="rgba(22,101,52,0.22)" strokeWidth="0.35" />
         ),
       )}
-      {dots.map(([x, y, r], k) => (
-        <circle key={k} cx={x} cy={y} r={r} fill={OK} opacity="0.75" />
+      {dots.map(([x, y, w], k) => (
+        <MiniCard key={k} cx={x} cy={y} w={w} tint={OK} o={0.95} />
       ))}
-      <circle cx={c.x} cy={c.y} r="2.6" fill={OK} />
+      <MiniCard cx={c.x} cy={c.y} w={7.5} tint="var(--color-ink)" />
       <text className="jw-cluster" x={c.x} y={c.y + c.r * 1.25 + 9} textAnchor="middle">{label}</text>
     </g>
   );
@@ -1058,7 +1071,7 @@ function SceneConstellation() {
         <g opacity={O2()}>
           <Vis a={0.68} b={W.s4[1] - 0.004} r={0.03} max={0.5} />
           {DIM_DOTS.map(([x, y, r], k) => (
-            <circle key={k} cx={x} cy={y} r={r} fill={INK} opacity="0.35" />
+            <rect key={k} x={x} y={y} width={r * 2.6} height={r * 0.8} rx="0.4" fill={INK} opacity="0.3" />
           ))}
         </g>
         {CLUSTERS.map((c, i) => (

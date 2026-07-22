@@ -285,14 +285,25 @@ function TitleSpine({ i, dark, lit, hideT7 }: { i: number; dark?: boolean; lit?:
         <>
           <line x1={x + 1.5} y1={top + 8} x2={x + 13.5} y2={top + 8} stroke={isT7 ? "#e6c893" : "#b08d57"} strokeWidth="0.8" opacity="0.65" />
           <line x1={x + 1.5} y1={top + 12} x2={x + 13.5} y2={top + 12} stroke={isT7 ? "#e6c893" : "#b08d57"} strokeWidth="0.6" opacity="0.5" />
-          <text
-            className="clib-spinelabel"
-            transform={`rotate(90 ${x + 7.5} ${top + h / 2 + 8})`}
-            x={x + 7.5} y={top + h / 2 + 8} textAnchor="middle"
-            fill={isT7 ? "#f0d9b0" : undefined}
-          >
-            {`${no} · ${name}`}
-          </text>
+          {(() => {
+            // the label lives between the gilt bands and the foot;
+            // long titles on short spines squeeze rather than overflow
+            const label = `${no} · ${name}`;
+            const est = label.length * 3.6;
+            const avail = h - 22;
+            const mid = top + 16 + (h - 20) / 2;
+            return (
+              <text
+                className="clib-spinelabel"
+                transform={`rotate(90 ${x + 7.5} ${mid})`}
+                x={x + 7.5} y={mid} textAnchor="middle" dominantBaseline="central"
+                {...(est > avail ? { textLength: avail, lengthAdjust: "spacingAndGlyphs" } : {})}
+                fill={isT7 ? "#f0d9b0" : undefined}
+              >
+                {label}
+              </text>
+            );
+          })()}
         </>
       )}
     </g>

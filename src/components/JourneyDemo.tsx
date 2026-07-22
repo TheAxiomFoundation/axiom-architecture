@@ -21,7 +21,7 @@ import { JourneyFilm } from "./JourneyFilm";
 
 const CYCLE = 56;
 const FILM_START = 0.207 * CYCLE; // the statute page, settled
-const FILM_END = 0.795 * CYCLE; // the wide graph has settled, ledger stamped
+const FILM_END = 0.862 * CYCLE; // the wide graph has settled, ledger stamped
 
 type Step = { label: string; kind: "stacks" | "landed" | "film"; t?: number };
 const STEPS: Step[] = [
@@ -31,7 +31,7 @@ const STEPS: Step[] = [
   { label: "the encoding", kind: "film", t: 0.37 },
   { label: "the gates, passed", kind: "film", t: 0.44 },
   { label: "the graph", kind: "film", t: 0.56 },
-  { label: "the graph, whole", kind: "film", t: 0.78 },
+  { label: "the graph, whole", kind: "film", t: 0.82 },
 ];
 const AUTO_LABEL = {
   map: "the pull",

@@ -19,13 +19,7 @@
 // crossfade. Reduced motion gets scene II as a composed still.
 
 import { useEffect, useRef } from "react";
-import {
-  CLUSTERS,
-  CO_SNAP_RING,
-  OUTPUTS,
-  PROGRAM_COUNT,
-  SNAPSHOT_DATE,
-} from "./registry-snapshot";
+import { CLUSTERS, CO_SNAP_RING, OUTPUTS } from "./registry-snapshot";
 
 const CYCLE = 56;
 
@@ -42,14 +36,14 @@ const OK = "var(--color-success)";
 const W = {
   s1: [0.012, 0.175],
   s2: [0.183, 0.48],
-  s3: [0.48, 0.8],
+  s3: [0.48, 0.87],
 } as const;
 
 const CAPTIONS = [
   { w: W.s1, name: "The law, whole", sub: "1,742,391 provisions · green = encoded & verified — the grey ones are next" },
   { w: W.s2, name: "One provision, encoded", sub: "segmented — each section encoded, each encoding through the four gates" },
   { w: [0.48, 0.615] as const, name: "The graph", sub: "every rule is a node — typed, cited, connected to the concepts it draws on" },
-  { w: [0.62, 0.8] as const, name: "The graph, whole", sub: "same cards, farther back — the live runtime registry, every count real" },
+  { w: [0.62, 0.87] as const, name: "The graph, whole", sub: "same cards, farther back — the live runtime registry, every count real" },
 ];
 
 // ── SMIL helpers ──────────────────────────────────────────────────────
@@ -800,9 +794,9 @@ function SceneGraph() {
   const cy = 300;
   // one continuous pull-back: hero graph → co-snap's rules → the whole
   // registry → the far field. Same cards at every distance.
-  const CAMT = [0, W.s3[0], 0.515, 0.558, 0.598, 0.652, 0.664, 0.748, 1];
-  const CAMS = [1.06, 1.06, 1.0, 0.55, 0.55, 0.18, 0.18, 0.055, 0.055];
-  const CAMSPL = "0 0 1 1;0.3 0 0.4 1;0.5 0 0.3 1;0 0 1 1;0.45 0 0.2 1;0 0 1 1;0.5 0 0.15 1;0 0 1 1";
+  const CAMT = [0, W.s3[0], 0.515, 0.558, 0.598, 0.652, 0.664, 0.728, 0.775, 1];
+  const CAMS = [1.06, 1.06, 1.0, 0.55, 0.55, 0.18, 0.18, 0.055, 0.026, 0.026];
+  const CAMSPL = "0 0 1 1;0.3 0 0.4 1;0.5 0 0.3 1;0 0 1 1;0.45 0 0.2 1;0 0 1 1;0.5 0 0.2 1;0.35 0 0.25 1;0 0 1 1";
   return (
     <Scene w={W.s3}>
       <g>
@@ -885,25 +879,21 @@ function SceneGraph() {
         {CLUSTERS.filter((c) => c.id !== "co-snap").map((c, i) => (
           <ProgramGroup key={c.id} id={c.id} count={c.count} i={i} />
         ))}
-        {/* …and at full distance, the not-yet-encoded horizon */}
-        {FAR_GHOSTS.map(([x, y], k) => (
-          <GhostCard key={k} x={x} y={y} at={0.69 + (k % 12) * 0.0022} max={0.4} />
+        {/* the fabric between the real groups */}
+        {REAL_WEB.map(([a, b], k) => (
+          <g key={`w${k}`}>
+            <line x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} stroke="rgba(87,83,78,0.15)" strokeWidth="6" opacity={O2()}>
+              <Vis a={0.648} b={W.s3[1] - 0.004} r={0.016} max={0.8} />
+            </line>
+            <line x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} stroke="rgba(87,83,78,0.18)" strokeWidth="50" opacity={O2()}>
+              <Vis a={0.735} b={W.s3[1] - 0.004} r={0.02} max={0.6} />
+            </line>
+          </g>
         ))}
-      </g>
-
-      {/* the ledger line, in screen space: what you are looking at */}
-      <g opacity={O2()}>
-        <Vis a={0.755} b={W.s3[1] - 0.005} r={0.008} />
-        <g filter="url(#jw-shadow)">
-          <rect x="475" y="428" width="470" height="66" rx="6" fill="var(--color-paper-elevated)" stroke="var(--color-rule)" strokeWidth="1" />
-        </g>
-        <rect x="475" y="428" width="470" height="3" rx="1.5" fill={WAX} />
-        <text className="jw-chip1" x="710" y="456" textAnchor="middle">
-          {`the runtime registry · ${PROGRAM_COUNT} programs compiled`}
-        </text>
-        <text className="jw-chip2" x="710" y="478" textAnchor="middle">
-          {`3,323 rules · certified & signed · registry snapshot ${SNAPSHOT_DATE}`}
-        </text>
+        {/* …and at full distance, the sea of programs still to come */}
+        {SEA.map((g, k) => (
+          <SeaProgram key={k} g={g} />
+        ))}
       </g>
     </Scene>
   );
@@ -1087,18 +1077,101 @@ function ProgramGroup({ id, count, i }: { id: string; count: number; i: number }
   );
 }
 
-// the not-yet-encoded horizon, revealed only at full distance
-const FAR_GHOSTS = (() => {
-  const rng = rng32(71);
-  const out: Array<[number, number]> = [];
-  while (out.length < 110) {
-    const x = 710 + (rng() - 0.5) * 18400;
-    const y = 300 + (rng() - 0.5) * 8600;
-    if (Math.abs(x - 710) < 3600 && Math.abs(y - 300) < 2100) continue;
-    out.push([x, y]);
-  }
-  return out;
+// the fabric: each real group threads to its nearest neighbour
+const REAL_CENTERS: Array<readonly [number, number]> = [
+  [710, 300],
+  ...Object.values(WORLD_POS),
+];
+const REAL_WEB: Array<[readonly [number, number], readonly [number, number]]> = (() => {
+  const pairs: Array<[readonly [number, number], readonly [number, number]]> = [];
+  const seen = new Set<string>();
+  REAL_CENTERS.forEach((c, i) => {
+    let bj = 0;
+    let bd = Infinity;
+    REAL_CENTERS.forEach((o, j) => {
+      if (i === j) return;
+      const d = Math.hypot(o[0] - c[0], o[1] - c[1]);
+      if (d < bd) {
+        bd = d;
+        bj = j;
+      }
+    });
+    const key = `${Math.min(i, bj)}-${Math.max(i, bj)}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      pairs.push([c, REAL_CENTERS[bj]]);
+    }
+  });
+  return pairs;
 })();
+
+// the sea: ghost programs to the horizon — the same hub-and-spoke shape
+// as the real groups, text as hairlines, each threaded to a neighbour
+type SeaGroup = {
+  x: number;
+  y: number;
+  cards: Array<readonly [number, number]>;
+  link?: readonly [number, number];
+  far: boolean;
+};
+const SEA: SeaGroup[] = (() => {
+  const rng = rng32(613);
+  const centers: Array<[number, number]> = [];
+  let guard = 0;
+  while (centers.length < 84 && guard++ < 9000) {
+    const x = 710 + (rng() - 0.5) * 42000;
+    const y = 300 + (rng() - 0.5) * 19000;
+    if (Math.abs(x - 710) < 3900 && Math.abs(y - 300) < 2200) continue; // the registry's clearing
+    if (centers.some(([cx, cy]) => Math.hypot(cx - x, cy - y) < 1700)) continue;
+    centers.push([x, y]);
+  }
+  return centers.map(([x, y], i) => {
+    const r = rng32(1700 + i * 13);
+    const n = 3 + Math.floor(r() * 4);
+    const cards = Array.from({ length: n }, () => {
+      const u = r() * Math.PI * 2;
+      const rad = 280 + r() * 440;
+      return [x + Math.cos(u) * rad * 1.3, y + Math.sin(u) * rad * 0.75] as const;
+    });
+    const pool: Array<readonly [number, number]> = [...centers.slice(0, i), ...REAL_CENTERS];
+    let link: readonly [number, number] | undefined;
+    let bd = Infinity;
+    for (const c of pool) {
+      const d = Math.hypot(c[0] - x, c[1] - y);
+      if (d > 100 && d < bd && d < 8000) {
+        bd = d;
+        link = c;
+      }
+    }
+    return { x, y, cards, link, far: Math.hypot(x - 710, y - 300) > 7000 };
+  });
+})();
+
+// reveal by distance: near groups arrive with the registry view, the
+// far sea only as the camera reaches it
+const seaAt = (g: SeaGroup) =>
+  Math.min(0.762, 0.695 + (Math.hypot(g.x - 710, g.y - 300) / 22000) * 0.075);
+
+function SeaProgram({ g }: { g: SeaGroup }) {
+  return (
+    <g opacity={O2()}>
+      <Vis a={seaAt(g)} b={W.s3[1] - 0.004} r={0.016} max={0.6} />
+      {/* strokes are sized for the DEEP zoom — the sea only exists there */}
+      {g.link && (
+        <line x1={g.x} y1={g.y} x2={g.link[0]} y2={g.link[1]} stroke="rgba(87,83,78,0.2)" strokeWidth="55" />
+      )}
+      {g.cards.map(([sx, sy], k) => (
+        <line key={`s${k}`} x1={g.x} y1={g.y} x2={sx} y2={sy} stroke="rgba(87,83,78,0.26)" strokeWidth="38" />
+      ))}
+      {[[g.x, g.y] as const, ...g.cards].map(([sx, sy], k) => (
+        <g key={k}>
+          <rect x={sx - NODE_W / 2} y={sy - NODE_H / 2} width={NODE_W} height={NODE_H} rx="4" fill="var(--color-paper-elevated)" stroke="rgba(87,83,78,0.75)" strokeWidth="12" />
+          <rect x={sx - NODE_W / 2} y={sy - NODE_H / 2} width={NODE_W} height="10" rx="3" fill="var(--color-rule-strong)" opacity="0.6" />
+        </g>
+      ))}
+    </g>
+  );
+}
 
 function Captions() {
   if (STATIC) {

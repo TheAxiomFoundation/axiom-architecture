@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { JourneyDemo } from "./JourneyDemo";
-import { FlatPipeline } from "./FlatPipeline";
 import { FlatStrip } from "./FlatStrip";
 
 // External process graphic as a real chart: a hand-drawn Sankey flow.
@@ -787,7 +786,7 @@ export function LaunchGraphic() {
     });
   }, [journeys]);
   const svgRef = useRef<SVGSVGElement | null>(null);
-  const [view, setView] = useState<"journey" | "strip" | "rows" | "chart">("journey");
+  const [view, setView] = useState<"journey" | "strip" | "chart">("journey");
 
   // ── zoom into a pathway ─────────────────────────────────────────
   const [zoom, setZoom] = useState<Region | null>(null);
@@ -863,7 +862,7 @@ export function LaunchGraphic() {
               the graph. Then the camera backs out to the whole live
               registry, and the library lights up.
             </p>
-          ) : view === "strip" || view === "rows" ? (
+          ) : view === "strip" ? (
             <p className="launch__sub">
               What Axiom is, on one screen: scraping pipelines fill the
               database, the database becomes the citable corpus, the encoder
@@ -884,7 +883,7 @@ export function LaunchGraphic() {
             </p>
           )}
           <div className="launch__viewtoggle" role="group" aria-label="View">
-            {(["journey", "strip", "rows", "chart"] as const).map((v) => (
+            {(["journey", "strip", "chart"] as const).map((v) => (
               <button
                 key={v}
                 type="button"
@@ -901,9 +900,7 @@ export function LaunchGraphic() {
           <JourneyDemo />
         ) : view === "strip" ? (
           <FlatStrip />
-        ) : view === "rows" ? (
-          <FlatPipeline />
-        ) : (
+                ) : (
         <div className="lsk__wrap">
           <svg
             ref={svgRef}

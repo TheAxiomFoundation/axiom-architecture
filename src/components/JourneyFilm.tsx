@@ -42,8 +42,9 @@ const W = {
 const CAPTIONS = [
   { w: W.s1, name: "The law, whole", sub: "1,742,391 provisions · green = encoded & verified — the grey ones are next" },
   { w: W.s2, name: "One provision, encoded", sub: "segmented — each section encoded, each encoding through the four gates" },
-  { w: [0.48, 0.615] as const, name: "The graph", sub: "every rule is a node — typed, cited, connected to the concepts it draws on" },
-  { w: [0.62, 0.87] as const, name: "The graph, whole", sub: "same cards, farther back — the live runtime registry, every count real" },
+  { w: [0.48, 0.583] as const, name: "The graph", sub: "every rule is a node — typed, cited, connected to the concepts it draws on" },
+  { w: [0.59, 0.648] as const, name: "One rule, many programs", sub: "the state programs import the federal core — the dependencies are real" },
+  { w: [0.655, 0.87] as const, name: "The graph, whole", sub: "same cards, farther back — the live runtime registry, every count real" },
 ];
 
 // ── SMIL helpers ──────────────────────────────────────────────────────
@@ -794,9 +795,9 @@ function SceneGraph() {
   const cy = 300;
   // one continuous pull-back: hero graph → co-snap's rules → the whole
   // registry → the far field. Same cards at every distance.
-  const CAMT = [0, W.s3[0], 0.515, 0.558, 0.598, 0.652, 0.664, 0.728, 0.775, 1];
-  const CAMS = [1.06, 1.06, 1.0, 0.55, 0.55, 0.18, 0.18, 0.055, 0.026, 0.026];
-  const CAMSPL = "0 0 1 1;0.3 0 0.4 1;0.5 0 0.3 1;0 0 1 1;0.45 0 0.2 1;0 0 1 1;0.5 0 0.2 1;0.35 0 0.25 1;0 0 1 1";
+  const CAMT = [0, W.s3[0], 0.515, 0.558, 0.588, 0.618, 0.638, 0.79, 1];
+  const CAMS = [1.06, 1.06, 1.0, 0.55, 0.55, 0.4, 0.4, 0.026, 0.026];
+  const CAMSPL = "0 0 1 1;0.3 0 0.4 1;0.5 0 0.3 1;0 0 1 1;0.45 0 0.25 1;0 0 1 1;0.4 0 0.1 1;0 0 1 1";
   return (
     <Scene w={W.s3}>
       <g>
@@ -868,6 +869,20 @@ function SceneGraph() {
               </line>
               <WideCard x={rx} y={ry} title={t} at={at} />
             </g>
+          );
+        })}
+        {/* the dependents draw amber threads into the federal core */}
+        {STATE_SNAPS.map((id, i) => {
+          const [wx, wy] = WORLD_POS[id];
+          const hub = nearestNode(wx, wy);
+          return (
+            <line
+              key={`dep-${id}`}
+              x1={wx} y1={wy} x2={hub.x + NODE_W / 2} y2={hub.y + NODE_H / 2}
+              stroke="rgba(146,64,14,0.4)" strokeWidth="3" markerEnd="url(#jw-earr)" opacity={O2()}
+            >
+              <Vis a={0.602 + i * 0.002} b={W.s3[1] - 0.004} r={0.012} max={0.85} />
+            </line>
           );
         })}
         <text className="jw-worldlabel" x={710} y={880} textAnchor="middle" opacity={O2()}>
@@ -980,24 +995,29 @@ const RING_POS: ReadonlyArray<readonly [number, number]> = [
   [1500, 640], [950, 710], [400, 730], [-140, 570], [-350, 230], [1150, -330],
 ];
 
-// world positions for the other fifteen programs
+// world positions. The state SNAPs sit close — they are the hero's
+// dependents, revealed by the first step back; everything else lies
+// farther out, met on the long glide to the sea.
 const WORLD_POS: Record<string, readonly [number, number]> = {
-  "us-sc-snap": [2600, -300],
-  "us-nc-snap": [-1450, 950],
-  "us-tn-snap": [2050, 1150],
-  "us-al-snap": [-950, -550],
-  "us-ca-snap": [250, 1400],
-  "us-ny-snap": [1650, -700],
-  "uk-universal-credit": [-2350, -150],
-  "us-co-tanf": [-650, 1500],
-  "us-ny-tanf": [1100, 1500],
-  "us-ak-atap": [-2100, 900],
-  "us-ks-tanf": [2950, 650],
-  "us-az-snap": [2500, -1100],
-  "us-il-scretd": [-2450, 650],
-  "us-tx-tanf": [900, -1150],
-  "us-oasdi-wage-tax": [-350, -1250],
+  "us-sc-snap": [2280, -170],
+  "us-nc-snap": [-840, 780],
+  "us-tn-snap": [2260, 700],
+  "us-al-snap": [-890, -250],
+  "us-ca-snap": [640, 960],
+  "us-ny-snap": [1870, -390],
+  "us-az-snap": [-380, 970],
+  "uk-universal-credit": [-2950, -420],
+  "us-co-tanf": [-1650, 1480],
+  "us-ny-tanf": [2950, 1250],
+  "us-ak-atap": [-2650, 1080],
+  "us-ks-tanf": [3450, 320],
+  "us-il-scretd": [-3150, 680],
+  "us-tx-tanf": [1250, -1350],
+  "us-oasdi-wage-tax": [-950, -1520],
 };
+
+// the dependents: these programs import the federal core
+const STATE_SNAPS = ["us-al-snap", "us-ca-snap", "us-nc-snap", "us-ny-snap", "us-sc-snap", "us-tn-snap", "us-az-snap"];
 
 // the SAME card the hero graph uses — no format change at any distance
 function WideCard({ x, y, title, repo = "rulespec-us", at }: { x: number; y: number; title: string; repo?: string; at: number }) {
@@ -1042,7 +1062,7 @@ function ProgramGroup({ id, count, i }: { id: string; count: number; i: number }
   const outs = OUTPUTS[id] ?? [];
   const rng = rng32(900 + i * 31);
   const K = Math.min(12, 3 + Math.round(count / 90));
-  const at = 0.615 + i * 0.004;
+  const at = STATE_SNAPS.includes(id) ? 0.594 + i * 0.003 : 0.655 + i * 0.004;
   const spots = Array.from({ length: Math.max(0, K - 1) }, () => {
     const u = rng() * Math.PI * 2;
     const rad = 200 + rng() * 320;
@@ -1069,7 +1089,7 @@ function ProgramGroup({ id, count, i }: { id: string; count: number; i: number }
       <WideCard x={wx - NODE_W / 2} y={wy - NODE_H / 2} title={outs[0] ?? id} repo={id.startsWith("uk") ? "rulespec-uk" : "rulespec-us"} at={at} />
       {/* low-sitting groups label above themselves — the caption zone
           at the bottom of the frame stays clear */}
-      <text className="jw-worldlabel" x={wx} y={wy > 900 ? wy - 440 : wy + 470} textAnchor="middle" opacity={O2()}>
+      <text className="jw-worldlabel" x={wx} y={wy > 1300 ? wy - 440 : wy + 470} textAnchor="middle" opacity={O2()}>
         <Vis a={at + 0.008} b={W.s3[1] - 0.004} r={0.014} max={0.85} />
         {`${id} · ${count.toLocaleString()} rules`}
       </text>

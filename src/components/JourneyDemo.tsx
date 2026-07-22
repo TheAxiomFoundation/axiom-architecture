@@ -10,13 +10,10 @@ import { JourneyFilm } from "./JourneyFilm";
 //                 shelf, opens, riffles to chapter 51, and settles on
 //                 the § 2017 page.
 //   THE FILM      picks up at the statute page: segmentation, the
-//                 encoding workbench, the four gates, the graph, the
-//                 certified program, and every surface the answer
-//                 reaches.
-//   THE DIGITAL   the program returns as a digital edition of the same
-//   LIBRARY       volume, slides home into its shelf slot, and light
-//                 spreads from that spine across the blueprint shelves —
-//                 feeding the tools row. Then the cycle begins again.
+//                 encoding workbench, the four gates, the graph — and
+//                 one long pull-back to the whole live registry, card
+//                 upon card. The cycle ends on that wide shot, then
+//                 the film fades out over the stacks starting again.
 //
 // Pause (or the arrow keys) drops into manual mode: step through the
 // tableaux one at a time; play resumes the automation from wherever
@@ -24,9 +21,9 @@ import { JourneyFilm } from "./JourneyFilm";
 
 const CYCLE = 56;
 const FILM_START = 0.207 * CYCLE; // the statute page, settled
-const FILM_END = 0.795 * CYCLE; // the constellation has settled, ledger stamped
+const FILM_END = 0.795 * CYCLE; // the wide graph has settled, ledger stamped
 
-type Step = { label: string; kind: "stacks" | "landed" | "film" | "finale"; t?: number };
+type Step = { label: string; kind: "stacks" | "landed" | "film"; t?: number };
 const STEPS: Step[] = [
   { label: "the stacks", kind: "stacks" },
   { label: "the book · § 2017", kind: "landed" },
@@ -35,33 +32,38 @@ const STEPS: Step[] = [
   { label: "the gates, passed", kind: "film", t: 0.44 },
   { label: "the graph", kind: "film", t: 0.56 },
   { label: "the graph, whole", kind: "film", t: 0.78 },
-  { label: "the digital library", kind: "finale" },
 ];
 const AUTO_LABEL = {
   map: "the pull",
   film: "the film",
-  outro: "the pull-back",
-  finale: "the digital library",
+  outro: "the return",
 } as const;
 
 export function JourneyDemo() {
   const rootRef = useRef<HTMLDivElement | null>(null);
   const [mode, setMode] = useState<"auto" | "manual">("auto");
-  const [phase, setPhase] = useState<"map" | "film" | "outro" | "finale">("map");
+  // outro = the film fading out over the next cycle's stacks
+  const [phase, setPhase] = useState<"map" | "film" | "outro">("map");
   const [step, setStep] = useState(0);
   // exact film time to freeze/resume at (null → the step's canonical time)
   const [offset, setOffset] = useState<number | null>(null);
   const [cycle, setCycle] = useState(0);
+  // keeps the film overlay mounted (and fading) while the stacks restart
+  const filmKey = useRef(0);
 
   const toFilm = useCallback(() => {
+    filmKey.current += 1;
     setOffset(null);
     setPhase("film");
   }, []);
-  // the sealed program shrinks into the rising world: film fades out over
-  // the finale layer, then hands over entirely
+  // the wide shot has settled: the next cycle's stacks start beneath the
+  // film while it fades out
   const toOutro = useCallback(() => {
+    setCycle((c) => c + 1);
     setPhase("outro");
-    window.setTimeout(() => setPhase("finale"), 1500);
+    window.setTimeout(() => {
+      setPhase((p) => (p === "outro" ? "map" : p));
+    }, 1450);
   }, []);
   const toMap = useCallback(() => {
     setOffset(null);
@@ -77,8 +79,7 @@ export function JourneyDemo() {
   // which step matches what is on screen right now (for entering manual mode)
   const currentStep = useCallback(() => {
     if (mode === "manual") return step;
-    if (phase === "map") return 0;
-    if (phase === "finale" || phase === "outro") return STEPS.length - 1;
+    if (phase === "map" || phase === "outro") return 0;
     const f = filmTime() / CYCLE;
     let best = 2;
     STEPS.forEach((st, i) => {
@@ -102,12 +103,11 @@ export function JourneyDemo() {
     const s = STEPS[step];
     setMode("auto");
     if (s.kind === "film") {
+      filmKey.current += 1;
       setPhase("film"); // resumes from `offset` (or the step's time)
       if (offset === null) setOffset(s.t! * CYCLE);
-    } else if (s.kind === "finale") {
-      setPhase("finale");
     } else {
-      toMap(); // globe / landed: restart the cycle from the top
+      toMap(); // stacks / landed: restart the cycle from the top
     }
   }, [step, offset, toMap]);
 
@@ -152,19 +152,15 @@ export function JourneyDemo() {
   return (
     <div className="jdemo" ref={rootRef}>
       {!manual && (
-        <div key={cycle} className="jdemo__stage">
-          {(phase === "map" || phase === "film") && (
-            <div className="jdemo__layer">
-              <CorpusLibrary autopilot onArrived={toFilm} />
-            </div>
-          )}
-          {(phase === "outro" || phase === "finale") && (
-            <div className="jdemo__layer">
-              <CorpusLibrary finale onArrived={toMap} />
-            </div>
-          )}
+        <div className="jdemo__stage">
+          <div key={`lib-${cycle}`} className="jdemo__layer">
+            <CorpusLibrary autopilot onArrived={toFilm} />
+          </div>
           {(phase === "film" || phase === "outro") && (
-            <div className={phase === "outro" ? "jdemo__over jdemo__over--out" : "jdemo__over"}>
+            <div
+              key={`film-${filmKey.current}`}
+              className={phase === "outro" ? "jdemo__over jdemo__over--out" : "jdemo__over"}
+            >
               <JourneyFilm startOffset={offset ?? FILM_START} endAt={FILM_END} onCycleEnd={toOutro} />
             </div>
           )}
@@ -175,7 +171,6 @@ export function JourneyDemo() {
           {s.kind === "stacks" && <CorpusLibrary />}
           {s.kind === "landed" && <CorpusLibrary pose="landed" />}
           {s.kind === "film" && <JourneyFilm startOffset={offset ?? s.t! * CYCLE} paused />}
-          {s.kind === "finale" && <CorpusLibrary finale />}
         </div>
       )}
       <div className="jdemo__ctrl">

@@ -1,8 +1,4 @@
 import { useEffect } from "react";
-import previewApp from "../assets/preview-app.png";
-import previewFinbot from "../assets/preview-finbot.png";
-import previewGraph from "../assets/preview-graph.png";
-import previewOracles from "../assets/preview-oracles.png";
 
 // THE READING ROOM — the corpus as a law library.
 //
@@ -14,13 +10,9 @@ import previewOracles from "../assets/preview-oracles.png";
 //                to chapter 51, and settles on § 2017 — which detaches
 //                and glides to the exact spot where the film's statute
 //                page lives. The film crossfades in over it.
-//   THE FILM     (JourneyFilm, unchanged) picks up at the statute page.
-//   THE DIGITAL  the program returns as a digital edition of the same
-//   LIBRARY      volume and slides home into its slot on shelves that
-//                are now a blueprint on paper — green wireframe over a
-//                dot grid. From that spine light spreads: every volume
-//                a green sliver of screen, T7 amber — feeding the four
-//                live surfaces below.
+//   THE FILM     (JourneyFilm, unchanged) picks up at the statute page
+//                and ends on the wide graph — then the cycle returns
+//                to the stacks.
 //
 // One 13-second SMIL clock, fill=freeze — remounting restarts the act.
 
@@ -48,12 +40,6 @@ const DIGI = {
 };
 const SCREEN_INK = "#0b2114";
 
-const PREVIEWS = [
-  { src: previewApp, t: "axiom app", s: "every rule, executable" },
-  { src: previewFinbot, t: "finbot", s: "$994/mo — computed, cited" },
-  { src: previewGraph, t: "rule graph", s: "Colorado SNAP · 210 rules" },
-  { src: previewOracles, t: "oracles", s: "99.43% of 7.7M checks" },
-];
 
 // ── the wall ─────────────────────────────────────────────────────────
 
@@ -577,47 +563,6 @@ function CoverFace({ stampAnim }: { stampAnim?: boolean }) {
   );
 }
 
-// the program, bound: the same volume in its encoded edition — dark
-// boards, luminous edges, the certification on the cover
-function DigitalVolume() {
-  const x = 567.5;
-  const y = 130;
-  const w = 285;
-  const h = 332;
-  const cx = x + w / 2;
-  return (
-    <g>
-      <rect x={x} y={y} width={w} height={h} rx="3" fill="none" stroke={NIGHT.amber} strokeWidth="2" filter="url(#clib-glow)" opacity="0.5">
-        {!REDUCED && <animate attributeName="opacity" values="0.35;0.6;0.35" dur="2.6s" repeatCount="indefinite" />}
-      </rect>
-      <rect x={x} y={y} width={w} height={h} rx="3" fill="#1d1914" stroke={NIGHT.amber} strokeWidth="1.2" />
-      <rect x={x} y={y} width="7" height={h} fill="rgba(0,0,0,0.5)" />
-      <rect x={x + 12} y={y + 12} width={w - 24} height={h - 24} fill="none" stroke={NIGHT.amber} strokeWidth="0.5" opacity="0.4" />
-      {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
-        <line key={i} x1={x + 14} y1={y + 26 + i * 40} x2={x + w - 14} y2={y + 26 + i * 40} stroke={NIGHT.green} strokeWidth="0.5" opacity="0.06" />
-      ))}
-      <text className="clib-cover-eyebrow" x={cx} y={y + 82} textAnchor="middle" style={{ fill: NIGHT.green }}>
-        united states code · encoded edition
-      </text>
-      <text className="clib-cover-title" x={cx} y={y + 138} textAnchor="middle">
-        TITLE 7
-      </text>
-      <line x1={cx - 52} y1={y + 158} x2={cx + 52} y2={y + 158} stroke={NIGHT.amber} strokeWidth="0.9" opacity="0.75" />
-      <text className="clib-cover-sub" x={cx} y={y + 188} textAnchor="middle">
-        Agriculture
-      </text>
-      <circle cx={cx} cy={y + 242} r="16" fill="none" stroke={NIGHT.green} strokeWidth="1.3" />
-      <circle cx={cx} cy={y + 242} r="11.5" fill="none" stroke={NIGHT.green} strokeWidth="0.6" opacity="0.7" />
-      <text x={cx} y={y + 247} textAnchor="middle" style={{ fill: NIGHT.green, fontSize: "12px" }}>
-        ✓
-      </text>
-      <text className="clib-cover-eyebrow" x={cx} y={y + h - 42} textAnchor="middle" style={{ fill: NIGHT.green }}>
-        3,323 rules · certified · signed
-      </text>
-    </g>
-  );
-}
-
 // board rim + gutter shade behind the open spread
 function SpreadBacking() {
   return (
@@ -658,27 +603,9 @@ function Defs() {
         <stop offset="50%" stopColor="#1c1917" stopOpacity="0.5" />
         <stop offset="100%" stopColor="#1c1917" stopOpacity="0" />
       </linearGradient>
-      <pattern id="clib-grid" width="26" height="26" patternUnits="userSpaceOnUse">
-        <circle cx="1" cy="1" r="0.9" fill="var(--color-success)" opacity="0.09" />
-      </pattern>
       <filter id="clib-softshadow" x="-30%" y="-30%" width="160%" height="160%">
         <feDropShadow dx="0" dy="4" stdDeviation="7" floodColor="#1c1917" floodOpacity="0.22" />
       </filter>
-      <filter id="clib-glow" x="-60%" y="-60%" width="220%" height="220%">
-        <feGaussianBlur stdDeviation="2.6" />
-      </filter>
-      {/* the finale's light spreads outward from the returned volume's
-          shelf slot, not left-to-right */}
-      <clipPath id="clib-sweepclip">
-        <rect x={REDUCED ? -642 : T7X - 2} y="0" width={REDUCED ? 2064 : 0} height="620">
-          {!REDUCED && (
-            <>
-              <animate attributeName="x" dur={`${DUR}s`} repeatCount="1" fill="freeze" values={`${T7X - 2};${T7X - 2};-642;-642`} keyTimes={kt([0, 4.2, 8.0, DUR])} calcMode="spline" keySplines="0 0 1 1;0.25 0 0.75 1;0 0 1 1" />
-              <animate attributeName="width" dur={`${DUR}s`} repeatCount="1" fill="freeze" values="0;0;2064;2064" keyTimes={kt([0, 4.2, 8.0, DUR])} calcMode="spline" keySplines="0 0 1 1;0.25 0 0.75 1;0 0 1 1" />
-            </>
-          )}
-        </rect>
-      </clipPath>
     </defs>
   );
 }
@@ -912,128 +839,26 @@ function ActLanded() {
   );
 }
 
-function ActFinale() {
-  return (
-    <svg
-      className="clib-svg"
-      viewBox="0 0 1420 620"
-      role="img"
-      aria-label="The program returns as a digital edition of the same volume — dark boards, luminous edges, 3,323 rules certified — and slides back into its slot on shelves that are now a blueprint on paper: green wireframe bays over a faint dot grid. From that spine, light spreads across the whole library — every volume a green sliver of screen with a check on its spine, Title 7 amber, a few holdouts next in line. The shelves feed four live surfaces: the Axiom app, FinBot, the rule graph, and the oracles."
-    >
-      <Defs />
-      <rect x="0" y="0" width="1420" height="620" fill={PAPER} />
-      {/* the substrate: this space is a screen, not a room */}
-      <rect x="0" y="0" width="1420" height="620" fill="url(#clib-grid)" />
-      <Wall dark rows={3} />
-      <g clipPath="url(#clib-sweepclip)">
-        <g filter="url(#clib-glow)" opacity="0.5">
-          <Wall dark lit rows={3} />
-        </g>
-        <Wall dark lit rows={3} />
-      </g>
-      <Plaques dark />
-
-      {/* the program, bound — it holds a beat, then slides home into the
-          T7 slot; the moment it lands, the light starts spreading */}
-      {!REDUCED && (
-        <g opacity="0" filter="url(#clib-softshadow)">
-          <F a="opacity" v={[0, 0, 1, 1, 0, 0]} t={[0, 0.4, 1.0, 4.12, 4.32, DUR]} />
-          <TF type="translate" v={["0 0", "0 0", "360.13 160.84", "360.13 160.84"]} t={[0, 3.0, 4.2, DUR]} s="0 0 1 1;0.5 0 0.22 1;0 0 1 1" />
-          <TF type="scale" add v={["1 1", "1 1", "0.0526 0.3012", "0.0526 0.3012"]} t={[0, 3.0, 4.2, DUR]} s="0 0 1 1;0.5 0 0.22 1;0 0 1 1" />
-          <DigitalVolume />
-        </g>
-      )}
-
-      {/* the bus: once lit, the bottom shelf carries the flow that
-          feeds the surfaces */}
-      <g opacity={REDUCED ? 0.6 : 0}>
-        {!REDUCED && <FadeIn at={6.2} r={0.8} to={0.6} />}
-        <line x1="40" y1="433" x2="1390" y2="433" stroke={DIGI.line} strokeWidth="1" strokeDasharray="2 16" opacity="0.55">
-          {!REDUCED && <animate attributeName="stroke-dashoffset" from="18" to="0" dur="1.4s" repeatCount="indefinite" />}
-        </line>
-      </g>
-
-      {/* the runtime, live */}
-      <g opacity={REDUCED ? 1 : 0}>
-        {!REDUCED && <FadeIn at={5.6} r={0.6} />}
-        <circle cx="1178" cy="26.5" r="3" fill={DIGI.line} opacity="0.9">
-          {!REDUCED && <animate attributeName="opacity" values="0.9;0.35;0.9" dur="2s" repeatCount="indefinite" />}
-        </circle>
-        <text className="clib-cap" x="1390" y="30" textAnchor="end" style={{ fill: "var(--color-success)" }}>
-          runtime: live · 7.7M checks
-        </text>
-      </g>
-
-      {/* the shelves feed the surfaces */}
-      {PREVIEWS.map(({ src, t, s }, i) => {
-        const w = 260;
-        const x = 136 + i * (w + 36);
-        const cx = x + w / 2;
-        const at = 6.6 + i * 0.3;
-        return (
-          <g key={t} opacity={REDUCED ? 1 : 0}>
-            {!REDUCED && <FadeIn at={at} r={0.55} />}
-            <line x1={cx} y1="434" x2={cx} y2="466" stroke={DIGI.line} strokeWidth="1" strokeDasharray="3 3" opacity="0.5">
-              {!REDUCED && <animate attributeName="stroke-dashoffset" from="12" to="0" dur="1.2s" repeatCount="indefinite" />}
-            </line>
-            <g filter="url(#clib-softshadow)">
-              <rect x={x} y="468" width={w} height="118" rx="4" fill={PAPER_EL} stroke={INK} strokeWidth="0.8" opacity="0.97" />
-            </g>
-            <rect x={x} y="468" width={w} height="2.5" rx="1" fill="var(--color-success)" />
-            <clipPath id={`clib-pv${i}`}>
-              <rect x={x + 7} y="475" width={w - 14} height="82" rx="3" />
-            </clipPath>
-            <image href={src} x={x + 7} y="475" width={w - 14} height="82" preserveAspectRatio="xMidYMid slice" clipPath={`url(#clib-pv${i})`} />
-            <rect x={x + 7} y="475" width={w - 14} height="82" rx="3" fill="none" stroke={INK} strokeWidth="0.6" opacity="0.25" />
-            <text className="fp-mono" x={x + 10} y="576">{t}</text>
-            <text className="fp-mono fp-mono--tiny" x={x + w - 10} y="576" textAnchor="end" opacity="0.6">{s}</text>
-          </g>
-        );
-      })}
-
-      {!REDUCED && (
-        <text className="clib-cap" x="36" y="612" opacity="0">
-          <Window a={0.7} b={3.9} r={0.4} />
-          the volume returns · encoded, certified, signed
-        </text>
-      )}
-      <text className="clib-cap" x="36" y="612" opacity={REDUCED ? 1 : 0}>
-        {!REDUCED && <FadeIn at={4.6} r={0.6} />}
-        the digital library · every volume executable · 3,323 rules certified
-        {!REDUCED && (
-          <tspan dx="6" fill="var(--color-success)">
-            ▊
-            <animate attributeName="fill-opacity" values="1;1;0;0" keyTimes="0;0.5;0.5;1" dur="1.1s" repeatCount="indefinite" />
-          </tspan>
-        )}
-      </text>
-    </svg>
-  );
-}
-
 // ── the component ────────────────────────────────────────────────────
 
 export function CorpusLibrary({
   autopilot = false,
-  finale = false,
   pose = "stacks",
   onArrived,
 }: {
   autopilot?: boolean;
-  finale?: boolean;
   pose?: "stacks" | "landed";
   onArrived?: () => void;
 }) {
   useEffect(() => {
     if (!onArrived) return;
-    const ms = finale ? (REDUCED ? 9000 : 10500) : autopilot ? (REDUCED ? 2600 : 12400) : 0;
+    const ms = autopilot ? (REDUCED ? 2600 : 12400) : 0;
     if (!ms) return;
     const t = window.setTimeout(() => onArrived(), ms);
     return () => window.clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  if (finale) return <ActFinale />;
   if (pose === "landed") return <ActLanded />;
   return <ActStacks auto={autopilot} />;
 }

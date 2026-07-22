@@ -859,9 +859,9 @@ export function LaunchGraphic() {
           {view === "journey" ? (
             <p className="launch__sub">
               The whole demo in one cycle: one volume comes off the shelf —
-              7 U.S.C. § 2017 — the section is encoded and gated, joins the
-              graph, certifies into a program, lands on every surface. Then
-              the library lights up.
+              7 U.S.C. § 2017 — the section is encoded and gated, and joins
+              the graph. Then the camera backs out to the whole live
+              registry, and the library lights up.
             </p>
           ) : view === "strip" || view === "rows" ? (
             <p className="launch__sub">

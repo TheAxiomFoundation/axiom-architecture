@@ -36,6 +36,43 @@ export const CLUSTERS: Cluster[] = [
 
 export const PROGRAM_COUNT = CLUSTERS.length;
 
+// each package's default outputs — real rule names, straight from the
+// registry listing
+export const OUTPUTS: Record<string, string[]> = {
+  "us-sc-snap": ["snap_benefit_amount", "snap_net_income", "snap_eligible"],
+  "us-nc-snap": ["snap_benefit_amount", "snap_net_income", "snap_eligible"],
+  "us-tn-snap": ["snap_benefit_amount", "snap_net_income", "snap_eligible"],
+  "us-al-snap": ["snap_benefit_amount", "snap_net_income", "snap_eligible"],
+  "us-ca-snap": ["snap_benefit_amount", "snap_net_income", "snap_eligible"],
+  "us-ny-snap": ["snap_benefit_amount", "snap_net_income", "snap_eligible"],
+  "us-az-snap": ["snap_benefit_amount", "snap_eligible"],
+  "uk-universal-credit": ["universal_credit_award_amount", "standard_allowance_amount"],
+  "us-co-tanf": ["co_tanf"],
+  "us-ny-tanf": ["ny_tanf", "ny_tanf_grant_standard"],
+  "us-ak-atap": ["ak_atap", "ak_atap_need_standard"],
+  "us-ks-tanf": ["ks_tanf", "ks_tanf_maximum_benefit"],
+  "us-tx-tanf": ["tx_tanf", "tx_tanf_payment_standard"],
+  "us-il-scretd": ["il_scretd_deferral_amount"],
+  "us-oasdi-wage-tax": ["oasdi_wage_tax"],
+};
+
+// a ring of co-snap's own rules around the hero graph — real names from
+// the package's 168 outputs, chosen to fit a card
+export const CO_SNAP_RING: string[] = [
+  "snap_maximum_allotment",
+  "snap_standard_deduction",
+  "excess_shelter_deduction",
+  "child_support_deduction",
+  "medical_deduction",
+  "dependent_care_deduction",
+  "snap_student_eligible",
+  "snap_resource_eligible",
+  "passes_gross_income_test",
+  "half_adjusted_income",
+  "snap_boarder_income",
+  "gross_income",
+];
+
 // co-snap's interior, at document level. Each node is a real source
 // document (label = its citation shorthand); count = how many of the
 // package's 168 rules cite it. Kind drives the tint.

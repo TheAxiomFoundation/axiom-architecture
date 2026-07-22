@@ -2558,18 +2558,12 @@ polygon.ill-line {
   opacity: 0.75;
 }
 
-/* the film's constellation scene */
+/* the film's wide pull-back */
 
-.jw-cluster {
+.jw-worldlabel {
   font-family: var(--f-mono);
-  font-size: 6px;
-  letter-spacing: 0.05em;
-  fill: var(--color-ink-secondary);
-}
-
-.jw-clusterdoc {
-  font-family: var(--f-mono);
-  font-size: 2.6px;
+  font-size: 40px;
+  letter-spacing: 0.06em;
   fill: var(--color-ink-secondary);
 }
 

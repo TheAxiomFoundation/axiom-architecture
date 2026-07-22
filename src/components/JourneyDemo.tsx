@@ -34,7 +34,7 @@ const STEPS: Step[] = [
   { label: "the encoding", kind: "film", t: 0.37 },
   { label: "the gates, passed", kind: "film", t: 0.44 },
   { label: "the graph", kind: "film", t: 0.56 },
-  { label: "the constellation", kind: "film", t: 0.78 },
+  { label: "the graph, whole", kind: "film", t: 0.78 },
   { label: "the digital library", kind: "finale" },
 ];
 const AUTO_LABEL = {

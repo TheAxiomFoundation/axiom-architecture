@@ -7,25 +7,24 @@
 //   III  THE GRAPH          validated rules join the axiom graph — every
 //                           rule a node, typed and cited, linked to the
 //                           concepts it draws on
-//   IV   THE CONSTELLATION  the camera backs out — really far. The hero
-//                           graph becomes one cluster among sixteen: the
-//                           live runtime registry, real IDs, real counts,
-//                           a bright island in the dim not-yet-encoded
-//                           field.
+//   IV   THE GRAPH, WHOLE   no cut, no new format: the same camera keeps
+//                           pulling back and the same cards keep coming —
+//                           co-snap's own rules, then every compiled
+//                           program in the live registry (real IDs, real
+//                           counts), then the ghost cards of everything
+//                           not yet encoded.
 //
 // Transitions carry the zoom story: scene I exits by scaling INTO the
-// target cell; scene IV is one long pull-back. Everything else is
+// target cell; scene III/IV is one long pull-back. Everything else is
 // crossfade. Reduced motion gets scene II as a composed still.
 
 import { useEffect, useRef } from "react";
 import {
   CLUSTERS,
-  CO_SNAP_DOCS,
-  CO_SNAP_XLINKS,
+  CO_SNAP_RING,
+  OUTPUTS,
   PROGRAM_COUNT,
   SNAPSHOT_DATE,
-  type Cluster,
-  type DocNode,
 } from "./registry-snapshot";
 
 const CYCLE = 56;
@@ -43,15 +42,14 @@ const OK = "var(--color-success)";
 const W = {
   s1: [0.012, 0.175],
   s2: [0.183, 0.48],
-  s3: [0.48, 0.585],
-  s4: [0.585, 0.8],
+  s3: [0.48, 0.8],
 } as const;
 
 const CAPTIONS = [
   { w: W.s1, name: "The law, whole", sub: "1,742,391 provisions · green = encoded & verified — the grey ones are next" },
   { w: W.s2, name: "One provision, encoded", sub: "segmented — each section encoded, each encoding through the four gates" },
-  { w: W.s3, name: "The graph", sub: "every rule is a node — typed, cited, connected to the concepts it draws on" },
-  { w: W.s4, name: "The graph, whole", sub: "the live runtime registry — every cluster a compiled program, every count real" },
+  { w: [0.48, 0.615] as const, name: "The graph", sub: "every rule is a node — typed, cited, connected to the concepts it draws on" },
+  { w: [0.62, 0.8] as const, name: "The graph, whole", sub: "same cards, farther back — the live runtime registry, every count real" },
 ];
 
 // ── SMIL helpers ──────────────────────────────────────────────────────
@@ -800,12 +798,13 @@ function GraphNode({ n }: { n: GNode }) {
 function SceneGraph() {
   const cx = 710;
   const cy = 300;
-  const s0 = 1.06;
-  const sMid = 1.0;
-  const s1 = 0.55; // the big reveal: half scale by scene's end
+  // one continuous pull-back: hero graph → co-snap's rules → the whole
+  // registry → the far field. Same cards at every distance.
+  const CAMT = [0, W.s3[0], 0.515, 0.558, 0.598, 0.652, 0.664, 0.748, 1];
+  const CAMS = [1.06, 1.06, 1.0, 0.55, 0.55, 0.18, 0.18, 0.055, 0.055];
+  const CAMSPL = "0 0 1 1;0.3 0 0.4 1;0.5 0 0.3 1;0 0 1 1;0.45 0 0.2 1;0 0 1 1;0.5 0 0.15 1;0 0 1 1";
   return (
     <Scene w={W.s3}>
-      {/* slow pull-back while the graph grows — it outgrows the frame */}
       <g>
         {!STATIC && (
           <>
@@ -815,9 +814,9 @@ function SceneGraph() {
               dur={`${CYCLE}s`}
               repeatCount="indefinite"
               calcMode="spline"
-              keySplines="0 0 1 1;0.3 0 0.4 1;0.5 0 0.3 1;0 0 1 1;0.55 0 0.8 0.6;0 0 1 1"
-              values={`${cx * (1 - s0)} ${cy * (1 - s0)};${cx * (1 - s0)} ${cy * (1 - s0)};${cx * (1 - sMid)} ${cy * (1 - sMid)};${cx * (1 - s1)} ${cy * (1 - s1)};${cx * (1 - s1)} ${cy * (1 - s1)};${cx * 0.84} ${cy * 0.84};${cx * 0.84} ${cy * 0.84}`}
-              keyTimes={`0;${W.s3[0]};0.515;0.558;0.566;${W.s3[1] + 0.005};1`}
+              keySplines={CAMSPL}
+              values={CAMS.map((sc) => `${cx * (1 - sc)} ${cy * (1 - sc)}`).join(";")}
+              keyTimes={CAMT.join(";")}
             />
             <animateTransform
               attributeName="transform"
@@ -826,9 +825,9 @@ function SceneGraph() {
               dur={`${CYCLE}s`}
               repeatCount="indefinite"
               calcMode="spline"
-              keySplines="0 0 1 1;0.3 0 0.4 1;0.5 0 0.3 1;0 0 1 1;0.55 0 0.8 0.6;0 0 1 1"
-              values={`${s0};${s0};${sMid};${s1};${s1};0.16;0.16`}
-              keyTimes={`0;${W.s3[0]};0.515;0.558;0.566;${W.s3[1] + 0.005};1`}
+              keySplines={CAMSPL}
+              values={CAMS.join(";")}
+              keyTimes={CAMT.join(";")}
             />
           </>
         )}
@@ -859,6 +858,52 @@ function SceneGraph() {
         {NODES.map((n) => (
           <GraphNode key={n.id} n={n} />
         ))}
+        {/* co-snap's own rules join around the hero — real names */}
+        {CO_SNAP_RING.map((t, i) => {
+          const [rx, ry] = RING_POS[i];
+          const hub = nearestNode(rx + NODE_W / 2, ry + NODE_H / 2);
+          const at = 0.588 + i * 0.0025;
+          return (
+            <g key={t}>
+              <line
+                x1={rx + NODE_W / 2} y1={ry + NODE_H / 2}
+                x2={hub.x + NODE_W / 2} y2={hub.y + NODE_H / 2}
+                stroke="rgba(87,83,78,0.25)" strokeWidth="0.9" opacity={O2()}
+              >
+                <Vis a={at} b={W.s3[1] - 0.004} r={0.012} max={0.8} />
+              </line>
+              <WideCard x={rx} y={ry} title={t} at={at} />
+            </g>
+          );
+        })}
+        <text className="jw-worldlabel" x={710} y={880} textAnchor="middle" opacity={O2()}>
+          <Vis a={0.634} b={W.s3[1] - 0.004} r={0.014} max={0.85} />
+          co-snap · 168 rules
+        </text>
+        {/* …then every compiled program in the registry, as more of the
+            same cards */}
+        {CLUSTERS.filter((c) => c.id !== "co-snap").map((c, i) => (
+          <ProgramGroup key={c.id} id={c.id} count={c.count} i={i} />
+        ))}
+        {/* …and at full distance, the not-yet-encoded horizon */}
+        {FAR_GHOSTS.map(([x, y], k) => (
+          <GhostCard key={k} x={x} y={y} at={0.69 + (k % 12) * 0.0022} max={0.4} />
+        ))}
+      </g>
+
+      {/* the ledger line, in screen space: what you are looking at */}
+      <g opacity={O2()}>
+        <Vis a={0.755} b={W.s3[1] - 0.005} r={0.008} />
+        <g filter="url(#jw-shadow)">
+          <rect x="475" y="428" width="470" height="66" rx="6" fill="var(--color-paper-elevated)" stroke="var(--color-rule)" strokeWidth="1" />
+        </g>
+        <rect x="475" y="428" width="470" height="3" rx="1.5" fill={WAX} />
+        <text className="jw-chip1" x="710" y="456" textAnchor="middle">
+          {`the runtime registry · ${PROGRAM_COUNT} programs compiled`}
+        </text>
+        <text className="jw-chip2" x="710" y="478" textAnchor="middle">
+          {`3,323 rules · certified & signed · registry snapshot ${SNAPSHOT_DATE}`}
+        </text>
       </g>
     </Scene>
   );
@@ -907,21 +952,15 @@ function Travelers() {
   );
 }
 
-// ── scene IV: the constellation — the registry, backed all the way out ─
+// ── the wider graph: same cards, farther back ─────────────────────────
 //
-// The hero graph recedes and becomes one cluster among sixteen: the
-// LIVE runtime registry, real package IDs, real rule counts (baked in
-// registry-snapshot.ts). co-snap's interior is its actual document
-// graph — the CDHS benefit-calculation hub and the source documents its
-// 168 rules cite, edges from the dependency API. Then the camera backs
-// out really far: the whole registry becomes a small bright island in
-// the dim field of everything not yet encoded.
+// The pull-back never changes the material. First co-snap's own rules
+// join around the hero (real names from the package's 168 outputs),
+// then every compiled program in the live registry arrives as its own
+// group of the SAME cards — real IDs, real counts — and finally the
+// ghost cards of everything not yet encoded. Data: registry-snapshot.ts.
 
-const CAM_T = [0, 0.585, 0.598, 0.652, 0.664, 0.748, 1];
-const CAM_S = [8, 8, 8, 1.15, 1.15, 0.3, 0.3];
-const CAM_SPL = "0 0 1 1;0 0 1 1;0.45 0 0.2 1;0 0 1 1;0.5 0 0.15 1;0 0 1 1";
-
-function rot32(seed: number) {
+function rng32(seed: number) {
   let a = seed >>> 0;
   return () => {
     a |= 0;
@@ -932,170 +971,134 @@ function rot32(seed: number) {
   };
 }
 
-const DOC_TINT: Record<DocNode["kind"], string> = {
-  hub: "var(--color-ink)",
-  "state-reg": OK,
-  "fed-reg": "#3f7050",
-  statute: WAX,
-  policy: "#5c6470",
+const nearestNode = (x: number, y: number) => {
+  let best = NODES[0];
+  let bd = Infinity;
+  for (const n of NODES) {
+    const d = Math.hypot(n.x + NODE_W / 2 - x, n.y + NODE_H / 2 - y);
+    if (d < bd) {
+      bd = d;
+      best = n;
+    }
+  }
+  return best;
 };
 
-// every node in the constellation is the SAME card the graph scene
-// builds with — the pull-back never changes the material, only the
-// distance. w scales with how many rules the node carries.
-function MiniCard({ cx, cy, w, tint, o = 1 }: { cx: number; cy: number; w: number; tint: string; o?: number }) {
-  const h = w * 0.27 + 0.9;
+// hand-placed around the hero graph, clear of its nodes
+const RING_POS: ReadonlyArray<readonly [number, number]> = [
+  [-150, -150], [350, -280], [900, -320], [1400, -200], [1760, 60], [1810, 400],
+  [1500, 640], [950, 710], [400, 730], [-140, 570], [-350, 230], [1150, -330],
+];
+
+// world positions for the other fifteen programs
+const WORLD_POS: Record<string, readonly [number, number]> = {
+  "us-sc-snap": [2600, -300],
+  "us-nc-snap": [-1450, 950],
+  "us-tn-snap": [2050, 1150],
+  "us-al-snap": [-950, -550],
+  "us-ca-snap": [250, 1400],
+  "us-ny-snap": [1650, -700],
+  "uk-universal-credit": [-2350, -150],
+  "us-co-tanf": [-650, 1500],
+  "us-ny-tanf": [1100, 1500],
+  "us-ak-atap": [-2100, 900],
+  "us-ks-tanf": [2950, 650],
+  "us-az-snap": [2500, -1100],
+  "us-il-scretd": [-2450, 650],
+  "us-tx-tanf": [900, -1150],
+  "us-oasdi-wage-tax": [-350, -1250],
+};
+
+// the SAME card the hero graph uses — no format change at any distance
+function WideCard({ x, y, title, repo = "rulespec-us", at }: { x: number; y: number; title: string; repo?: string; at: number }) {
+  const est = title.length * 7.2;
+  const avail = NODE_W - 24;
   return (
-    <g opacity={o}>
-      <rect x={cx - w / 2} y={cy - h / 2} width={w} height={h} rx={0.6} fill="var(--color-paper-elevated)" stroke="rgba(28,25,23,0.35)" strokeWidth="0.25" />
-      <rect x={cx - w / 2} y={cy - h / 2} width={w} height={Math.min(0.7, h * 0.22)} rx={0.3} fill={tint} />
+    <g opacity={O2()}>
+      <Vis a={at} b={W.s3[1] - 0.004} r={0.012} />
+      <rect x={x} y={y} width={NODE_W} height={NODE_H} rx="4" fill="var(--color-paper-elevated)" stroke="var(--color-rule)" strokeWidth="1" />
+      <rect x={x} y={y} width={NODE_W} height="3" rx="1.5" fill="var(--color-rule-strong)" />
+      <text className="jw-nodeeyebrow" x={x + 12} y={y + 19}>
+        <tspan fill={WAX}>¶</tspan>
+        {`  ${repo}`}
+      </text>
+      <text
+        className="jw-nodetitle" x={x + 12} y={y + 38}
+        {...(est > avail ? { textLength: avail, lengthAdjust: "spacingAndGlyphs" as const } : {})}
+      >
+        {title}
+      </text>
     </g>
   );
 }
 
-// the dim field: everything the registry hasn't reached yet — visible
-// only once the camera is far enough out to see past the registry
-const DIM_DOTS = (() => {
-  const rng = rot32(41);
-  const out: Array<[number, number, number]> = [];
-  while (out.length < 130) {
-    const x = -2600 + rng() * 6600;
-    const y = -1250 + rng() * 3100;
-    if (x > 60 && x < 1360 && y > 60 && y < 560) continue; // keep the registry's clearing
-    out.push([x, y, 1.8 + rng() * 3.4]);
+// too far to read — the card again, text as hairlines
+function GhostCard({ x, y, at, max = 0.55 }: { x: number; y: number; at: number; max?: number }) {
+  return (
+    <g opacity={O2()}>
+      <Vis a={at} b={W.s3[1] - 0.004} r={0.012} max={max} />
+      <rect x={x} y={y} width={NODE_W} height={NODE_H} rx="4" fill="var(--color-paper-elevated)" stroke="var(--color-rule)" strokeWidth="1" />
+      <rect x={x} y={y} width={NODE_W} height="3" rx="1.5" fill="var(--color-rule-strong)" opacity="0.6" />
+      <line x1={x + 12} y1={y + 17} x2={x + 74} y2={y + 17} stroke="rgba(120,113,108,0.5)" strokeWidth="2" />
+      <line x1={x + 12} y1={y + 34} x2={x + 118} y2={y + 34} stroke="rgba(87,83,78,0.45)" strokeWidth="3" />
+    </g>
+  );
+}
+
+// one compiled program: a group of the same cards — its default outputs
+// named, the rest ghosts — under a real id · count label
+function ProgramGroup({ id, count, i }: { id: string; count: number; i: number }) {
+  const [wx, wy] = WORLD_POS[id];
+  const outs = OUTPUTS[id] ?? [];
+  const rng = rng32(900 + i * 31);
+  const K = Math.min(12, 3 + Math.round(count / 90));
+  const at = 0.615 + i * 0.004;
+  const spots = Array.from({ length: Math.max(0, K - 1) }, () => {
+    const u = rng() * Math.PI * 2;
+    const rad = 200 + rng() * 320;
+    return [wx + Math.cos(u) * rad * 1.3 - NODE_W / 2, wy + Math.sin(u) * rad * 0.75 - NODE_H / 2] as const;
+  });
+  return (
+    <g>
+      {spots.map(([sx, sy], k) => (
+        <line
+          key={`e${k}`}
+          x1={wx} y1={wy} x2={sx + NODE_W / 2} y2={sy + NODE_H / 2}
+          stroke="rgba(87,83,78,0.22)" strokeWidth="1.2" opacity={O2()}
+        >
+          <Vis a={at} b={W.s3[1] - 0.004} r={0.012} max={0.8} />
+        </line>
+      ))}
+      {spots.map(([sx, sy], k) =>
+        k < outs.length - 1 ? (
+          <WideCard key={`n${k}`} x={sx} y={sy} title={outs[k + 1]} repo={id.startsWith("uk") ? "rulespec-uk" : "rulespec-us"} at={at + 0.004} />
+        ) : (
+          <GhostCard key={`g${k}`} x={sx} y={sy} at={at + 0.006} />
+        ),
+      )}
+      <WideCard x={wx - NODE_W / 2} y={wy - NODE_H / 2} title={outs[0] ?? id} repo={id.startsWith("uk") ? "rulespec-uk" : "rulespec-us"} at={at} />
+      {/* low-sitting groups label above themselves — the caption zone
+          at the bottom of the frame stays clear */}
+      <text className="jw-worldlabel" x={wx} y={wy > 900 ? wy - 440 : wy + 470} textAnchor="middle" opacity={O2()}>
+        <Vis a={at + 0.008} b={W.s3[1] - 0.004} r={0.014} max={0.85} />
+        {`${id} · ${count.toLocaleString()} rules`}
+      </text>
+    </g>
+  );
+}
+
+// the not-yet-encoded horizon, revealed only at full distance
+const FAR_GHOSTS = (() => {
+  const rng = rng32(71);
+  const out: Array<[number, number]> = [];
+  while (out.length < 110) {
+    const x = 710 + (rng() - 0.5) * 18400;
+    const y = 300 + (rng() - 0.5) * 8600;
+    if (Math.abs(x - 710) < 3600 && Math.abs(y - 300) < 2100) continue;
+    out.push([x, y]);
   }
   return out;
 })();
-
-function ClusterBlob({ c, i }: { c: Cluster; i: number }) {
-  const at = c.id === "co-snap" ? W.s4[0] : 0.598 + i * 0.004;
-  const label = `${c.id} · ${c.count.toLocaleString()}`;
-  if (c.id === "co-snap") {
-    // the real document graph, node size = rules citing that document
-    return (
-      <g opacity={O2()}>
-        <Vis a={at} b={W.s4[1] - 0.004} r={0.01} />
-        <circle cx={c.x} cy={c.y} r={c.r * 1.3} fill={OK} opacity="0.06" />
-        {CO_SNAP_DOCS.map((d) =>
-          d.kind === "hub" ? null : (
-            <line
-              key={`e-${d.id}`}
-              x1={c.x} y1={c.y} x2={c.x + d.dx} y2={c.y + d.dy}
-              stroke="rgba(22,101,52,0.3)" strokeWidth="0.4"
-            />
-          ),
-        )}
-        {CO_SNAP_XLINKS.map(([f, t]) => {
-          const a = CO_SNAP_DOCS.find((d) => d.id === f)!;
-          const b = CO_SNAP_DOCS.find((d) => d.id === t)!;
-          return (
-            <line
-              key={`x-${f}-${t}`}
-              x1={c.x + a.dx} y1={c.y + a.dy} x2={c.x + b.dx} y2={c.y + b.dy}
-              stroke="rgba(146,64,14,0.4)" strokeWidth="0.4"
-            />
-          );
-        })}
-        {CO_SNAP_DOCS.map((d) => {
-          const w = 3.4 + 2.1 * Math.sqrt(d.count);
-          return (
-            <g key={d.id}>
-              <MiniCard cx={c.x + d.dx} cy={c.y + d.dy} w={w} tint={DOC_TINT[d.kind]} />
-              <text className="jw-clusterdoc" x={c.x + d.dx} y={c.y + d.dy - (w * 0.27 + 0.9) / 2 - 1.2} textAnchor="middle">
-                {d.label}
-              </text>
-            </g>
-          );
-        })}
-        <text className="jw-cluster" x={c.x} y={c.y + c.r + 12} textAnchor="middle">{label}</text>
-      </g>
-    );
-  }
-  const rng = rot32(500 + i * 17);
-  const n = Math.round(Math.min(26, 7 + c.count / 30));
-  const dots: Array<[number, number, number]> = Array.from({ length: n }, () => {
-    const u = rng() * Math.PI * 2;
-    const rad = c.r * (0.2 + 0.68 * Math.sqrt(rng()));
-    return [c.x + Math.cos(u) * rad, c.y + Math.sin(u) * rad * 0.9, 4.6 + rng() * 4.2];
-  });
-  return (
-    <g opacity={O2()}>
-      <Vis a={at} b={W.s4[1] - 0.004} r={0.012} />
-      <circle cx={c.x} cy={c.y} r={c.r * 1.25} fill={OK} opacity="0.05" />
-      {dots.map(([x, y], k) =>
-        k % 3 === 0 ? null : (
-          <line key={`e${k}`} x1={c.x} y1={c.y} x2={x} y2={y} stroke="rgba(22,101,52,0.22)" strokeWidth="0.35" />
-        ),
-      )}
-      {dots.map(([x, y, w], k) => (
-        <MiniCard key={k} cx={x} cy={y} w={w} tint={OK} o={0.95} />
-      ))}
-      <MiniCard cx={c.x} cy={c.y} w={7.5} tint="var(--color-ink)" />
-      <text className="jw-cluster" x={c.x} y={c.y + c.r * 1.25 + 9} textAnchor="middle">{label}</text>
-    </g>
-  );
-}
-
-function SceneConstellation() {
-  return (
-    <Scene w={W.s4}>
-      {/* the camera: enters tight on co-snap (where the hero graph
-          receded to), then backs out — twice */}
-      <g>
-        {!STATIC && (
-          <>
-            <animateTransform
-              attributeName="transform"
-              type="translate"
-              dur={`${CYCLE}s`}
-              repeatCount="indefinite"
-              calcMode="spline"
-              keySplines={CAM_SPL}
-              values={CAM_S.map((s) => `${710 * (1 - s)} ${300 * (1 - s)}`).join(";")}
-              keyTimes={CAM_T.join(";")}
-            />
-            <animateTransform
-              attributeName="transform"
-              type="scale"
-              additive="sum"
-              dur={`${CYCLE}s`}
-              repeatCount="indefinite"
-              calcMode="spline"
-              keySplines={CAM_SPL}
-              values={CAM_S.join(";")}
-              keyTimes={CAM_T.join(";")}
-            />
-          </>
-        )}
-        {/* the not-yet-encoded dark matter, revealed by distance */}
-        <g opacity={O2()}>
-          <Vis a={0.68} b={W.s4[1] - 0.004} r={0.03} max={0.5} />
-          {DIM_DOTS.map(([x, y, r], k) => (
-            <rect key={k} x={x} y={y} width={r * 2.6} height={r * 0.8} rx="0.4" fill={INK} opacity="0.3" />
-          ))}
-        </g>
-        {CLUSTERS.map((c, i) => (
-          <ClusterBlob key={c.id} c={c} i={i} />
-        ))}
-      </g>
-
-      {/* the ledger line, in screen space: what you are looking at */}
-      <g opacity={O2()}>
-        <Vis a={0.754} b={W.s4[1] - 0.004} r={0.008} />
-        <g filter="url(#jw-shadow)">
-          <rect x="475" y="428" width="470" height="66" rx="6" fill="var(--color-paper-elevated)" stroke="var(--color-rule)" strokeWidth="1" />
-        </g>
-        <rect x="475" y="428" width="470" height="3" rx="1.5" fill={WAX} />
-        <text className="jw-chip1" x="710" y="456" textAnchor="middle">
-          {`the runtime registry · ${PROGRAM_COUNT} programs compiled`}
-        </text>
-        <text className="jw-chip2" x="710" y="478" textAnchor="middle">
-          {`3,323 rules · certified & signed · registry snapshot ${SNAPSHOT_DATE}`}
-        </text>
-      </g>
-    </Scene>
-  );
-}
 
 function Captions() {
   if (STATIC) {
@@ -1191,7 +1194,7 @@ export function JourneyFilm({
         className="lsk"
         viewBox="0 0 1420 620"
         role="img"
-        aria-label="One continuous shot, five scenes. First, the whole law: a wall of 1,742,391 provision-cells across seven jurisdictions, almost all lit green — encoded and verified — with a few grey holdouts remaining. The camera dives into one cell: the statute is segmented into sections, each section encoded into a RuleSpec — id, citation, typed inputs and output, and the formula allotment equals tfp minus 0.30 times net income, every value citing its source words, and each encoding walked through the four gates — run, checks, compare, review; one cites the wrong section, is caught by compare, redrafted, and passes. The validated rules then join the axiom graph as nodes — typed, cited, connected to the concepts they draw on; on the graph's output layer, two composed nodes declare their types and compute live answers: snap/benefit, money per month, $478, and snap/eligible, boolean, yes. Then the camera backs out, far: the graph becomes the co-snap cluster — its real document graph, the CDHS benefit-calculation hub citing Colorado regulations, 7 CFR 273, 7 U.S.C. chapter 51, and USDA cost-of-living tables — and co-snap becomes one cluster among sixteen: the live runtime registry, from us-sc-snap at 1,327 rules to us-oasdi-wage-tax at 6, every ID and count real. Backing out further still, the whole registry is a small bright island in a dim field of everything not yet encoded, stamped: the runtime registry, 16 programs compiled, 3,323 rules certified and signed."
+        aria-label="One continuous shot, five scenes. First, the whole law: a wall of 1,742,391 provision-cells across seven jurisdictions, almost all lit green — encoded and verified — with a few grey holdouts remaining. The camera dives into one cell: the statute is segmented into sections, each section encoded into a RuleSpec — id, citation, typed inputs and output, and the formula allotment equals tfp minus 0.30 times net income, every value citing its source words, and each encoding walked through the four gates — run, checks, compare, review; one cites the wrong section, is caught by compare, redrafted, and passes. The validated rules then join the axiom graph as nodes — typed, cited, connected to the concepts they draw on; on the graph's output layer, two composed nodes declare their types and compute live answers: snap/benefit, money per month, $478, and snap/eligible, boolean, yes. Then the camera backs out and the same cards keep coming: co-snap's own rules join around the hero graph — snap_maximum_allotment, the deductions, the eligibility tests, real names from its 168 outputs — then every compiled program in the live registry arrives as its own group of identical cards under a real label, from us-sc-snap at 1,327 rules to us-oasdi-wage-tax at 6. At full distance the encoded graph sits among the ghost cards of everything not yet encoded, stamped: the runtime registry, 16 programs compiled, 3,323 rules certified and signed."
       >
         <Defs />
         <SceneWall />
@@ -1199,7 +1202,6 @@ export function JourneyFilm({
         <CellToPage />
         <SceneGraph />
         <Travelers />
-        <SceneConstellation />
         <Captions />
       </svg>
     </div>

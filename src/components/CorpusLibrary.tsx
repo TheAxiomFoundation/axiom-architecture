@@ -838,7 +838,9 @@ function ActStacks({ auto }: { auto: boolean }) {
           {/* the glide copy appears over its identical twin in the
               spread, travels, and is at rest BEFORE the film fades in —
               the crossfade then blends two matching stills */}
-          <g opacity="0" filter="url(#clib-softshadow)">
+          {/* no drop shadow here — the film's page has none, and the
+              crossfade must blend two identical renderings */}
+          <g opacity="0">
             <FadeIn at={11.1} r={0.15} />
             <TF type="translate" v={[`${GUT} ${PAGE.y}`, `${GUT} ${PAGE.y}`, `${FILM_PAGE.x} ${FILM_PAGE.y}`, `${FILM_PAGE.x} ${FILM_PAGE.y}`]} t={[0, 11.35, 12.35, DUR]} s="0 0 1 1;0.45 0 0.18 1;0 0 1 1" />
             <TF type="scale" add v={["0.95", "0.95", "1", "1"]} t={[0, 11.35, 12.35, DUR]} s="0 0 1 1;0.45 0 0.18 1;0 0 1 1" />

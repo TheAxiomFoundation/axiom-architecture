@@ -1283,6 +1283,12 @@ body::before {
   animation: jdemo-in 1200ms var(--ease-out) both;
 }
 
+/* the film's svg must sit pixel-exactly over the library's svg — the
+   wrap's usual top margin would shift the statute page mid-handoff */
+.jdemo__over .lsk__wrap {
+  margin-top: 0;
+}
+
 /* …and fading back out as the program shrinks into the rising world */
 .jdemo__over--out {
   animation: jdemo-out 1400ms ease both;

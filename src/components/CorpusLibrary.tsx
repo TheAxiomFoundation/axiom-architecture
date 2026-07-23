@@ -172,9 +172,6 @@ const FadeIn = ({ at, r = 0.3, to = 1 }: { at: number; r?: number; to?: number }
 const FadeOut = ({ at, r = 0.3 }: { at: number; r?: number }) => (
   <F a="opacity" v={[1, 1, 0, 0]} t={[0, at, at + r, DUR]} />
 );
-const Window = ({ a, b, r = 0.25 }: { a: number; b: number; r?: number }) => (
-  <F a="opacity" v={[0, 0, 1, 1, 0, 0]} t={[0, a, a + r, b, b + r, DUR]} />
-);
 
 // ── pieces of the wall ───────────────────────────────────────────────
 
@@ -774,17 +771,6 @@ function ActStacks({ auto }: { auto: boolean }) {
             <StatutePage />
           </g>
 
-          {/* captions */}
-          <g>
-            <text className="clib-cap" x="36" y="604" opacity="0">
-              <Window a={0.3} b={4.2} />
-              the stacks · 1,742,391 provisions, on paper
-            </text>
-            <text className="clib-cap" x="36" y="604" opacity="0">
-              <Window a={4.45} b={7.55} />
-              one volume · title 7 — agriculture
-            </text>
-          </g>
         </>
       )}
 
@@ -793,11 +779,6 @@ function ActStacks({ auto }: { auto: boolean }) {
         <StillSpread />
       )}
 
-      {!auto && (
-        <text className="clib-cap" x="36" y="604">
-          the stacks · 1,742,391 provisions, on paper
-        </text>
-      )}
     </svg>
   );
 }

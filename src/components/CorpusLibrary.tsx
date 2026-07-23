@@ -14,9 +14,9 @@ import { useEffect } from "react";
 //                and ends on the wide graph — then the cycle returns
 //                to the stacks.
 //
-// One 13-second SMIL clock, fill=freeze — remounting restarts the act.
+// One ~14-second SMIL clock, fill=freeze — remounting restarts the act.
 
-const DUR = 13;
+const DUR = 14.2;
 
 const REDUCED =
   typeof window !== "undefined" &&
@@ -482,10 +482,10 @@ function SectionLeaf({ no, title }: { no: string; title: string }) {
 // the thumb-through: the contents sheet turns first, then §§ 2011,
 // 2013, 2015 — each turn unhurried enough to read the page going by
 const RIFFLE: Array<{ no?: string; title?: string; a: number; b: number }> = [
-  { a: 8.3, b: 9.45 },
-  { no: "2011", title: "Congressional declaration", a: 8.95, b: 10.1 },
-  { no: "2013", title: "Establishment of program", a: 9.6, b: 10.75 },
-  { no: "2015", title: "Eligibility disqualifications", a: 10.25, b: 11.4 },
+  { a: 8.3, b: 9.9 },
+  { no: "2011", title: "Congressional declaration", a: 9.15, b: 10.75 },
+  { no: "2013", title: "Establishment of program", a: 10.0, b: 11.6 },
+  { no: "2015", title: "Eligibility disqualifications", a: 10.85, b: 12.45 },
 ];
 
 // the statute page — drawn in the FILM's coordinates (300 × 350 at 0,0)
@@ -656,7 +656,7 @@ function ActStacks({ auto }: { auto: boolean }) {
               shelf, grows to the closed book (width expansion = the turn
               toward camera), tips as it leaves */}
           <ellipse cx={GUT + PAGE.w / 2} cy={PAGE.y + PAGE.h + 12} rx="170" ry="10" fill={INK} opacity="0">
-            <F a="opacity" v={[0, 0, 0.13, 0.13, 0]} t={[0, 6.3, 6.9, 11.55, 12.35]} />
+            <F a="opacity" v={[0, 0, 0.13, 0.13, 0]} t={[0, 6.3, 6.9, 12.75, 13.55]} />
             <F a="rx" v={[170, 170, 170, 310, 310]} t={[0, 6.9, 7.05, 8.0, DUR]} />
             <F a="cx" v={[GUT + PAGE.w / 2, GUT + PAGE.w / 2, GUT + PAGE.w / 2, GUT, GUT]} t={[0, 6.9, 7.05, 8.0, DUR]} />
           </ellipse>
@@ -677,7 +677,7 @@ function ActStacks({ auto }: { auto: boolean }) {
             <g opacity="0">
               {/* one window — competing fill-freeze opacity animations
                   would override each other */}
-              <F a="opacity" v={[0, 0, 1, 1, 0, 0]} t={[0, 4.9, 5.02, 11.55, 12.3, DUR]} />
+              <F a="opacity" v={[0, 0, 1, 1, 0, 0]} t={[0, 4.9, 5.02, 12.75, 13.5, DUR]} />
 
               {/* backing + right page appear the moment the cover opens */}
               <g opacity="0">
@@ -764,7 +764,7 @@ function ActStacks({ auto }: { auto: boolean }) {
           {/* everything settles to paper while the page glides to the
               film's opening position */}
           <rect x="0" y="0" width="1420" height="620" fill={PAPER} opacity="0">
-            <FadeIn at={11.55} r={0.9} />
+            <FadeIn at={12.75} r={0.9} />
           </rect>
           {/* the glide copy appears over its identical twin in the
               spread, travels, and is at rest BEFORE the film fades in —
@@ -772,9 +772,9 @@ function ActStacks({ auto }: { auto: boolean }) {
           {/* no drop shadow here — the film's page has none, and the
               crossfade must blend two identical renderings */}
           <g opacity="0">
-            <FadeIn at={11.3} r={0.15} />
-            <TF type="translate" v={[`${GUT} ${PAGE.y}`, `${GUT} ${PAGE.y}`, `${FILM_PAGE.x} ${FILM_PAGE.y}`, `${FILM_PAGE.x} ${FILM_PAGE.y}`]} t={[0, 11.5, 12.5, DUR]} s="0 0 1 1;0.45 0 0.18 1;0 0 1 1" />
-            <TF type="scale" add v={["0.95", "0.95", "1", "1"]} t={[0, 11.5, 12.5, DUR]} s="0 0 1 1;0.45 0 0.18 1;0 0 1 1" />
+            <FadeIn at={12.5} r={0.15} />
+            <TF type="translate" v={[`${GUT} ${PAGE.y}`, `${GUT} ${PAGE.y}`, `${FILM_PAGE.x} ${FILM_PAGE.y}`, `${FILM_PAGE.x} ${FILM_PAGE.y}`]} t={[0, 12.7, 13.7, DUR]} s="0 0 1 1;0.45 0 0.18 1;0 0 1 1" />
+            <TF type="scale" add v={["0.95", "0.95", "1", "1"]} t={[0, 12.7, 13.7, DUR]} s="0 0 1 1;0.45 0 0.18 1;0 0 1 1" />
             <StatutePage />
           </g>
 
@@ -840,7 +840,7 @@ export function CorpusLibrary({
 }) {
   useEffect(() => {
     if (!onArrived) return;
-    const ms = autopilot ? (REDUCED ? 2600 : 12550) : 0;
+    const ms = autopilot ? (REDUCED ? 2600 : 13750) : 0;
     if (!ms) return;
     const t = window.setTimeout(() => onArrived(), ms);
     return () => window.clearTimeout(t);

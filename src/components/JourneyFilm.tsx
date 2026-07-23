@@ -858,12 +858,15 @@ function SceneGraph() {
           const [rx, ry] = RING_POS[i];
           const hub = nearestNode(rx + NODE_W / 2, ry + NODE_H / 2);
           const at = 0.588 + i * 0.0025;
+          const c1 = [rx + NODE_W / 2, ry + NODE_H / 2] as const;
+          const c2 = [hub.x + NODE_W / 2, hub.y + NODE_H / 2] as const;
+          const p1 = toEdge(c2[0], c2[1], c1[0], c1[1]);
+          const p2 = toEdge(c1[0], c1[1], c2[0], c2[1]);
           return (
             <g key={t}>
               <line
-                x1={rx + NODE_W / 2} y1={ry + NODE_H / 2}
-                x2={hub.x + NODE_W / 2} y2={hub.y + NODE_H / 2}
-                stroke="rgba(87,83,78,0.25)" strokeWidth="0.9" opacity={O2()}
+                x1={p1[0]} y1={p1[1]} x2={p2[0]} y2={p2[1]}
+                stroke="rgba(87,83,78,0.3)" strokeWidth="0.9" vectorEffect="non-scaling-stroke" opacity={O2()}
               >
                 <Vis a={at} b={W.s3[1] - 0.004} r={0.012} max={0.8} />
               </line>
@@ -875,13 +878,18 @@ function SceneGraph() {
         {STATE_SNAPS.map((id, i) => {
           const [wx, wy] = WORLD_POS[id];
           const hub = nearestNode(wx, wy);
+          const hc = [hub.x + NODE_W / 2, hub.y + NODE_H / 2] as const;
+          const p1 = toEdge(hc[0], hc[1], wx, wy);
+          const p2 = toEdge(wx, wy, hc[0], hc[1]);
           return (
             <line
               key={`dep-${id}`}
-              x1={wx} y1={wy} x2={hub.x + NODE_W / 2} y2={hub.y + NODE_H / 2}
-              stroke="rgba(146,64,14,0.4)" strokeWidth="3" markerEnd="url(#jw-earr)" opacity={O2()}
+              x1={p1[0]} y1={p1[1]} x2={p2[0]} y2={p2[1]}
+              stroke="rgba(146,64,14,0.4)" strokeWidth="1.3" vectorEffect="non-scaling-stroke" markerEnd="url(#jw-earr)" opacity={O2()}
             >
-              <Vis a={0.602 + i * 0.002} b={W.s3[1] - 0.004} r={0.012} max={0.85} />
+              {/* a dependents-stage device: the screen-sized arrowheads
+                  must not ride into the deep zoom */}
+              <Vis a={0.602 + i * 0.002} b={0.7} r={0.012} max={0.85} />
             </line>
           );
         })}
@@ -895,16 +903,15 @@ function SceneGraph() {
           <ProgramGroup key={c.id} id={c.id} count={c.count} i={i} />
         ))}
         {/* the fabric between the real groups */}
-        {REAL_WEB.map(([a, b], k) => (
-          <g key={`w${k}`}>
-            <line x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} stroke="rgba(87,83,78,0.15)" strokeWidth="6" opacity={O2()}>
+        {REAL_WEB.map(([a, b], k) => {
+          const p1 = toEdge(b[0], b[1], a[0], a[1]);
+          const p2 = toEdge(a[0], a[1], b[0], b[1]);
+          return (
+            <line key={`w${k}`} x1={p1[0]} y1={p1[1]} x2={p2[0]} y2={p2[1]} stroke="rgba(87,83,78,0.2)" strokeWidth="1.1" vectorEffect="non-scaling-stroke" opacity={O2()}>
               <Vis a={0.648} b={W.s3[1] - 0.004} r={0.016} max={0.8} />
             </line>
-            <line x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} stroke="rgba(87,83,78,0.18)" strokeWidth="50" opacity={O2()}>
-              <Vis a={0.735} b={W.s3[1] - 0.004} r={0.02} max={0.6} />
-            </line>
-          </g>
-        ))}
+          );
+        })}
         {/* …and at full distance, the sea of programs still to come */}
         {SEA.map((g, k) => (
           <SeaProgram key={k} g={g} />
@@ -976,6 +983,19 @@ function rng32(seed: number) {
   };
 }
 
+// point on the border of the NODE_W × NODE_H card centred at (tx,ty),
+// along the segment toward (fx,fy) — lines and arrowheads land on card
+// edges, never under faces
+const toEdge = (fx: number, fy: number, tx: number, ty: number) => {
+  const dx = fx - tx;
+  const dy = fy - ty;
+  const t = Math.min(
+    NODE_W / 2 / Math.max(Math.abs(dx), 1e-9),
+    NODE_H / 2 / Math.max(Math.abs(dy), 1e-9),
+  );
+  return [tx + dx * Math.min(t, 1), ty + dy * Math.min(t, 1)] as const;
+};
+
 const nearestNode = (x: number, y: number) => {
   let best = NODES[0];
   let bd = Infinity;
@@ -1026,7 +1046,7 @@ function WideCard({ x, y, title, repo = "rulespec-us", at }: { x: number; y: num
   return (
     <g opacity={O2()}>
       <Vis a={at} b={W.s3[1] - 0.004} r={0.012} />
-      <rect x={x} y={y} width={NODE_W} height={NODE_H} rx="4" fill="var(--color-paper-elevated)" stroke="var(--color-rule)" strokeWidth="1" />
+      <rect x={x} y={y} width={NODE_W} height={NODE_H} rx="4" fill="var(--color-paper-elevated)" stroke="var(--color-rule)" strokeWidth="1" vectorEffect="non-scaling-stroke" />
       <rect x={x} y={y} width={NODE_W} height="3" rx="1.5" fill="var(--color-rule-strong)" />
       <text className="jw-nodeeyebrow" x={x + 12} y={y + 19}>
         <tspan fill={WAX}>¶</tspan>
@@ -1047,7 +1067,7 @@ function GhostCard({ x, y, at, max = 0.55 }: { x: number; y: number; at: number;
   return (
     <g opacity={O2()}>
       <Vis a={at} b={W.s3[1] - 0.004} r={0.012} max={max} />
-      <rect x={x} y={y} width={NODE_W} height={NODE_H} rx="4" fill="var(--color-paper-elevated)" stroke="var(--color-rule)" strokeWidth="1" />
+      <rect x={x} y={y} width={NODE_W} height={NODE_H} rx="4" fill="var(--color-paper-elevated)" stroke="var(--color-rule)" strokeWidth="1" vectorEffect="non-scaling-stroke" />
       <rect x={x} y={y} width={NODE_W} height="3" rx="1.5" fill="var(--color-rule-strong)" opacity="0.6" />
       <line x1={x + 12} y1={y + 17} x2={x + 74} y2={y + 17} stroke="rgba(120,113,108,0.5)" strokeWidth="2" />
       <line x1={x + 12} y1={y + 34} x2={x + 118} y2={y + 34} stroke="rgba(87,83,78,0.45)" strokeWidth="3" />
@@ -1070,20 +1090,25 @@ function ProgramGroup({ id, count, i }: { id: string; count: number; i: number }
   });
   return (
     <g>
-      {spots.map(([sx, sy], k) => (
-        <line
-          key={`e${k}`}
-          x1={wx} y1={wy} x2={sx + NODE_W / 2} y2={sy + NODE_H / 2}
-          stroke="rgba(87,83,78,0.22)" strokeWidth="1.2" opacity={O2()}
-        >
-          <Vis a={at} b={W.s3[1] - 0.004} r={0.012} max={0.8} />
-        </line>
-      ))}
+      {spots.map(([sx, sy], k) => {
+        const mc = [sx + NODE_W / 2, sy + NODE_H / 2] as const;
+        const p1 = toEdge(mc[0], mc[1], wx, wy);
+        const p2 = toEdge(wx, wy, mc[0], mc[1]);
+        return (
+          <line
+            key={`e${k}`}
+            x1={p1[0]} y1={p1[1]} x2={p2[0]} y2={p2[1]}
+            stroke="rgba(87,83,78,0.28)" strokeWidth="0.8" vectorEffect="non-scaling-stroke" opacity={O2()}
+          >
+            <Vis a={at} b={W.s3[1] - 0.004} r={0.012} max={0.8} />
+          </line>
+        );
+      })}
       {spots.map(([sx, sy], k) =>
         k < outs.length - 1 ? (
           <WideCard key={`n${k}`} x={sx} y={sy} title={outs[k + 1]} repo={id.startsWith("uk") ? "rulespec-uk" : "rulespec-us"} at={at + 0.004} />
         ) : (
-          <GhostCard key={`g${k}`} x={sx} y={sy} at={at + 0.006} />
+          <GhostCard key={`g${k}`} x={sx} y={sy} at={at + 0.006} max={0.6} />
         ),
       )}
       <WideCard x={wx - NODE_W / 2} y={wy - NODE_H / 2} title={outs[0] ?? id} repo={id.startsWith("uk") ? "rulespec-uk" : "rulespec-us"} at={at} />
@@ -1183,18 +1208,19 @@ function SeaProgram({ g }: { g: SeaGroup }) {
   return (
     <g opacity={O2()}>
       <Vis a={g.at} b={W.s3[1] - 0.004} r={0.02} max={0.6} />
-      {/* strokes are sized for the DEEP zoom — the sea only exists there */}
-      {g.link && (
-        <line x1={g.x} y1={g.y} x2={g.link[0]} y2={g.link[1]} stroke="rgba(87,83,78,0.2)" strokeWidth="55" />
-      )}
-      {g.cards.map(([sx, sy], k) => (
-        <line key={`s${k}`} x1={g.x} y1={g.y} x2={sx} y2={sy} stroke="rgba(87,83,78,0.26)" strokeWidth="38" />
-      ))}
+      {g.link &&
+        (() => {
+          const p1 = toEdge(g.link[0], g.link[1], g.x, g.y);
+          const p2 = toEdge(g.x, g.y, g.link[0], g.link[1]);
+          return <line x1={p1[0]} y1={p1[1]} x2={p2[0]} y2={p2[1]} stroke="rgba(87,83,78,0.2)" strokeWidth="1.1" vectorEffect="non-scaling-stroke" />;
+        })()}
+      {g.cards.map(([sx, sy], k) => {
+        const p1 = toEdge(sx, sy, g.x, g.y);
+        const p2 = toEdge(g.x, g.y, sx, sy);
+        return <line key={`s${k}`} x1={p1[0]} y1={p1[1]} x2={p2[0]} y2={p2[1]} stroke="rgba(87,83,78,0.28)" strokeWidth="0.8" vectorEffect="non-scaling-stroke" />;
+      })}
       {[[g.x, g.y] as const, ...g.cards].map(([sx, sy], k) => (
-        <g key={k}>
-          <rect x={sx - NODE_W / 2} y={sy - NODE_H / 2} width={NODE_W} height={NODE_H} rx="4" fill="var(--color-paper-elevated)" stroke="rgba(87,83,78,0.75)" strokeWidth="12" />
-          <rect x={sx - NODE_W / 2} y={sy - NODE_H / 2} width={NODE_W} height="10" rx="3" fill="var(--color-rule-strong)" opacity="0.6" />
-        </g>
+        <GhostCard key={k} x={sx - NODE_W / 2} y={sy - NODE_H / 2} at={g.at} max={1} />
       ))}
     </g>
   );

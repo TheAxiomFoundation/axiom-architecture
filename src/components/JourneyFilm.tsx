@@ -1133,16 +1133,17 @@ type SeaGroup = {
   cards: Array<readonly [number, number]>;
   link?: readonly [number, number];
   far: boolean;
+  at: number;
 };
 const SEA: SeaGroup[] = (() => {
   const rng = rng32(613);
   const centers: Array<[number, number]> = [];
   let guard = 0;
-  while (centers.length < 84 && guard++ < 9000) {
-    const x = 710 + (rng() - 0.5) * 42000;
-    const y = 300 + (rng() - 0.5) * 19000;
+  while (centers.length < 130 && guard++ < 16000) {
+    const x = 710 + (rng() - 0.5) * 50000;
+    const y = 300 + (rng() - 0.5) * 23000;
     if (Math.abs(x - 710) < 3900 && Math.abs(y - 300) < 2200) continue; // the registry's clearing
-    if (centers.some(([cx, cy]) => Math.hypot(cx - x, cy - y) < 1700)) continue;
+    if (centers.some(([cx, cy]) => Math.hypot(cx - x, cy - y) < 1600)) continue;
     centers.push([x, y]);
   }
   return centers.map(([x, y], i) => {
@@ -1163,19 +1164,25 @@ const SEA: SeaGroup[] = (() => {
         link = c;
       }
     }
-    return { x, y, cards, link, far: Math.hypot(x - 710, y - 300) > 7000 };
+    return { x, y, cards, link, far: Math.hypot(x - 710, y - 300) > 7000, at: 0 };
   });
 })();
-
-// reveal by distance: near groups arrive with the registry view, the
-// far sea only as the camera reaches it
-const seaAt = (g: SeaGroup) =>
-  Math.min(0.762, 0.695 + (Math.hypot(g.x - 710, g.y - 300) / 22000) * 0.075);
+// rank by distance (with a little shuffle) and spread the arrivals
+// evenly across the whole back half — something is ALWAYS appearing,
+// through the glide and on into the held final frame
+(() => {
+  const rng = rng32(377);
+  const order = SEA.map((g, i) => ({ i, k: Math.hypot(g.x - 710, g.y - 300) * (0.82 + rng() * 0.36) }))
+    .sort((p, q) => p.k - q.k);
+  order.forEach(({ i }, rank) => {
+    SEA[i].at = 0.66 + (rank / (order.length - 1)) * 0.195;
+  });
+})();
 
 function SeaProgram({ g }: { g: SeaGroup }) {
   return (
     <g opacity={O2()}>
-      <Vis a={seaAt(g)} b={W.s3[1] - 0.004} r={0.016} max={0.6} />
+      <Vis a={g.at} b={W.s3[1] - 0.004} r={0.02} max={0.6} />
       {/* strokes are sized for the DEEP zoom — the sea only exists there */}
       {g.link && (
         <line x1={g.x} y1={g.y} x2={g.link[0]} y2={g.link[1]} stroke="rgba(87,83,78,0.2)" strokeWidth="55" />

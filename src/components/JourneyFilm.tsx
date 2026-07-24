@@ -847,22 +847,6 @@ function SceneGraph() {
         {NODES.map((n) => (
           <GraphNode key={n.id} n={n} />
         ))}
-        {/* the dependents draw amber threads into the federal core */}
-        {STATE_SNAPS.map((id, i) => {
-          const [wx, wy] = WORLD_POS[id];
-          const p1 = clampSeg(HERO_C[0], HERO_C[1], wx, wy, MOTIF_R);
-          const p2 = clampSeg(wx, wy, HERO_C[0], HERO_C[1], 700);
-          return (
-            <line
-              key={`dep-${id}`}
-              x1={p1[0]} y1={p1[1]} x2={p2[0]} y2={p2[1]}
-              stroke="rgba(146,64,14,0.45)" strokeWidth="8" markerEnd="url(#jw-earr)" opacity={O2()}
-            >
-              {/* a dependents-stage device — gone before the deep zoom */}
-              <Vis a={0.6 + i * 0.002} b={0.7} r={0.012} max={0.85} />
-            </line>
-          );
-        })}
         <text className="jw-worldlabel" x={745} y={880} textAnchor="middle" opacity={O2()}>
           <Vis a={0.61} b={W.s3[1] - 0.004} r={0.014} max={0.85} />
           co-snap · 168 rules

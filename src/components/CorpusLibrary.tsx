@@ -658,19 +658,25 @@ function ActStacks({ auto }: { auto: boolean }) {
             <F a="cx" v={[GUT + PAGE.w / 2, GUT + PAGE.w / 2, GUT + PAGE.w / 2, GUT, GUT]} t={[0, 6.9, 7.05, 8.0, DUR]} />
           </ellipse>
           <g>
+            {/* the pull, in three beats: TIP (lean out on the bottom
+                edge), DRAW (off the shelf toward the viewer — thickness
+                growing, dropping out of the slot), then a lifting ARC
+                to centre while it straightens and turns to face you */}
             <TF
               type="translate"
-              v={[`${SLIVER.x - (SLIVER.w / PAGE.w) * GUT} ${SLIVER.y - (SLIVER.h / PAGE.h) * PAGE.y}`, `${SLIVER.x - (SLIVER.w / PAGE.w) * GUT} ${SLIVER.y - (SLIVER.h / PAGE.h) * PAGE.y}`, "0 0", "0 0"]}
-              t={[0, 5.5, 6.8, DUR]}
-              s="0 0 1 1;0.3 0 0.16 1;0 0 1 1"
+              v={[`${SLIVER.x - (SLIVER.w / PAGE.w) * GUT} ${SLIVER.y - (SLIVER.h / PAGE.h) * PAGE.y}`, `${SLIVER.x - (SLIVER.w / PAGE.w) * GUT} ${SLIVER.y - (SLIVER.h / PAGE.h) * PAGE.y}`, "486.6 64.4", "277.1 55.6", "0 0", "0 0"]}
+              t={[0, 5.15, 5.7, 6.2, 6.85, DUR]}
+              s="0 0 1 1;0.45 0 0.45 1;0.35 0 0.5 1;0.22 0 0.14 1;0 0 1 1"
             />
             <TF
               type="scale" add
-              v={[`${(SLIVER.w / PAGE.w).toFixed(4)} ${(SLIVER.h / PAGE.h).toFixed(4)}`, `${(SLIVER.w / PAGE.w).toFixed(4)} ${(SLIVER.h / PAGE.h).toFixed(4)}`, "1 1", "1 1"]}
-              t={[0, 5.5, 6.8, DUR]}
-              s="0 0 1 1;0.3 0 0.16 1;0 0 1 1"
+              v={[`${(SLIVER.w / PAGE.w).toFixed(4)} ${(SLIVER.h / PAGE.h).toFixed(4)}`, `${(SLIVER.w / PAGE.w).toFixed(4)} ${(SLIVER.h / PAGE.h).toFixed(4)}`, "0.18 0.8", "0.55 0.9", "1 1", "1 1"]}
+              t={[0, 5.15, 5.7, 6.2, 6.85, DUR]}
+              s="0 0 1 1;0.45 0 0.45 1;0.35 0 0.5 1;0.22 0 0.14 1;0 0 1 1"
             />
-            <TF type="rotate" add v={["0 852 482", "0 852 482", "7 852 482", "0 852 482", "0 852 482"]} t={[0, 5.05, 5.5, 6.45, DUR]} s="0.3 0 0.3 1;0.3 0 0.3 1;0.3 0 0.3 1;0 0 1 1" />
+            {/* local angles stay small — the non-uniform sliver scale
+                amplifies them: 5° local ≈ 20° on screen at the shelf */}
+            <TF type="rotate" add v={["0 852 482", "0 852 482", "5 852 482", "8 852 482", "0 852 482", "0 852 482"]} t={[0, 4.98, 5.6, 6.2, 6.68, DUR]} s="0 0 1 1;0.35 0 0.3 1;0.4 0 0.55 1;0.3 0 0.15 1;0 0 1 1" />
             <g opacity="0">
               {/* one window — competing fill-freeze opacity animations
                   would override each other */}

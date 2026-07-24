@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { AxiomGlyph } from "./AxiomGlyph";
 
 // External process graphic as a real chart: a hand-drawn Sankey flow.
 // Ribbon widths carry the story — hundreds of official sources merge into
@@ -1225,7 +1226,7 @@ export function LaunchGraphic() {
             rules
           </span>
           <span className="launch__footbrand">
-            <span className="glyph-axiom">∀</span> axiom-foundation.org
+            <AxiomGlyph className="glyph-axiom" /> axiom-foundation.org
           </span>
         </footer>
       </div>

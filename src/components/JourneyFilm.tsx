@@ -868,14 +868,22 @@ function SceneGraph() {
             </g>
           );
         })}
+        {/* the wiring: the hero connects to each of its dependents… */}
+        {STATE_SNAPS.map((id, i) => (
+          <CrossEdge key={`hs-${id}`} a={HERO_C} b={WORLD_POS[id]} at={0.602 + i * 0.003} />
+        ))}
+        {/* …and other programs feed the hero in turn */}
+        {HERO_FEEDS.map((id, i) => (
+          <CrossEdge key={`hf-${id}`} a={WORLD_POS[id]} b={HERO_C} at={0.655 + i * 0.004} />
+        ))}
         {/* the fabric between the real constellations */}
         {REAL_WEB.map(([a, b], k) => (
-          <Thread key={`w${k}`} a={a} b={b} at={0.644} />
+          <CrossEdge key={`w${k}`} a={a} b={b} at={0.648} />
         ))}
         {/* …and the same structure again, over and over, to the horizon */}
         {SEA.map((g, k) => (
           <g key={k}>
-            {g.link && <Thread a={[g.x, g.y]} b={g.link} at={g.at} />}
+            {g.link && <CrossEdge a={[g.x, g.y]} b={g.link} at={g.at} />}
             <GraphMotif cx={g.x} cy={g.y} at={g.at} />
           </g>
         ))}
@@ -959,14 +967,6 @@ const MOTIF_EDGES: Array<[string, string]> = [
 ];
 const MOTIF_R = 660; // where inter-constellation threads stop
 
-// walk from (fx,fy) toward (tx,ty), stopping r short of the target
-const clampSeg = (fx: number, fy: number, tx: number, ty: number, r: number) => {
-  const dx = tx - fx;
-  const dy = ty - fy;
-  const d = Math.hypot(dx, dy) || 1;
-  return [tx - (dx / d) * r, ty - (dy / d) * r] as const;
-};
-
 function GhostMotifCard({ x, y }: { x: number; y: number }) {
   return (
     <g>
@@ -1008,18 +1008,40 @@ function GraphMotif({ cx, cy, at, max = 0.65 }: { cx: number; cy: number; at: nu
   );
 }
 
-// one thread style for every inter-constellation link
-function Thread({ a, b, at }: { a: readonly [number, number]; b: readonly [number, number]; at: number }) {
+// every inter-constellation connection is the same curved wire,
+// leaving one structure's port and entering the next's — quiet,
+// non-scaling, no arrowhead (the arrows live inside the structures)
+const port = (c: readonly [number, number], toward: readonly [number, number]) => {
+  const right = toward[0] >= c[0];
+  if (c[0] === HERO_C[0] && c[1] === HERO_C[1]) {
+    // the hero graph's own ports: benefit's right edge / income's left
+    return right ? ([1340, 240] as const) : ([150, 295] as const);
+  }
+  return right
+    ? ([c[0] + 500 + NODE_W / 2, c[1] - 80] as const)
+    : ([c[0] - 500 - NODE_W / 2, c[1]] as const);
+};
+
+function CrossEdge({ a, b, at }: { a: readonly [number, number]; b: readonly [number, number]; at: number }) {
   const d = Math.hypot(b[0] - a[0], b[1] - a[1]);
-  if (d < MOTIF_R * 2.2) return null;
-  const p1 = clampSeg(b[0], b[1], a[0], a[1], MOTIF_R);
-  const p2 = clampSeg(a[0], a[1], b[0], b[1], MOTIF_R);
+  if (d < MOTIF_R * 1.6) return null;
+  const p0 = port(a, b);
+  const p1 = port(b, a);
+  const h = (p1[0] - p0[0]) / 3;
   return (
-    <line x1={p1[0]} y1={p1[1]} x2={p2[0]} y2={p2[1]} stroke="rgba(87,83,78,0.18)" strokeWidth="1" vectorEffect="non-scaling-stroke" opacity={O2()}>
-      <Vis a={at} b={W.s3[1] - 0.004} r={0.018} max={0.8} />
-    </line>
+    <path
+      d={`M ${p0[0]} ${p0[1]} C ${p0[0] + h} ${p0[1]}, ${p1[0] - h} ${p1[1]}, ${p1[0]} ${p1[1]}`}
+      fill="none" stroke="rgba(87,83,78,0.3)" strokeWidth="1" vectorEffect="non-scaling-stroke" opacity={O2()}
+    >
+      <Vis a={at} b={W.s3[1] - 0.004} r={0.018} max={0.75} />
+    </path>
   );
 }
+
+// what feeds the hero from beyond its own cluster — real relationships:
+// TANF receipt drives categorical eligibility; wage taxes sit under the
+// income variables
+const HERO_FEEDS = ["us-co-tanf", "us-ny-tanf", "us-oasdi-wage-tax"];
 
 // world positions. The state SNAPs ring the hero — its dependents,
 // revealed by the first step back; the rest lie farther out, met on

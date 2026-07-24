@@ -665,18 +665,19 @@ function ActStacks({ auto }: { auto: boolean }) {
             <TF
               type="translate"
               v={[`${SLIVER.x - (SLIVER.w / PAGE.w) * GUT} ${SLIVER.y - (SLIVER.h / PAGE.h) * PAGE.y}`, `${SLIVER.x - (SLIVER.w / PAGE.w) * GUT} ${SLIVER.y - (SLIVER.h / PAGE.h) * PAGE.y}`, "486.6 64.4", "277.1 55.6", "0 0", "0 0"]}
-              t={[0, 5.15, 5.7, 6.2, 6.85, DUR]}
-              s="0 0 1 1;0.45 0 0.45 1;0.35 0 0.5 1;0.22 0 0.14 1;0 0 1 1"
+              t={[0, 5.1, 5.75, 6.25, 6.85, DUR]}
+              s="0 0 1 1;0.55 0 1 1;0 0 1 1;0 0 0.22 1;0 0 1 1"
             />
             <TF
               type="scale" add
               v={[`${(SLIVER.w / PAGE.w).toFixed(4)} ${(SLIVER.h / PAGE.h).toFixed(4)}`, `${(SLIVER.w / PAGE.w).toFixed(4)} ${(SLIVER.h / PAGE.h).toFixed(4)}`, "0.18 0.8", "0.55 0.9", "1 1", "1 1"]}
-              t={[0, 5.15, 5.7, 6.2, 6.85, DUR]}
-              s="0 0 1 1;0.45 0 0.45 1;0.35 0 0.5 1;0.22 0 0.14 1;0 0 1 1"
+              t={[0, 5.1, 5.75, 6.25, 6.85, DUR]}
+              s="0 0 1 1;0.55 0 1 1;0 0 1 1;0 0 0.22 1;0 0 1 1"
             />
-            {/* local angles stay small — the non-uniform sliver scale
-                amplifies them: 5° local ≈ 20° on screen at the shelf */}
-            <TF type="rotate" add v={["0 852 482", "0 852 482", "5 852 482", "8 852 482", "0 852 482", "0 852 482"]} t={[0, 4.98, 5.6, 6.2, 6.68, DUR]} s="0 0 1 1;0.35 0 0.3 1;0.4 0 0.55 1;0.3 0 0.15 1;0 0 1 1" />
+            {/* the lean rises and decays INSIDE the one gesture — local
+                angles stay small; the sliver's non-uniform scale
+                amplifies 5° to ~20° on screen */}
+            <TF type="rotate" add v={["0 852 482", "0 852 482", "6 852 482", "0 852 482", "0 852 482"]} t={[0, 5.1, 5.85, 6.8, DUR]} s="0 0 1 1;0.45 0 0.7 0.6;0.3 0.4 0.35 1;0 0 1 1" />
             <g opacity="0">
               {/* one window — competing fill-freeze opacity animations
                   would override each other */}

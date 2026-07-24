@@ -789,9 +789,9 @@ function SceneGraph() {
   const cy = 300;
   // one continuous pull-back: hero graph → co-snap's rules → the whole
   // registry → the far field. Same cards at every distance.
-  const CAMT = [0, W.s3[0], 0.515, 0.558, 0.588, 0.618, 0.638, 0.79, 1];
-  const CAMS = [1.06, 1.06, 1.0, 0.55, 0.55, 0.18, 0.18, 0.026, 0.026];
-  const CAMSPL = "0 0 1 1;0.3 0 0.4 1;0.5 0 0.3 1;0 0 1 1;0.45 0 0.25 1;0 0 1 1;0.4 0 0.1 1;0 0 1 1";
+  const CAMT = [0, W.s3[0], 0.515, 0.558, 0.588, 0.632, 0.668, 0.79, 1];
+  const CAMS = [1.06, 1.06, 1.0, 0.55, 0.55, 0.24, 0.185, 0.026, 0.026];
+  const CAMSPL = "0 0 1 1;0.3 0 0.4 1;0.5 0 0.3 1;0 0 1 1;0.45 0 0.55 1;0.35 0.35 0.65 0.65;0.4 0 0.12 1;0 0 1 1";
   return (
     <Scene w={W.s3}>
       <g>
@@ -847,38 +847,25 @@ function SceneGraph() {
         {NODES.map((n) => (
           <GraphNode key={n.id} n={n} />
         ))}
-        <text className="jw-worldlabel" x={745} y={880} textAnchor="middle" opacity={O2()}>
-          <Vis a={0.61} b={W.s3[1] - 0.004} r={0.014} max={0.85} />
-          co-snap · 168 rules
-        </text>
         {/* every compiled program in the registry: the same structure,
             full size, under a real label */}
         {CLUSTERS.filter((c) => c.id !== "co-snap").map((c) => {
           const [wx, wy] = WORLD_POS[c.id];
           const idx = STATE_SNAPS.indexOf(c.id);
-          const at = idx >= 0 ? 0.596 + idx * 0.003 : 0.648 + (c.count % 7) * 0.004;
-          const above = wy > 1300;
-          return (
-            <g key={c.id}>
-              <GraphMotif cx={wx} cy={wy} at={at} />
-              <text className="jw-worldlabel" x={wx} y={wy + (above ? -300 : 330)} textAnchor="middle" opacity={O2()}>
-                <Vis a={at + 0.008} b={W.s3[1] - 0.004} r={0.014} max={0.85} />
-                {`${c.id} · ${c.count.toLocaleString()} rules`}
-              </text>
-            </g>
-          );
+          const at = idx >= 0 ? 0.592 + idx * 0.0025 : 0.615 + (c.count % 7) * 0.003;
+          return <GraphMotif key={c.id} cx={wx} cy={wy} at={at} />;
         })}
         {/* the wiring: the hero connects to each of its dependents… */}
         {STATE_SNAPS.map((id, i) => (
-          <CrossEdge key={`hs-${id}`} a={HERO_C} b={WORLD_POS[id]} at={0.602 + i * 0.003} />
+          <CrossEdge key={`hs-${id}`} a={HERO_C} b={WORLD_POS[id]} at={0.598 + i * 0.003} />
         ))}
         {/* …and other programs feed the hero in turn */}
         {HERO_FEEDS.map((id, i) => (
-          <CrossEdge key={`hf-${id}`} a={WORLD_POS[id]} b={HERO_C} at={0.655 + i * 0.004} />
+          <CrossEdge key={`hf-${id}`} a={WORLD_POS[id]} b={HERO_C} at={0.628 + i * 0.004} />
         ))}
         {/* the fabric between the real constellations */}
         {REAL_WEB.map(([a, b], k) => (
-          <CrossEdge key={`w${k}`} a={a} b={b} at={0.648} />
+          <CrossEdge key={`w${k}`} a={a} b={b} at={0.632} />
         ))}
         {/* …and the same structure again, over and over, to the horizon */}
         {SEA.map((g, k) => (
@@ -1047,13 +1034,13 @@ const HERO_FEEDS = ["us-co-tanf", "us-ny-tanf", "us-oasdi-wage-tax"];
 // revealed by the first step back; the rest lie farther out, met on
 // the glide.
 const WORLD_POS: Record<string, readonly [number, number]> = {
-  "us-ny-snap": [2700, -1100],
-  "us-sc-snap": [3300, 300],
-  "us-tn-snap": [2300, 1300],
-  "us-ca-snap": [-200, 1450],
-  "us-nc-snap": [-2300, 1200],
-  "us-al-snap": [-3000, -200],
-  "us-az-snap": [-1700, -1300],
+  "us-ny-snap": [2500, -1000],
+  "us-sc-snap": [2650, 250],
+  "us-tn-snap": [2100, 1100],
+  "us-ca-snap": [-200, 1120],
+  "us-nc-snap": [-2100, 1050],
+  "us-al-snap": [-2650, -200],
+  "us-az-snap": [-1600, -1080],
   "uk-universal-credit": [-4800, -900],
   "us-co-tanf": [-4300, 1900],
   "us-ny-tanf": [4600, 1600],
@@ -1129,7 +1116,7 @@ const SEA: SeaGroup[] = (() => {
     .map((g, i) => ({ i, k: Math.hypot(g.x - 710, g.y - 300) * (0.82 + jitter() * 0.36) }))
     .sort((p, q) => p.k - q.k)
     .forEach(({ i }, rank) => {
-      groups[i].at = 0.66 + (rank / (groups.length - 1)) * 0.195;
+      groups[i].at = 0.645 + (rank / (groups.length - 1)) * 0.21;
     });
   return groups;
 })();

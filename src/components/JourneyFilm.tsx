@@ -19,7 +19,7 @@
 // crossfade. Reduced motion gets scene II as a composed still.
 
 import { useEffect, useRef } from "react";
-import { CLUSTERS, CO_SNAP_RING, OUTPUTS } from "./registry-snapshot";
+import { CLUSTERS } from "./registry-snapshot";
 
 const CYCLE = 56;
 
@@ -762,7 +762,7 @@ function GraphNode({ n }: { n: GNode }) {
     <g opacity={O2()}>
       <Vis a={n.at} b={W.s3[1] - 0.005} r={0.012} />
       <g filter="url(#jw-shadow)">
-        <rect x={n.x} y={n.y} width={NODE_W} height={NODE_H} rx="4" fill="var(--color-paper-elevated)" stroke="var(--color-rule)" strokeWidth="1" />
+        <rect x={n.x} y={n.y} width={NODE_W} height={NODE_H} rx="4" fill="var(--color-paper-elevated)" stroke="var(--color-rule)" strokeWidth="1" vectorEffect="non-scaling-stroke" />
       </g>
       <rect x={n.x} y={n.y} width={NODE_W} height="3" rx="1.5" fill={n.fresh ? OK : "var(--color-rule-strong)"} />
       <text className="jw-nodeeyebrow" x={n.x + 12} y={n.y + 19}>
@@ -790,7 +790,7 @@ function SceneGraph() {
   // one continuous pull-back: hero graph → co-snap's rules → the whole
   // registry → the far field. Same cards at every distance.
   const CAMT = [0, W.s3[0], 0.515, 0.558, 0.588, 0.618, 0.638, 0.79, 1];
-  const CAMS = [1.06, 1.06, 1.0, 0.55, 0.55, 0.4, 0.4, 0.026, 0.026];
+  const CAMS = [1.06, 1.06, 1.0, 0.55, 0.55, 0.18, 0.18, 0.026, 0.026];
   const CAMSPL = "0 0 1 1;0.3 0 0.4 1;0.5 0 0.3 1;0 0 1 1;0.45 0 0.25 1;0 0 1 1;0.4 0 0.1 1;0 0 1 1";
   return (
     <Scene w={W.s3}>
@@ -847,68 +847,53 @@ function SceneGraph() {
         {NODES.map((n) => (
           <GraphNode key={n.id} n={n} />
         ))}
-        {/* co-snap's own rules join around the hero — real names */}
-        {CO_SNAP_RING.map((t, i) => {
-          const [rx, ry] = RING_POS[i];
-          const hub = nearestNode(rx + NODE_W / 2, ry + NODE_H / 2);
-          const at = 0.588 + i * 0.0025;
-          const c1 = [rx + NODE_W / 2, ry + NODE_H / 2] as const;
-          const c2 = [hub.x + NODE_W / 2, hub.y + NODE_H / 2] as const;
-          const p1 = toEdge(c2[0], c2[1], c1[0], c1[1]);
-          const p2 = toEdge(c1[0], c1[1], c2[0], c2[1]);
-          return (
-            <g key={t}>
-              <line
-                x1={p1[0]} y1={p1[1]} x2={p2[0]} y2={p2[1]}
-                stroke="rgba(87,83,78,0.3)" strokeWidth="0.9" vectorEffect="non-scaling-stroke" opacity={O2()}
-              >
-                <Vis a={at} b={W.s3[1] - 0.004} r={0.012} max={0.8} />
-              </line>
-              <WideCard x={rx} y={ry} title={t} at={at} />
-            </g>
-          );
-        })}
         {/* the dependents draw amber threads into the federal core */}
         {STATE_SNAPS.map((id, i) => {
           const [wx, wy] = WORLD_POS[id];
-          const hub = nearestNode(wx, wy);
-          const hc = [hub.x + NODE_W / 2, hub.y + NODE_H / 2] as const;
-          const p1 = toEdge(hc[0], hc[1], wx, wy);
-          const p2 = toEdge(wx, wy, hc[0], hc[1]);
+          const p1 = clampSeg(HERO_C[0], HERO_C[1], wx, wy, MOTIF_R);
+          const p2 = clampSeg(wx, wy, HERO_C[0], HERO_C[1], 700);
           return (
             <line
               key={`dep-${id}`}
               x1={p1[0]} y1={p1[1]} x2={p2[0]} y2={p2[1]}
-              stroke="rgba(146,64,14,0.4)" strokeWidth="1.3" vectorEffect="non-scaling-stroke" markerEnd="url(#jw-earr)" opacity={O2()}
+              stroke="rgba(146,64,14,0.45)" strokeWidth="8" markerEnd="url(#jw-earr)" opacity={O2()}
             >
-              {/* a dependents-stage device: the screen-sized arrowheads
-                  must not ride into the deep zoom */}
-              <Vis a={0.602 + i * 0.002} b={0.7} r={0.012} max={0.85} />
+              {/* a dependents-stage device — gone before the deep zoom */}
+              <Vis a={0.6 + i * 0.002} b={0.7} r={0.012} max={0.85} />
             </line>
           );
         })}
-        <text className="jw-worldlabel" x={710} y={880} textAnchor="middle" opacity={O2()}>
-          <Vis a={0.634} b={W.s3[1] - 0.004} r={0.014} max={0.85} />
+        <text className="jw-worldlabel" x={745} y={880} textAnchor="middle" opacity={O2()}>
+          <Vis a={0.61} b={W.s3[1] - 0.004} r={0.014} max={0.85} />
           co-snap · 168 rules
         </text>
-        {/* …then every compiled program in the registry, as more of the
-            same cards */}
-        {CLUSTERS.filter((c) => c.id !== "co-snap").map((c, i) => (
-          <ProgramGroup key={c.id} id={c.id} count={c.count} i={i} />
-        ))}
-        {/* the fabric between the real groups */}
-        {REAL_WEB.map(([a, b], k) => {
-          const p1 = toEdge(b[0], b[1], a[0], a[1]);
-          const p2 = toEdge(a[0], a[1], b[0], b[1]);
+        {/* every compiled program in the registry: the same structure,
+            full size, under a real label */}
+        {CLUSTERS.filter((c) => c.id !== "co-snap").map((c) => {
+          const [wx, wy] = WORLD_POS[c.id];
+          const idx = STATE_SNAPS.indexOf(c.id);
+          const at = idx >= 0 ? 0.596 + idx * 0.003 : 0.648 + (c.count % 7) * 0.004;
+          const above = wy > 1300;
           return (
-            <line key={`w${k}`} x1={p1[0]} y1={p1[1]} x2={p2[0]} y2={p2[1]} stroke="rgba(87,83,78,0.2)" strokeWidth="1.1" vectorEffect="non-scaling-stroke" opacity={O2()}>
-              <Vis a={0.648} b={W.s3[1] - 0.004} r={0.016} max={0.8} />
-            </line>
+            <g key={c.id}>
+              <GraphMotif cx={wx} cy={wy} at={at} />
+              <text className="jw-worldlabel" x={wx} y={wy + (above ? -300 : 330)} textAnchor="middle" opacity={O2()}>
+                <Vis a={at + 0.008} b={W.s3[1] - 0.004} r={0.014} max={0.85} />
+                {`${c.id} · ${c.count.toLocaleString()} rules`}
+              </text>
+            </g>
           );
         })}
-        {/* …and at full distance, the sea of programs still to come */}
+        {/* the fabric between the real constellations */}
+        {REAL_WEB.map(([a, b], k) => (
+          <Thread key={`w${k}`} a={a} b={b} at={0.644} />
+        ))}
+        {/* …and the same structure again, over and over, to the horizon */}
         {SEA.map((g, k) => (
-          <SeaProgram key={k} g={g} />
+          <g key={k}>
+            {g.link && <Thread a={[g.x, g.y]} b={g.link} at={g.at} />}
+            <GraphMotif cx={g.x} cy={g.y} at={g.at} />
+          </g>
         ))}
       </g>
     </Scene>
@@ -958,13 +943,13 @@ function Travelers() {
   );
 }
 
-// ── the wider graph: same cards, farther back ─────────────────────────
+// ── the wider graph: the same structure, over and over ───────────────
 //
-// The pull-back never changes the material. First co-snap's own rules
-// join around the hero (real names from the package's 168 outputs),
-// then every compiled program in the live registry arrives as its own
-// group of the SAME cards — real IDs, real counts — and finally the
-// ghost cards of everything not yet encoded. Data: registry-snapshot.ts.
+// Every constellation in the field is the SAME motif: the hero graph's
+// exact card arrangement and curved, arrowed edges, repeated at full
+// size. The real registry programs carry a label; the sea repeats the
+// structure unnamed to the horizon. One geometry, one edge style, one
+// size — identical at every distance.
 
 function rng32(seed: number) {
   let a = seed >>> 0;
@@ -977,90 +962,30 @@ function rng32(seed: number) {
   };
 }
 
-// point on the border of the NODE_W × NODE_H card centred at (tx,ty),
-// along the segment toward (fx,fy) — lines and arrowheads land on card
-// edges, never under faces
-const toEdge = (fx: number, fy: number, tx: number, ty: number) => {
-  const dx = fx - tx;
-  const dy = fy - ty;
-  const t = Math.min(
-    NODE_W / 2 / Math.max(Math.abs(dx), 1e-9),
-    NODE_H / 2 / Math.max(Math.abs(dy), 1e-9),
-  );
-  return [tx + dx * Math.min(t, 1), ty + dy * Math.min(t, 1)] as const;
+// the hero graph's card offsets, relative to its centre — the motif
+const HERO_C = [745, 295] as const;
+const MOTIF: Record<string, readonly [number, number]> = {
+  tfp: [-470, -140], inc: [-500, 0], fpl: [-470, 140],
+  allot: [-90, -120], elig: [-120, 30], round: [200, 150],
+  benefit: [500, -80], eligible: [500, 90],
 };
-
-const nearestNode = (x: number, y: number) => {
-  let best = NODES[0];
-  let bd = Infinity;
-  for (const n of NODES) {
-    const d = Math.hypot(n.x + NODE_W / 2 - x, n.y + NODE_H / 2 - y);
-    if (d < bd) {
-      bd = d;
-      best = n;
-    }
-  }
-  return best;
-};
-
-// hand-placed around the hero graph, clear of its nodes
-const RING_POS: ReadonlyArray<readonly [number, number]> = [
-  [-150, -150], [350, -280], [900, -320], [1400, -200], [1760, 60], [1810, 400],
-  [1500, 640], [950, 710], [400, 730], [-140, 570], [-350, 230], [1150, -330],
+const MOTIF_EDGES: Array<[string, string]> = [
+  ["tfp", "allot"], ["inc", "allot"], ["inc", "elig"], ["fpl", "elig"],
+  ["allot", "round"], ["elig", "eligible"], ["round", "benefit"],
 ];
+const MOTIF_R = 660; // where inter-constellation threads stop
 
-// world positions. The state SNAPs sit close — they are the hero's
-// dependents, revealed by the first step back; everything else lies
-// farther out, met on the long glide to the sea.
-const WORLD_POS: Record<string, readonly [number, number]> = {
-  "us-sc-snap": [2280, -170],
-  "us-nc-snap": [-840, 780],
-  "us-tn-snap": [2260, 700],
-  "us-al-snap": [-890, -250],
-  "us-ca-snap": [640, 960],
-  "us-ny-snap": [1870, -390],
-  "us-az-snap": [-380, 970],
-  "uk-universal-credit": [-2950, -420],
-  "us-co-tanf": [-1650, 1480],
-  "us-ny-tanf": [2950, 1250],
-  "us-ak-atap": [-2650, 1080],
-  "us-ks-tanf": [3450, 320],
-  "us-il-scretd": [-3150, 680],
-  "us-tx-tanf": [1250, -1350],
-  "us-oasdi-wage-tax": [-950, -1520],
+// walk from (fx,fy) toward (tx,ty), stopping r short of the target
+const clampSeg = (fx: number, fy: number, tx: number, ty: number, r: number) => {
+  const dx = tx - fx;
+  const dy = ty - fy;
+  const d = Math.hypot(dx, dy) || 1;
+  return [tx - (dx / d) * r, ty - (dy / d) * r] as const;
 };
 
-// the dependents: these programs import the federal core
-const STATE_SNAPS = ["us-al-snap", "us-ca-snap", "us-nc-snap", "us-ny-snap", "us-sc-snap", "us-tn-snap", "us-az-snap"];
-
-// the SAME card the hero graph uses — no format change at any distance
-function WideCard({ x, y, title, repo = "rulespec-us", at }: { x: number; y: number; title: string; repo?: string; at: number }) {
-  const est = title.length * 7.2;
-  const avail = NODE_W - 24;
+function GhostMotifCard({ x, y }: { x: number; y: number }) {
   return (
-    <g opacity={O2()}>
-      <Vis a={at} b={W.s3[1] - 0.004} r={0.012} />
-      <rect x={x} y={y} width={NODE_W} height={NODE_H} rx="4" fill="var(--color-paper-elevated)" stroke="var(--color-rule)" strokeWidth="1" vectorEffect="non-scaling-stroke" />
-      <rect x={x} y={y} width={NODE_W} height="3" rx="1.5" fill="var(--color-rule-strong)" />
-      <text className="jw-nodeeyebrow" x={x + 12} y={y + 19}>
-        <tspan fill={WAX}>¶</tspan>
-        {`  ${repo}`}
-      </text>
-      <text
-        className="jw-nodetitle" x={x + 12} y={y + 38}
-        {...(est > avail ? { textLength: avail, lengthAdjust: "spacingAndGlyphs" as const } : {})}
-      >
-        {title}
-      </text>
-    </g>
-  );
-}
-
-// too far to read — the card again, text as hairlines
-function GhostCard({ x, y, at, max = 0.55 }: { x: number; y: number; at: number; max?: number }) {
-  return (
-    <g opacity={O2()}>
-      <Vis a={at} b={W.s3[1] - 0.004} r={0.012} max={max} />
+    <g>
       <rect x={x} y={y} width={NODE_W} height={NODE_H} rx="4" fill="var(--color-paper-elevated)" stroke="var(--color-rule)" strokeWidth="1" vectorEffect="non-scaling-stroke" />
       <rect x={x} y={y} width={NODE_W} height="3" rx="1.5" fill="var(--color-rule-strong)" opacity="0.6" />
       <line x1={x + 12} y1={y + 17} x2={x + 74} y2={y + 17} stroke="rgba(120,113,108,0.5)" strokeWidth="2" />
@@ -1069,56 +994,76 @@ function GhostCard({ x, y, at, max = 0.55 }: { x: number; y: number; at: number;
   );
 }
 
-// one compiled program: a group of the same cards — its default outputs
-// named, the rest ghosts — under a real id · count label
-function ProgramGroup({ id, count, i }: { id: string; count: number; i: number }) {
-  const [wx, wy] = WORLD_POS[id];
-  const outs = OUTPUTS[id] ?? [];
-  const rng = rng32(900 + i * 31);
-  const K = Math.min(12, 3 + Math.round(count / 90));
-  const at = STATE_SNAPS.includes(id) ? 0.594 + i * 0.003 : 0.655 + i * 0.004;
-  const spots = Array.from({ length: Math.max(0, K - 1) }, () => {
-    const u = rng() * Math.PI * 2;
-    const rad = 200 + rng() * 320;
-    return [wx + Math.cos(u) * rad * 1.3 - NODE_W / 2, wy + Math.sin(u) * rad * 0.75 - NODE_H / 2] as const;
-  });
+// one constellation: the hero graph's structure, ghost-typeset —
+// identical curved edges, identical arrowheads, identical cards
+function GraphMotif({ cx, cy, at, max = 0.65 }: { cx: number; cy: number; at: number; max?: number }) {
   return (
-    <g>
-      {spots.map(([sx, sy], k) => {
-        const mc = [sx + NODE_W / 2, sy + NODE_H / 2] as const;
-        const p1 = toEdge(mc[0], mc[1], wx, wy);
-        const p2 = toEdge(wx, wy, mc[0], mc[1]);
+    <g opacity={O2()}>
+      <Vis a={at} b={W.s3[1] - 0.004} r={0.018} max={max} />
+      {MOTIF_EDGES.map(([f, t]) => {
+        const [fx, fy] = MOTIF[f];
+        const [tx, ty] = MOTIF[t];
+        const x0 = cx + fx + NODE_W / 2;
+        const y0 = cy + fy;
+        const x1 = cx + tx - NODE_W / 2;
+        const y1 = cy + ty;
+        const m = (x0 + x1) / 2;
         return (
-          <line
-            key={`e${k}`}
-            x1={p1[0]} y1={p1[1]} x2={p2[0]} y2={p2[1]}
-            stroke="rgba(87,83,78,0.28)" strokeWidth="0.8" vectorEffect="non-scaling-stroke" opacity={O2()}
-          >
-            <Vis a={at} b={W.s3[1] - 0.004} r={0.012} max={0.8} />
-          </line>
+          <path
+            key={f + t}
+            className="jw-edge"
+            d={`M ${x0} ${y0} C ${m} ${y0}, ${m} ${y1}, ${x1 - 6} ${y1}`}
+            markerEnd="url(#jw-earr)"
+          />
         );
       })}
-      {spots.map(([sx, sy], k) =>
-        k < outs.length - 1 ? (
-          <WideCard key={`n${k}`} x={sx} y={sy} title={outs[k + 1]} repo={id.startsWith("uk") ? "rulespec-uk" : "rulespec-us"} at={at + 0.004} />
-        ) : (
-          <GhostCard key={`g${k}`} x={sx} y={sy} at={at + 0.006} max={0.6} />
-        ),
-      )}
-      <WideCard x={wx - NODE_W / 2} y={wy - NODE_H / 2} title={outs[0] ?? id} repo={id.startsWith("uk") ? "rulespec-uk" : "rulespec-us"} at={at} />
-      {/* low-sitting groups label above themselves — the caption zone
-          at the bottom of the frame stays clear */}
-      <text className="jw-worldlabel" x={wx} y={wy > 1300 ? wy - 440 : wy + 470} textAnchor="middle" opacity={O2()}>
-        <Vis a={at + 0.008} b={W.s3[1] - 0.004} r={0.014} max={0.85} />
-        {`${id} · ${count.toLocaleString()} rules`}
-      </text>
+      {Object.values(MOTIF).map(([dx, dy], k) => (
+        <GhostMotifCard key={k} x={cx + dx - NODE_W / 2} y={cy + dy - NODE_H / 2} />
+      ))}
     </g>
   );
 }
 
-// the fabric: each real group threads to its nearest neighbour
+// one thread style for every inter-constellation link
+function Thread({ a, b, at }: { a: readonly [number, number]; b: readonly [number, number]; at: number }) {
+  const d = Math.hypot(b[0] - a[0], b[1] - a[1]);
+  if (d < MOTIF_R * 2.2) return null;
+  const p1 = clampSeg(b[0], b[1], a[0], a[1], MOTIF_R);
+  const p2 = clampSeg(a[0], a[1], b[0], b[1], MOTIF_R);
+  return (
+    <line x1={p1[0]} y1={p1[1]} x2={p2[0]} y2={p2[1]} stroke="rgba(87,83,78,0.18)" strokeWidth="1" vectorEffect="non-scaling-stroke" opacity={O2()}>
+      <Vis a={at} b={W.s3[1] - 0.004} r={0.018} max={0.8} />
+    </line>
+  );
+}
+
+// world positions. The state SNAPs ring the hero — its dependents,
+// revealed by the first step back; the rest lie farther out, met on
+// the glide.
+const WORLD_POS: Record<string, readonly [number, number]> = {
+  "us-ny-snap": [2700, -1100],
+  "us-sc-snap": [3300, 300],
+  "us-tn-snap": [2300, 1300],
+  "us-ca-snap": [-200, 1450],
+  "us-nc-snap": [-2300, 1200],
+  "us-al-snap": [-3000, -200],
+  "us-az-snap": [-1700, -1300],
+  "uk-universal-credit": [-4800, -900],
+  "us-co-tanf": [-4300, 1900],
+  "us-ny-tanf": [4600, 1600],
+  "us-ak-atap": [-5300, 800],
+  "us-ks-tanf": [5200, -300],
+  "us-il-scretd": [-4600, -2100],
+  "us-tx-tanf": [2200, -2200],
+  "us-oasdi-wage-tax": [-800, -2500],
+};
+
+// the dependents: these programs import the federal core
+const STATE_SNAPS = ["us-al-snap", "us-ca-snap", "us-nc-snap", "us-ny-snap", "us-sc-snap", "us-tn-snap", "us-az-snap"];
+
+// the fabric: each real constellation threads to its nearest neighbour
 const REAL_CENTERS: Array<readonly [number, number]> = [
-  [710, 300],
+  HERO_C,
   ...Object.values(WORLD_POS),
 ];
 const REAL_WEB: Array<[readonly [number, number], readonly [number, number]]> = (() => {
@@ -1144,81 +1089,44 @@ const REAL_WEB: Array<[readonly [number, number], readonly [number, number]]> = 
   return pairs;
 })();
 
-// the sea: ghost programs to the horizon — the same hub-and-spoke shape
-// as the real groups, text as hairlines, each threaded to a neighbour
-type SeaGroup = {
-  x: number;
-  y: number;
-  cards: Array<readonly [number, number]>;
-  link?: readonly [number, number];
-  far: boolean;
-  at: number;
-};
+// the sea: the same structure repeated to the horizon, each threaded
+// to a neighbour, arriving continuously through the held final frame
+type SeaGroup = { x: number; y: number; link?: readonly [number, number]; at: number };
 const SEA: SeaGroup[] = (() => {
   const rng = rng32(613);
   const centers: Array<[number, number]> = [];
   let guard = 0;
-  while (centers.length < 130 && guard++ < 16000) {
-    const x = 710 + (rng() - 0.5) * 50000;
-    const y = 300 + (rng() - 0.5) * 23000;
-    if (Math.abs(x - 710) < 3900 && Math.abs(y - 300) < 2200) continue; // the registry's clearing
-    if (centers.some(([cx, cy]) => Math.hypot(cx - x, cy - y) < 1600)) continue;
+  while (centers.length < 48 && guard++ < 16000) {
+    const x = 710 + (rng() - 0.5) * 52000;
+    const y = 300 + (rng() - 0.5) * 24000;
+    if (Math.abs(x - 710) < 6500 && Math.abs(y - 300) < 3200) continue; // the registry's clearing
+    if (centers.some(([cx, cy]) => Math.hypot(cx - x, cy - y) < 2600)) continue;
     centers.push([x, y]);
   }
-  return centers.map(([x, y], i) => {
-    const r = rng32(1700 + i * 13);
-    const n = 3 + Math.floor(r() * 4);
-    const cards = Array.from({ length: n }, () => {
-      const u = r() * Math.PI * 2;
-      const rad = 280 + r() * 440;
-      return [x + Math.cos(u) * rad * 1.3, y + Math.sin(u) * rad * 0.75] as const;
-    });
+  const groups: SeaGroup[] = centers.map(([x, y], i) => {
     const pool: Array<readonly [number, number]> = [...centers.slice(0, i), ...REAL_CENTERS];
     let link: readonly [number, number] | undefined;
     let bd = Infinity;
     for (const c of pool) {
       const d = Math.hypot(c[0] - x, c[1] - y);
-      if (d > 100 && d < bd && d < 8000) {
+      if (d > 100 && d < bd && d < 12000) {
         bd = d;
         link = c;
       }
     }
-    return { x, y, cards, link, far: Math.hypot(x - 710, y - 300) > 7000, at: 0 };
+    return { x, y, link, at: 0 };
   });
+  // rank by distance (with a little shuffle) and spread the arrivals
+  // across the whole back half — something is ALWAYS appearing
+  const jitter = rng32(377);
+  groups
+    .map((g, i) => ({ i, k: Math.hypot(g.x - 710, g.y - 300) * (0.82 + jitter() * 0.36) }))
+    .sort((p, q) => p.k - q.k)
+    .forEach(({ i }, rank) => {
+      groups[i].at = 0.66 + (rank / (groups.length - 1)) * 0.195;
+    });
+  return groups;
 })();
-// rank by distance (with a little shuffle) and spread the arrivals
-// evenly across the whole back half — something is ALWAYS appearing,
-// through the glide and on into the held final frame
-(() => {
-  const rng = rng32(377);
-  const order = SEA.map((g, i) => ({ i, k: Math.hypot(g.x - 710, g.y - 300) * (0.82 + rng() * 0.36) }))
-    .sort((p, q) => p.k - q.k);
-  order.forEach(({ i }, rank) => {
-    SEA[i].at = 0.66 + (rank / (order.length - 1)) * 0.195;
-  });
-})();
-
-function SeaProgram({ g }: { g: SeaGroup }) {
-  return (
-    <g opacity={O2()}>
-      <Vis a={g.at} b={W.s3[1] - 0.004} r={0.02} max={0.6} />
-      {g.link &&
-        (() => {
-          const p1 = toEdge(g.link[0], g.link[1], g.x, g.y);
-          const p2 = toEdge(g.x, g.y, g.link[0], g.link[1]);
-          return <line x1={p1[0]} y1={p1[1]} x2={p2[0]} y2={p2[1]} stroke="rgba(87,83,78,0.2)" strokeWidth="1.1" vectorEffect="non-scaling-stroke" />;
-        })()}
-      {g.cards.map(([sx, sy], k) => {
-        const p1 = toEdge(sx, sy, g.x, g.y);
-        const p2 = toEdge(g.x, g.y, sx, sy);
-        return <line key={`s${k}`} x1={p1[0]} y1={p1[1]} x2={p2[0]} y2={p2[1]} stroke="rgba(87,83,78,0.28)" strokeWidth="0.8" vectorEffect="non-scaling-stroke" />;
-      })}
-      {[[g.x, g.y] as const, ...g.cards].map(([sx, sy], k) => (
-        <GhostCard key={k} x={sx - NODE_W / 2} y={sy - NODE_H / 2} at={g.at} max={1} />
-      ))}
-    </g>
-  );
-}
 
 function Captions() {
   if (STATIC) {

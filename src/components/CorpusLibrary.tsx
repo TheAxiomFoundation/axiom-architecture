@@ -399,7 +399,7 @@ function TitlePage() {
         Agriculture
       </text>
       <text className="jw-doceyebrow" x={cx} y={PAGE.h - 34} textAnchor="middle">
-        washington · u.s. government publishing office
+        u.s. government publishing office
       </text>
     </g>
   );

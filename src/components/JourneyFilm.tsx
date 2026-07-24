@@ -380,9 +380,6 @@ function CellToPage() {
             ))}
           </g>
         ))}
-        <text className="jw-doceyebrow" x={page.x + page.w / 2} y={page.y + page.h - 18} textAnchor="middle">
-          as published · amended through 2026
-        </text>
       </g>
     </g>
   );
@@ -444,9 +441,6 @@ function SceneProvision() {
         </text>
         <line x1={DOC.x + 24} y1={DOC.y + 74} x2={DOC.x + DOC.w - 24} y2={DOC.y + 74} stroke={INK} strokeWidth="1.3" opacity="0.8" />
         <line x1={DOC.x + 24} y1={DOC.y + 77.5} x2={DOC.x + DOC.w - 24} y2={DOC.y + 77.5} stroke={INK} strokeWidth="0.5" opacity="0.5" />
-        <text className="jw-doceyebrow" x={DOC.x + DOC.w / 2} y={DOC.y + DOC.h - 18} textAnchor="middle">
-          as published · amended through 2026
-        </text>
       </g>
       {SECTIONS.map(({ key, label, y }, i) => (
         <g key={key}>

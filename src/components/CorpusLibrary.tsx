@@ -522,9 +522,6 @@ function StatutePage() {
           ))}
         </g>
       ))}
-      <text className="jw-doceyebrow" x={w / 2} y={FILM_PAGE.h - 18} textAnchor="middle">
-        as published · amended through 2026
-      </text>
     </g>
   );
 }

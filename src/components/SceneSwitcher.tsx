@@ -1,5 +1,6 @@
 import type { Layout, RepoSpec } from "../architecture";
 import type { DetailMode } from "../App";
+import { AxiomGlyph } from "./AxiomGlyph";
 
 export function SceneSwitcher({
   layouts,
@@ -40,7 +41,7 @@ export function SceneSwitcher({
   return (
     <nav className={`scene-switcher ${open ? "scene-switcher--open" : ""}`}>
       <div className="scene-switcher__wordmark">
-        <span className="glyph-axiom">∀</span>
+        <AxiomGlyph className="glyph-axiom" />
         <span className="scene-switcher__wordmark-text">Architecture</span>
         <button
           type="button"
@@ -126,7 +127,7 @@ export function SceneSwitcher({
             onClick={() => onChange(launchTabId)}
             title="External one-pager — the five-stage story for the launch"
           >
-            <span className="scene-switcher__notes-glyph">∀</span>
+            <AxiomGlyph className="scene-switcher__notes-glyph" />
             <span>Launch graphic</span>
           </button>
           <button

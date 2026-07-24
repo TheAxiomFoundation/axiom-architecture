@@ -106,10 +106,10 @@ body::before {
   background-clip: text;
 }
 
+/* ∀ mark — rendered as the outlined-path SVG (AxiomGlyph, settled w350
+   lockup glyph), never a live font. The svg sizes itself in em against the
+   inherited font-size and fills with the inherited color. */
 .glyph-axiom {
-  font-family: var(--f-display);
-  font-style: normal;
-  font-weight: 300;
   display: inline-block;
 }
 
@@ -341,9 +341,8 @@ body::before {
   font-weight: 600;
 }
 
+/* ∀ mark (AxiomGlyph svg) — font-size drives the em-sized glyph. */
 .scene-switcher__notes-glyph {
-  font-family: var(--f-serif);
-  font-style: italic;
   font-size: 13px;
   color: var(--color-accent);
 }

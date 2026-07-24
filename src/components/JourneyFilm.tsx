@@ -1031,9 +1031,9 @@ function CrossEdge({ a, b, at }: { a: readonly [number, number]; b: readonly [nu
   return (
     <path
       d={`M ${p0[0]} ${p0[1]} C ${p0[0] + h} ${p0[1]}, ${p1[0] - h} ${p1[1]}, ${p1[0]} ${p1[1]}`}
-      fill="none" stroke="rgba(87,83,78,0.3)" strokeWidth="1" vectorEffect="non-scaling-stroke" opacity={O2()}
+      fill="none" stroke="rgba(87,83,78,0.18)" strokeWidth="0.6" vectorEffect="non-scaling-stroke" opacity={O2()}
     >
-      <Vis a={at} b={W.s3[1] - 0.004} r={0.018} max={0.75} />
+      <Vis a={at} b={W.s3[1] - 0.004} r={0.018} max={0.35} />
     </path>
   );
 }

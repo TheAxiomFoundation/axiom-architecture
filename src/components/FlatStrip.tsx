@@ -174,9 +174,6 @@ export function FlatStrip() {
               </g>
             )),
           )}
-          <Foot x={CO}>
-            <text className="fp-mono" x={CO + 16} y={FOOT_Y}>1,742,391 provisions</text>
-          </Foot>
         </Station>
 
         {/* the feed: one provision leaves the § entry */}
@@ -185,13 +182,6 @@ export function FlatStrip() {
           <rect x={(CO + BOX.w + EN) / 2 - 10} y={MID - 13} width="19" height="25" rx="2" fill="var(--color-paper)" stroke={INK} strokeWidth="0.8" />
         </g>
         <text className="fp-mono fp-mono--node" x={(CO + BOX.w + EN) / 2 - 0.5} y={MID + 1} textAnchor="middle" fill={WAX}>§</text>
-        <text
-          className="fp-mono fp-mono--tiny"
-          transform={`rotate(-90 ${(CO + BOX.w + EN) / 2 - 0.5} 380)`}
-          x={(CO + BOX.w + EN) / 2 - 0.5} y={380} textAnchor="middle" opacity="0.6"
-        >
-          one provision at a time
-        </text>
 
         {/* ── THE ENCODING LOOP ── */}
         <Station x={EN} title="the encoding loop" sub="drafted, checked, redrafted">
@@ -242,10 +232,6 @@ export function FlatStrip() {
             {!REDUCED && <animate attributeName="stroke-dashoffset" from="0" to="-16" dur="1.3s" repeatCount="indefinite" />}
           </path>
           <path d={`M ${EN + 29.5} ${B + 101} L ${EN + 37} ${B + 92} L ${EN + 41} ${B + 102.5}`} fill="none" stroke={WAX} strokeWidth="1.1" />
-          <Foot x={EN}>
-            <text className="fp-mono" x={EN + 16} y={FOOT_Y}>7.7M runs</text>
-            <text className="fp-mono fp-mono--tiny" x={EN + BOX.w - 16} y={FOOT_Y} textAnchor="end" opacity="0.5">50+ checks</text>
-          </Foot>
         </Station>
         <text x={EN + 100} y={BOX.y + BOX.h + 18} textAnchor="middle">
           <tspan className="fp-mono fp-mono--wax">✗ caught → redrafted</tspan>
@@ -269,10 +255,6 @@ export function FlatStrip() {
           <text className="fp-mono fp-mono--tiny" x={SP + 24} y={B + 198} opacity="0.75">
             <tspan fill={WAX}>0.30</tspan> ← “30 per centum”
           </text>
-          <Foot x={SP}>
-            <text className="fp-mono" x={SP + 16} y={FOOT_Y}>3,323 rules</text>
-            <text className="fp-mono fp-mono--tiny" x={SP + BOX.w - 16} y={FOOT_Y} textAnchor="end" opacity="0.5">open format</text>
-          </Foot>
         </Station>
 
         {/* ── THE GRAPH ── */}
@@ -304,9 +286,6 @@ export function FlatStrip() {
               </text>
             </g>
           ))}
-          <text className="fp-mono fp-mono--tiny" x={G + 100} y={B + 232} textAnchor="middle" opacity="0.55">
-            snap_allotment · one node of 3,323
-          </text>
           <Foot x={G}>
             <text className="fp-mono" x={G + 16} y={FOOT_Y}>typed · cited</text>
             <text className="fp-mono fp-mono--tiny" x={G + BOX.w - 16} y={FOOT_Y} textAnchor="end" opacity="0.5">executable</text>

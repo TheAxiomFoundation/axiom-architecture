@@ -233,11 +233,6 @@ export function FlatStrip() {
           </path>
           <path d={`M ${EN + 29.5} ${B + 101} L ${EN + 37} ${B + 92} L ${EN + 41} ${B + 102.5}`} fill="none" stroke={WAX} strokeWidth="1.1" />
         </Station>
-        <text x={EN + 100} y={BOX.y + BOX.h + 18} textAnchor="middle">
-          <tspan className="fp-mono fp-mono--wax">✗ caught → redrafted</tspan>
-          <tspan className="fp-capq" dx="8">every catch teaches the encoder</tspan>
-        </text>
-
         {/* ── RULESPEC ── */}
         <Duct x0={EN + BOX.w + 3} x1={SP - 4} />
         <Station x={SP} title="rulespec" sub="one rule, fully cited" bar={OK}>

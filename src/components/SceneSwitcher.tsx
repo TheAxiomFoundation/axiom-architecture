@@ -1,5 +1,4 @@
 import type { Layout, RepoSpec } from "../architecture";
-import type { DetailMode } from "../App";
 import { AxiomGlyph } from "./AxiomGlyph";
 
 export function SceneSwitcher({
@@ -7,8 +6,6 @@ export function SceneSwitcher({
   activeId,
   onChange,
   repos,
-  detailMode,
-  onDetailModeChange,
   launchTabId,
   open = false,
   onClose,
@@ -17,8 +14,6 @@ export function SceneSwitcher({
   activeId: string;
   onChange: (id: string) => void;
   repos: RepoSpec[];
-  detailMode: DetailMode;
-  onDetailModeChange: (mode: DetailMode) => void;
   launchTabId: string;
   open?: boolean;
   onClose?: () => void;
@@ -64,36 +59,6 @@ export function SceneSwitcher({
       </ul>
 
       <div className="scene-switcher__footer">
-        <div className="scene-switcher__row">
-          <span className="scene-switcher__row-label">Detail</span>
-          <div
-            className="scene-switcher__pill"
-            role="group"
-            aria-label="Detail level"
-          >
-            <button
-              type="button"
-              className={`scene-switcher__pill-btn ${
-                detailMode === "external" ? "scene-switcher__pill-btn--active" : ""
-              }`}
-              onClick={() => onDetailModeChange("external")}
-              title="Public-facing summary — concepts and relationships"
-            >
-              External
-            </button>
-            <button
-              type="button"
-              className={`scene-switcher__pill-btn ${
-                detailMode === "internal" ? "scene-switcher__pill-btn--active" : ""
-              }`}
-              onClick={() => onDetailModeChange("internal")}
-              title="Operator depth — mechanics, gotchas, file paths, commands"
-            >
-              Internal
-            </button>
-          </div>
-        </div>
-
         <ul className="scene-switcher__edges">
           <li>
             <span className="edge-swatch edge-swatch--solid" />

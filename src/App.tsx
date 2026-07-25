@@ -95,8 +95,6 @@ function toRfEdges(
   });
 }
 
-export type DetailMode = "external" | "internal";
-
 // Hidden tab ids — not real React Flow layouts. Each surfaces a
 // documentation panel instead of the canvas.
 export const LAUNCH_TAB_ID = "launch";
@@ -105,7 +103,6 @@ export function App() {
   const [activeLayoutId, setActiveLayoutId] = useState(LAYOUTS[0].id);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
-  const [detailMode, setDetailMode] = useState<DetailMode>("external");
   // Mobile only: the sidebar collapses to an off-canvas drawer toggled here.
   const [navOpen, setNavOpen] = useState(false);
 
@@ -218,8 +215,6 @@ export function App() {
           setNavOpen(false);
         }}
         repos={REPOS}
-        detailMode={detailMode}
-        onDetailModeChange={setDetailMode}
         launchTabId={LAUNCH_TAB_ID}
       />
       {showLaunch ? (
@@ -264,7 +259,6 @@ export function App() {
           node={selectedNode}
           incoming={neighbors?.incoming ?? []}
           outgoing={neighbors?.outgoing ?? []}
-          mode={detailMode}
           onSelectNode={setSelectedId}
           onClose={() => setSelectedId(null)}
         />

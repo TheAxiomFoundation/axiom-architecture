@@ -232,58 +232,13 @@ body::before {
   gap: 18px;
 }
 
-.scene-switcher__row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
 
-.scene-switcher__row-label {
-  font-family: var(--f-mono);
-  font-size: 10px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--color-ink-muted);
-  font-weight: 500;
-}
 
 /* Pill-shaped External/Internal toggle */
-.scene-switcher__pill {
-  display: inline-flex;
-  border: 1px solid var(--color-rule);
-  border-radius: 999px;
-  overflow: hidden;
-  background: var(--color-paper);
-}
 
-.scene-switcher__pill-btn {
-  background: transparent;
-  border: none;
-  padding: 4px 12px;
-  font-family: var(--f-mono);
-  font-size: 10px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--color-ink-muted);
-  cursor: pointer;
-  transition: background 180ms var(--ease-out), color 180ms var(--ease-out);
-  line-height: 1.6;
-}
 
-.scene-switcher__pill-btn:hover {
-  color: var(--color-ink);
-}
 
-.scene-switcher__pill-btn--active {
-  background: var(--color-accent);
-  color: var(--color-paper-elevated);
-}
 
-.scene-switcher__pill-btn--active:hover {
-  background: var(--color-accent-hover);
-  color: var(--color-paper-elevated);
-}
 
 /* Compact edge legend (no title; three lines is self-explanatory) */
 .scene-switcher__edges {
@@ -579,44 +534,10 @@ body::before {
   white-space: pre-wrap;
 }
 
-.detail-panel__list {
-  margin: 0;
-  padding: 0 0 0 18px;
-  font-size: 12.5px;
-  line-height: 1.55;
-  color: var(--color-ink-secondary);
-  list-style-type: square;
-}
 
-.detail-panel__list li + li {
-  margin-top: 8px;
-}
 
-.detail-panel__list li::marker {
-  color: var(--color-accent);
-}
 
-.detail-panel__codelist {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
 
-.detail-panel__codelist code {
-  display: inline-block;
-  width: 100%;
-  font-family: var(--f-mono);
-  font-size: 11px;
-  background: var(--color-paper);
-  padding: 5px 8px;
-  border: 1px solid var(--color-rule);
-  border-radius: 3px;
-  color: var(--color-ink);
-  word-break: break-all;
-}
 
 .detail-panel__repo {
   padding: 10px 12px;

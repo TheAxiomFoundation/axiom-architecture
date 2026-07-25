@@ -12,10 +12,7 @@ import { LayerNode } from "./components/LayerNode";
 import type { LayerNodeData } from "./components/LayerNode";
 import { LabeledEdge } from "./components/LabeledEdge";
 import { DetailPanel } from "./components/DetailPanel";
-import { EncodingPlaybook } from "./components/EncodingPlaybook";
 import { LaunchGraphic } from "./components/LaunchGraphic";
-import { NotesPanel } from "./components/NotesPanel";
-import { SpecsPanel } from "./components/SpecsPanel";
 import { SceneSwitcher } from "./components/SceneSwitcher";
 import {
   LAYOUTS,
@@ -102,9 +99,6 @@ export type DetailMode = "external" | "internal";
 
 // Hidden tab ids — not real React Flow layouts. Each surfaces a
 // documentation panel instead of the canvas.
-export const NOTES_TAB_ID = "notes";
-export const PLAYBOOK_TAB_ID = "encoding-playbook";
-export const SPECS_TAB_ID = "specs";
 export const LAUNCH_TAB_ID = "launch";
 
 export function App() {
@@ -120,11 +114,8 @@ export function App() {
   // panel — that's a deliberate, separate action.
   const highlightId = hoveredId ?? selectedId;
 
-  const showNotes = activeLayoutId === NOTES_TAB_ID;
-  const showPlaybook = activeLayoutId === PLAYBOOK_TAB_ID;
-  const showSpecs = activeLayoutId === SPECS_TAB_ID;
   const showLaunch = activeLayoutId === LAUNCH_TAB_ID;
-  const showDoc = showNotes || showPlaybook || showSpecs || showLaunch;
+  const showDoc = showLaunch;
 
   const catalog = useMemo(() => new Map(NODES.map((node) => [node.id, node])), []);
 
@@ -229,26 +220,11 @@ export function App() {
         repos={REPOS}
         detailMode={detailMode}
         onDetailModeChange={setDetailMode}
-        notesTabId={NOTES_TAB_ID}
-        playbookTabId={PLAYBOOK_TAB_ID}
-        specsTabId={SPECS_TAB_ID}
         launchTabId={LAUNCH_TAB_ID}
       />
       {showLaunch ? (
         <main className="canvas canvas--launch">
           <LaunchGraphic />
-        </main>
-      ) : showNotes ? (
-        <main className="canvas canvas--notes">
-          <NotesPanel />
-        </main>
-      ) : showPlaybook ? (
-        <main className="canvas canvas--notes">
-          <EncodingPlaybook />
-        </main>
-      ) : showSpecs ? (
-        <main className="canvas canvas--notes">
-          <SpecsPanel />
         </main>
       ) : (
         <main className="canvas">

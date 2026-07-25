@@ -932,9 +932,9 @@ export const NODES: NodeSpec[] = [
     summary: "Financial advice demo",
     detail:
       "Demo that combines corpus citations with RuleSpec computation to answer " +
-      "benefit / tax questions in natural language. Standalone repo " +
-      "(finbot-snap-demo, deployed at finbot-snap-demo.vercel.app) — one of the ten " +
-      "surfaces in axiom-demo-shell's Application tier.",
+      "benefit / tax questions in natural language. User-facing name: Chatbot. " +
+      "Standalone repo (finbot-snap-demo, deployed at axiom.org/chatbot) — one of " +
+      "the ten surfaces in axiom-demo-shell's Application tier.",
     mechanics:
       "Calls Supabase REST + a RuleSpec runtime to compute eligibility / benefit " +
       "amounts, then surfaces the actual source provisions that drove the answer. " +
@@ -948,7 +948,7 @@ export const NODES: NodeSpec[] = [
     summary: "Dashboard demo",
     detail:
       "Demo for assembling policy dashboards on top of the corpus. Standalone repo " +
-      "deployed at dashboard-builder-flax.vercel.app. rulespec-graph-viewer — the " +
+      "deployed at axiom.org/builder. rulespec-graph-viewer — the " +
       "interactive RuleSpec computation-DAG viewer — was extracted from this repo " +
       "and now ships as its own demo surface.",
   },

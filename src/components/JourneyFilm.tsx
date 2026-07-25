@@ -687,7 +687,7 @@ function SceneProvision() {
               </g>
             );
           })}
-          <text className="jw-redraft" x={WB.x + WB.w - 18} y={WB.y + 229} textAnchor="end" opacity="0">
+          <text className="jw-redraft" x={WB.x + WB.w / 2} y={WB.y + 229} textAnchor="middle" opacity="0">
             ✗ disagrees with independent calculators — redrafted
             {!STATIC && <Vis a={HERO.flag} b={HERO.repass} r={0.006} />}
           </text>
@@ -791,7 +791,7 @@ function SceneGraph() {
   // registry → the far field. Same cards at every distance.
   const CAMT = [0, W.s3[0], 0.515, 0.558, 0.588, 0.632, 0.668, 0.79, 1];
   const CAMS = [1.06, 1.06, 1.0, 0.55, 0.55, 0.24, 0.185, 0.026, 0.026];
-  const CAMSPL = "0 0 1 1;0.3 0 0.4 1;0.5 0 0.3 1;0 0 1 1;0.45 0 0.55 1;0.35 0.35 0.65 0.65;0.4 0 0.12 1;0 0 1 1";
+  const CAMSPL = "0 0 1 1;0.3 0 0.4 1;0.5 0 0.3 1;0 0 1 1;0.45 0 0.7 0.85;0.3 0.15 0.7 0.85;0.3 0.15 0.12 1;0 0 1 1";
   return (
     <Scene w={W.s3}>
       <g>
@@ -854,6 +854,23 @@ function SceneGraph() {
           const idx = STATE_SNAPS.indexOf(c.id);
           const at = idx >= 0 ? 0.592 + idx * 0.0025 : 0.615 + (c.count % 7) * 0.003;
           return <GraphMotif key={c.id} cx={wx} cy={wy} at={at} spec={REG_SPECS[c.id]} />;
+        })}
+        {/* SNAP itself keeps growing: more of its rules join the core */}
+        {HERO_RING.map((q, k) => {
+          const [hx, hy] = q.hub;
+          const ltr = hx <= q.x;
+          const sx = (ltr ? hx : q.x) + NODE_W / 2;
+          const sy = ltr ? hy : q.y;
+          const tx = (ltr ? q.x : hx) - NODE_W / 2;
+          const ty = ltr ? q.y : hy;
+          const m = (sx + tx) / 2;
+          return (
+            <g key={`hr${k}`} opacity={O2()}>
+              <Vis a={q.at} b={W.s3[1] - 0.004} r={0.014} max={0.75} />
+              <path className="jw-edge" d={`M ${sx} ${sy} C ${m} ${sy}, ${m} ${ty}, ${tx - 6} ${ty}`} markerEnd="url(#jw-earr)" />
+              <GhostMotifCard x={q.x - NODE_W / 2} y={q.y - NODE_H / 2} />
+            </g>
+          );
         })}
         {/* the wiring: the hero connects to each of its dependents… */}
         {STATE_SNAPS.map((id, i) => (
@@ -1085,6 +1102,38 @@ const WORLD_POS: Record<string, readonly [number, number]> = {
 
 // the dependents: these programs import the federal core
 const STATE_SNAPS = ["us-al-snap", "us-ca-snap", "us-nc-snap", "us-ny-snap", "us-sc-snap", "us-tn-snap", "us-az-snap"];
+
+// the hero grows first: two dozen more of SNAP's own rules join the
+// core as the pull begins — each wired to the nearest existing card,
+// so the cluster reads as one organism getting bigger
+const HERO_RING: Array<{ x: number; y: number; hub: readonly [number, number]; at: number }> = (() => {
+  const r = rng32(97);
+  const anchors: Array<readonly [number, number]> = [
+    [275, 155], [245, 295], [275, 435], [845, 200], [815, 350], [1135, 470], [1340, 240], [1340, 410],
+  ];
+  const pts: Array<{ x: number; y: number; hub: readonly [number, number]; at: number }> = [];
+  let guard = 0;
+  while (pts.length < 24 && guard++ < 4000) {
+    const u = r() * Math.PI * 2;
+    const rad = 520 + r() * 630;
+    const x = 745 + Math.cos(u) * rad * 1.25;
+    const y = 295 + Math.sin(u) * rad * 0.72;
+    if (x > 60 && x < 1430 && y > 40 && y < 550) continue; // the core's own block
+    if (pts.some((q) => Math.hypot(q.x - x, q.y - y) < 250)) continue;
+    if (STATE_SNAPS.some((id) => Math.hypot(WORLD_POS[id][0] - x, WORLD_POS[id][1] - y) < 950)) continue;
+    let hub: readonly [number, number] = anchors[0];
+    let bd = Infinity;
+    for (const a of [...anchors, ...pts.map((q) => [q.x, q.y] as const)]) {
+      const d = Math.hypot(a[0] - x, a[1] - y);
+      if (d < bd) {
+        bd = d;
+        hub = a;
+      }
+    }
+    pts.push({ x, y, hub, at: 0.583 + pts.length * 0.0016 });
+  }
+  return pts;
+})();
 
 // each registry program's own variant of the family
 const idHash = (id: string) => [...id].reduce((a, ch) => (a * 31 + ch.charCodeAt(0)) >>> 0, 7);

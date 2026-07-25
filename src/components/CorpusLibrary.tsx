@@ -80,6 +80,42 @@ const PAGE = { w: 285, h: 332, y: 150 };
 // the film's statute page — the glide's destination (JourneyFilm scene II)
 const FILM_PAGE = { x: 250, y: 130, w: 300, h: 350 };
 
+// THE PULL, precomputed: the book's centre rides one smooth bezier
+// from the shelf (out, slightly down, a lifting arc) to the resting
+// spot, while thickness and lean grow and decay along the same curve.
+// Dense samples with baked-in easing — no waypoint corners, no
+// stop-start.
+const PULL = (() => {
+  const S0 = [SLIVER.w / PAGE.w, SLIVER.h / PAGE.h] as const;
+  const P0 = [SLIVER.x + SLIVER.w / 2, SLIVER.y + SLIVER.h / 2] as const; // sliver centre
+  const P1 = [P0[0] + 10, P0[1] + 54] as const; // out of the slot, downward
+  const P2 = [762, 262] as const; // the lifting arc
+  const C = [852.5, 316] as const; // the closed book's local centre
+  const P3 = C; // identity transform puts the centre here
+  const bez = (a: number, b: number, c: number, d: number, t: number) => {
+    const m = 1 - t;
+    return m * m * m * a + 3 * m * m * t * b + 3 * m * t * t * c + t * t * t * d;
+  };
+  const smooth = (u: number) => u * u * (3 - 2 * u);
+  const N = 8;
+  const tt: string[] = [];
+  const sc: string[] = [];
+  const ro: string[] = [];
+  const times: number[] = [];
+  for (let i = 0; i <= N; i++) {
+    const v = smooth(i / N);
+    const sx = S0[0] + (1 - S0[0]) * v;
+    const sy = S0[1] + (1 - S0[1]) * v;
+    const bx = bez(P0[0], P1[0], P2[0], P3[0], v);
+    const by = bez(P0[1], P1[1], P2[1], P3[1], v);
+    tt.push(`${(bx - sx * C[0]).toFixed(1)} ${(by - sy * C[1]).toFixed(1)}`);
+    sc.push(`${sx.toFixed(4)} ${sy.toFixed(4)}`);
+    ro.push(`${(6 * Math.sin(Math.PI * Math.pow(v, 0.7))).toFixed(2)} 852 482`);
+    times.push(5.1 + (6.85 - 5.1) * (i / N));
+  }
+  return { tt, sc, ro, times };
+})();
+
 function mulberry32(seed: number) {
   let a = seed >>> 0;
   return () => {
@@ -658,26 +694,12 @@ function ActStacks({ auto }: { auto: boolean }) {
             <F a="cx" v={[GUT + PAGE.w / 2, GUT + PAGE.w / 2, GUT + PAGE.w / 2, GUT, GUT]} t={[0, 6.9, 7.05, 8.0, DUR]} />
           </ellipse>
           <g>
-            {/* the pull, in three beats: TIP (lean out on the bottom
-                edge), DRAW (off the shelf toward the viewer — thickness
-                growing, dropping out of the slot), then a lifting ARC
-                to centre while it straightens and turns to face you */}
-            <TF
-              type="translate"
-              v={[`${SLIVER.x - (SLIVER.w / PAGE.w) * GUT} ${SLIVER.y - (SLIVER.h / PAGE.h) * PAGE.y}`, `${SLIVER.x - (SLIVER.w / PAGE.w) * GUT} ${SLIVER.y - (SLIVER.h / PAGE.h) * PAGE.y}`, "486.6 64.4", "277.1 55.6", "0 0", "0 0"]}
-              t={[0, 5.1, 5.75, 6.25, 6.85, DUR]}
-              s="0 0 1 1;0.55 0 1 1;0 0 1 1;0 0 0.22 1;0 0 1 1"
-            />
-            <TF
-              type="scale" add
-              v={[`${(SLIVER.w / PAGE.w).toFixed(4)} ${(SLIVER.h / PAGE.h).toFixed(4)}`, `${(SLIVER.w / PAGE.w).toFixed(4)} ${(SLIVER.h / PAGE.h).toFixed(4)}`, "0.18 0.8", "0.55 0.9", "1 1", "1 1"]}
-              t={[0, 5.1, 5.75, 6.25, 6.85, DUR]}
-              s="0 0 1 1;0.55 0 1 1;0 0 1 1;0 0 0.22 1;0 0 1 1"
-            />
-            {/* the lean rises and decays INSIDE the one gesture — local
-                angles stay small; the sliver's non-uniform scale
-                amplifies 5° to ~20° on screen */}
-            <TF type="rotate" add v={["0 852 482", "0 852 482", "6 852 482", "0 852 482", "0 852 482"]} t={[0, 5.1, 5.85, 6.8, DUR]} s="0 0 1 1;0.45 0 0.7 0.6;0.3 0.4 0.35 1;0 0 1 1" />
+            {/* one smooth gesture: dense samples along a single bezier
+                (see PULL) — tip, draw, and lifting arc are phases of one
+                curve, not separate moves */}
+            <TF type="translate" v={[PULL.tt[0], ...PULL.tt, PULL.tt[PULL.tt.length - 1]]} t={[0, ...PULL.times, DUR]} />
+            <TF type="scale" add v={[PULL.sc[0], ...PULL.sc, PULL.sc[PULL.sc.length - 1]]} t={[0, ...PULL.times, DUR]} />
+            <TF type="rotate" add v={[PULL.ro[0], ...PULL.ro, PULL.ro[PULL.ro.length - 1]]} t={[0, ...PULL.times, DUR]} />
             <g opacity="0">
               {/* one window — competing fill-freeze opacity animations
                   would override each other */}

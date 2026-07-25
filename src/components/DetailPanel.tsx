@@ -1,6 +1,5 @@
 import type { EdgeSpec, NodeSpec, Repo } from "../architecture";
 import { REPOS } from "../architecture";
-import type { DetailMode } from "../App";
 
 const REPO_INFO: Record<Repo, { label: string; description: string }> = Object.fromEntries(
   REPOS.map((r) => [r.id, { label: r.label, description: r.description }]),
@@ -16,22 +15,16 @@ export function DetailPanel({
   node,
   incoming,
   outgoing,
-  mode,
   onSelectNode,
   onClose,
 }: {
   node: NodeSpec;
   incoming: { node: NodeSpec; edge: EdgeSpec }[];
   outgoing: { node: NodeSpec; edge: EdgeSpec }[];
-  mode: DetailMode;
   onSelectNode: (id: string) => void;
   onClose: () => void;
 }) {
   const repo = REPO_INFO[node.repo];
-  // External mode strips the operator-depth sections — mechanics, gotchas,
-  // file paths, commands — keeping the conceptual story and the
-  // relationship graph. Internal mode shows everything.
-  const showInternal = mode === "internal";
 
   return (
     <aside className="detail-panel">
@@ -48,58 +41,6 @@ export function DetailPanel({
       <Section label="About">
         <p className="detail-panel__body">{node.detail}</p>
       </Section>
-
-      {showInternal && node.mechanics && (
-        <Section label="How it works">
-          <p className="detail-panel__body">{node.mechanics}</p>
-        </Section>
-      )}
-
-      {node.rationale && (
-        <Section label="Why this design">
-          <p className="detail-panel__body">{node.rationale}</p>
-        </Section>
-      )}
-
-      {showInternal && node.important && node.important.length > 0 && (
-        <Section label="Worth knowing">
-          <ul className="detail-panel__list">
-            {node.important.map((item, i) => (
-              <li key={i}>{item}</li>
-            ))}
-          </ul>
-        </Section>
-      )}
-
-      {showInternal &&
-        ((node.files && node.files.length > 0) || node.source) && (
-          <Section label="Source paths">
-            <ul className="detail-panel__codelist">
-              {node.source && !node.files?.includes(node.source) && (
-                <li>
-                  <code>{node.source}</code>
-                </li>
-              )}
-              {node.files?.map((p, i) => (
-                <li key={i}>
-                  <code>{p}</code>
-                </li>
-              ))}
-            </ul>
-          </Section>
-        )}
-
-      {showInternal && node.commands && node.commands.length > 0 && (
-        <Section label="Related commands">
-          <ul className="detail-panel__codelist">
-            {node.commands.map((cmd, i) => (
-              <li key={i}>
-                <code>axiom-corpus-ingest {cmd}</code>
-              </li>
-            ))}
-          </ul>
-        </Section>
-      )}
 
       <Section label="Repository">
         <div className="detail-panel__repo">

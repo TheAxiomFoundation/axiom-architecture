@@ -853,7 +853,7 @@ function SceneGraph() {
           const [wx, wy] = WORLD_POS[c.id];
           const idx = STATE_SNAPS.indexOf(c.id);
           const at = idx >= 0 ? 0.592 + idx * 0.0025 : 0.615 + (c.count % 7) * 0.003;
-          return <GraphMotif key={c.id} cx={wx} cy={wy} at={at} />;
+          return <GraphMotif key={c.id} cx={wx} cy={wy} at={at} spec={REG_SPECS[c.id]} />;
         })}
         {/* the wiring: the hero connects to each of its dependents… */}
         {STATE_SNAPS.map((id, i) => (
@@ -871,7 +871,7 @@ function SceneGraph() {
         {SEA.map((g, k) => (
           <g key={k}>
             {g.link && <CrossEdge a={[g.x, g.y]} b={g.link} at={g.at} />}
-            <GraphMotif cx={g.x} cy={g.y} at={g.at} />
+            <GraphMotif cx={g.x} cy={g.y} at={g.at} spec={g.spec} />
           </g>
         ))}
       </g>
@@ -941,18 +941,45 @@ function rng32(seed: number) {
   };
 }
 
-// the hero graph's card offsets, relative to its centre — the motif
+// the hero graph's centre, and the family every constellation belongs
+// to: same cards, same curved arrowed edges, same left-to-right
+// anatomy (inputs → mids → outputs) — but each cluster gets its own
+// seeded count, spacing, and wiring
 const HERO_C = [745, 295] as const;
-const MOTIF: Record<string, readonly [number, number]> = {
-  tfp: [-470, -140], inc: [-500, 0], fpl: [-470, 140],
-  allot: [-90, -120], elig: [-120, 30], round: [200, 150],
-  benefit: [500, -80], eligible: [500, 90],
+const MOTIF_R = 660; // minimum spacing for inter-constellation wires
+
+type MotifSpec = {
+  cards: Array<readonly [number, number]>;
+  edges: Array<readonly [number, number]>; // card indices, source → target
 };
-const MOTIF_EDGES: Array<[string, string]> = [
-  ["tfp", "allot"], ["inc", "allot"], ["inc", "elig"], ["fpl", "elig"],
-  ["allot", "round"], ["elig", "eligible"], ["round", "benefit"],
-];
-const MOTIF_R = 660; // where inter-constellation threads stop
+
+function makeMotif(seed: number): MotifSpec {
+  const r = rng32(seed);
+  const nIn = 2 + Math.floor(r() * 3); // 2–4
+  const nMid = 1 + Math.floor(r() * 3); // 1–3
+  const nOut = 1 + (r() < 0.55 ? 1 : 0); // 1–2
+  const col = (n: number, x: number, jx: number, gap: number) =>
+    Array.from({ length: n }, (_, i) => [
+      x + (r() - 0.5) * jx,
+      (i - (n - 1) / 2) * gap + (r() - 0.5) * 50,
+    ] as const);
+  const ins = col(nIn, -500, 90, 170);
+  const mids = col(nMid, -80, 130, 180);
+  const outs = col(nOut, 480, 110, 190);
+  const cards = [...ins, ...mids, ...outs];
+  const mi0 = nIn;
+  const oi0 = nIn + nMid;
+  const edges: Array<readonly [number, number]> = [];
+  ins.forEach((_, i) => edges.push([i, mi0 + Math.floor(r() * nMid)]));
+  for (let i = 0; i < nMid; i++) edges.push([mi0 + i, oi0 + Math.floor(r() * nOut)]);
+  if (nIn > 1 && nMid > 1 && r() < 0.5) edges.push([Math.floor(r() * nIn), mi0 + Math.floor(r() * nMid)]);
+  return { cards, edges };
+}
+
+// every cluster's spec, keyed by its world centre, so wires can leave
+// from the cluster's ACTUAL outermost card
+const SPECS = new Map<string, MotifSpec>();
+const specKey = (c: readonly [number, number]) => `${c[0]},${c[1]}`;
 
 function GhostMotifCard({ x, y }: { x: number; y: number }) {
   return (
@@ -965,15 +992,15 @@ function GhostMotifCard({ x, y }: { x: number; y: number }) {
   );
 }
 
-// one constellation: the hero graph's structure, ghost-typeset —
-// identical curved edges, identical arrowheads, identical cards
-function GraphMotif({ cx, cy, at, max = 0.65 }: { cx: number; cy: number; at: number; max?: number }) {
+// one constellation of the family: its own count and silhouette, the
+// same cards, the same curved arrowed edges
+function GraphMotif({ cx, cy, at, spec, max = 0.65 }: { cx: number; cy: number; at: number; spec: MotifSpec; max?: number }) {
   return (
     <g opacity={O2()}>
       <Vis a={at} b={W.s3[1] - 0.004} r={0.018} max={max} />
-      {MOTIF_EDGES.map(([f, t]) => {
-        const [fx, fy] = MOTIF[f];
-        const [tx, ty] = MOTIF[t];
+      {spec.edges.map(([f, t], k) => {
+        const [fx, fy] = spec.cards[f];
+        const [tx, ty] = spec.cards[t];
         const x0 = cx + fx + NODE_W / 2;
         const y0 = cy + fy;
         const x1 = cx + tx - NODE_W / 2;
@@ -981,14 +1008,14 @@ function GraphMotif({ cx, cy, at, max = 0.65 }: { cx: number; cy: number; at: nu
         const m = (x0 + x1) / 2;
         return (
           <path
-            key={f + t}
+            key={k}
             className="jw-edge"
             d={`M ${x0} ${y0} C ${m} ${y0}, ${m} ${y1}, ${x1 - 6} ${y1}`}
             markerEnd="url(#jw-earr)"
           />
         );
       })}
-      {Object.values(MOTIF).map(([dx, dy], k) => (
+      {spec.cards.map(([dx, dy], k) => (
         <GhostMotifCard key={k} x={cx + dx - NODE_W / 2} y={cy + dy - NODE_H / 2} />
       ))}
     </g>
@@ -1004,9 +1031,14 @@ const port = (c: readonly [number, number], toward: readonly [number, number]) =
     // the hero graph's own ports: benefit's right edge / income's left
     return right ? ([1340, 240] as const) : ([150, 295] as const);
   }
-  return right
-    ? ([c[0] + 500 + NODE_W / 2, c[1] - 80] as const)
-    : ([c[0] - 500 - NODE_W / 2, c[1]] as const);
+  const spec = SPECS.get(specKey(c));
+  if (!spec) {
+    return right
+      ? ([c[0] + 500 + NODE_W / 2, c[1] - 80] as const)
+      : ([c[0] - 500 - NODE_W / 2, c[1]] as const);
+  }
+  const pick = spec.cards.reduce((best, q) => ((right ? q[0] > best[0] : q[0] < best[0]) ? q : best));
+  return [c[0] + pick[0] + (right ? NODE_W / 2 : -NODE_W / 2), c[1] + pick[1]] as const;
 };
 
 function CrossEdge({ a, b, at }: { a: readonly [number, number]; b: readonly [number, number]; at: number }) {
@@ -1054,6 +1086,16 @@ const WORLD_POS: Record<string, readonly [number, number]> = {
 // the dependents: these programs import the federal core
 const STATE_SNAPS = ["us-al-snap", "us-ca-snap", "us-nc-snap", "us-ny-snap", "us-sc-snap", "us-tn-snap", "us-az-snap"];
 
+// each registry program's own variant of the family
+const idHash = (id: string) => [...id].reduce((a, ch) => (a * 31 + ch.charCodeAt(0)) >>> 0, 7);
+const REG_SPECS: Record<string, MotifSpec> = Object.fromEntries(
+  Object.keys(WORLD_POS).map((id) => {
+    const spec = makeMotif(idHash(id));
+    SPECS.set(specKey(WORLD_POS[id]), spec);
+    return [id, spec];
+  }),
+);
+
 // the fabric: each real constellation threads to its nearest neighbour
 const REAL_CENTERS: Array<readonly [number, number]> = [
   HERO_C,
@@ -1084,7 +1126,7 @@ const REAL_WEB: Array<[readonly [number, number], readonly [number, number]]> = 
 
 // the sea: the same structure repeated to the horizon, each threaded
 // to a neighbour, arriving continuously through the held final frame
-type SeaGroup = { x: number; y: number; link?: readonly [number, number]; at: number };
+type SeaGroup = { x: number; y: number; link?: readonly [number, number]; at: number; spec: MotifSpec };
 const SEA: SeaGroup[] = (() => {
   const rng = rng32(613);
   const centers: Array<[number, number]> = [];
@@ -1107,7 +1149,9 @@ const SEA: SeaGroup[] = (() => {
         link = c;
       }
     }
-    return { x, y, link, at: 0 };
+    const spec = makeMotif(4200 + i * 17);
+    SPECS.set(specKey([x, y]), spec);
+    return { x, y, link, at: 0, spec };
   });
   // rank by distance (with a little shuffle) and spread the arrivals
   // across the whole back half — something is ALWAYS appearing

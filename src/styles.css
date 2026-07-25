@@ -823,144 +823,24 @@ body::before {
    Notes panel (hidden "Open questions" tab)
    ──────────────────────────────────────────────────────────── */
 
-.canvas--notes {
-  overflow-y: auto;
-}
 
-.notes {
-  max-width: 760px;
-  margin: 0 auto;
-  padding: 48px 56px 96px 56px;
-}
 
-.notes__header {
-  padding-bottom: 24px;
-  margin-bottom: 32px;
-  border-bottom: 1px solid var(--color-rule);
-}
 
-.notes__header h1 {
-  margin: 6px 0 10px 0;
-  font-size: 1.8rem;
-}
 
-.notes__header p {
-  margin: 0;
-  font-size: 14px;
-  color: var(--color-ink-secondary);
-  font-style: italic;
-  max-width: 580px;
-  line-height: 1.6;
-}
 
-.notes__body {
-  display: flex;
-  flex-direction: column;
-  gap: 44px;
-}
 
-.notes__section-kicker {
-  font-family: var(--f-mono);
-  font-size: 10.5px;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: var(--color-accent);
-  margin-bottom: 6px;
-}
 
-.notes__section-title {
-  font-family: var(--f-display);
-  font-weight: 300;
-  font-size: 1.25rem;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--color-ink);
-  margin: 0 0 18px 0;
-  padding-bottom: 10px;
-  border-bottom: 1px solid var(--color-rule);
-}
 
-.notes__section-body {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
 
-.notes__h {
-  font-family: var(--f-body);
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--color-ink);
-  margin: 14px 0 -4px 0;
-  letter-spacing: -0.005em;
-}
 
-.notes__p {
-  margin: 0;
-  font-size: 13.5px;
-  line-height: 1.65;
-  color: var(--color-ink-secondary);
-}
 
-.notes__ul {
-  margin: 0;
-  padding: 0 0 0 20px;
-  font-size: 13.5px;
-  line-height: 1.65;
-  color: var(--color-ink-secondary);
-  list-style-type: square;
-}
 
-.notes__ul li + li {
-  margin-top: 10px;
-}
 
-.notes__ul li::marker {
-  color: var(--color-accent);
-}
 
-.notes__code {
-  margin: 6px 0;
-  padding: 14px 16px;
-  background: var(--color-paper-elevated);
-  border: 1px solid var(--color-rule);
-  border-radius: 4px;
-  font-family: var(--f-mono);
-  font-size: 11.5px;
-  line-height: 1.55;
-  color: var(--color-ink);
-  overflow-x: auto;
-  white-space: pre;
-}
 
-.notes__code code {
-  font: inherit;
-  color: inherit;
-  background: transparent;
-}
 
-.notes__callout {
-  margin: 6px 0;
-  padding: 12px 14px;
-  border-left: 3px solid var(--color-rule);
-  background: var(--color-paper-elevated);
-  border-radius: 0 4px 4px 0;
-  font-size: 13px;
-  line-height: 1.6;
-  color: var(--color-ink-secondary);
-}
 
-.notes__callout--blocker {
-  border-left-color: var(--color-accent);
-  background: var(--color-accent-light);
-  color: var(--color-ink);
-}
 
-.notes__callout--note {
-  border-left-color: var(--color-ink-muted);
-  color: var(--color-ink-secondary);
-  font-style: italic;
-}
 
 /* ────────────────────────────────────────────────────────────
    Mobile drawer controls — hidden on desktop, shown ≤ 768px
@@ -1126,10 +1006,6 @@ body::before {
   }
 
   /* Documentation tabs replace the canvas and need to scroll internally. */
-  .canvas--notes {
-    height: 100vh;
-    overflow-y: auto;
-  }
 
   /* Detail panel: overlay the whole screen instead of a third column. */
   .detail-panel {

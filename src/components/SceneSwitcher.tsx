@@ -9,9 +9,6 @@ export function SceneSwitcher({
   repos,
   detailMode,
   onDetailModeChange,
-  notesTabId,
-  playbookTabId,
-  specsTabId,
   launchTabId,
   open = false,
   onClose,
@@ -22,16 +19,10 @@ export function SceneSwitcher({
   repos: RepoSpec[];
   detailMode: DetailMode;
   onDetailModeChange: (mode: DetailMode) => void;
-  notesTabId: string;
-  playbookTabId: string;
-  specsTabId: string;
   launchTabId: string;
   open?: boolean;
   onClose?: () => void;
 }) {
-  const notesActive = activeId === notesTabId;
-  const playbookActive = activeId === playbookTabId;
-  const specsActive = activeId === specsTabId;
   const launchActive = activeId === launchTabId;
   // repos prop is kept for future re-introduction of a per-repo view; we no
   // longer surface the full list in the sidebar because each card already
@@ -129,39 +120,6 @@ export function SceneSwitcher({
           >
             <AxiomGlyph className="scene-switcher__notes-glyph" />
             <span>Launch graphic</span>
-          </button>
-          <button
-            type="button"
-            className={`scene-switcher__notes-link ${
-              playbookActive ? "scene-switcher__notes-link--active" : ""
-            }`}
-            onClick={() => onChange(playbookTabId)}
-            title="Operator playbook — how to take a state benefit program end-to-end"
-          >
-            <span className="scene-switcher__notes-glyph">§</span>
-            <span>Encoding playbook</span>
-          </button>
-          <button
-            type="button"
-            className={`scene-switcher__notes-link ${
-              specsActive ? "scene-switcher__notes-link--active" : ""
-            }`}
-            onClick={() => onChange(specsTabId)}
-            title="Specs & contracts — the durable formats and where their canonical definitions live"
-          >
-            <span className="scene-switcher__notes-glyph">§</span>
-            <span>Specs &amp; contracts</span>
-          </button>
-          <button
-            type="button"
-            className={`scene-switcher__notes-link ${
-              notesActive ? "scene-switcher__notes-link--active" : ""
-            }`}
-            onClick={() => onChange(notesTabId)}
-            title="Internal architectural review — not part of the main story"
-          >
-            <span className="scene-switcher__notes-glyph">§</span>
-            <span>Open questions</span>
           </button>
         </div>
       </div>

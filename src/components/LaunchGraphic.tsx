@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { JourneyDemo } from "./JourneyDemo";
+import { FlatStrip } from "./FlatStrip";
 import { AxiomGlyph } from "./AxiomGlyph";
 
 // External process graphic as a real chart: a hand-drawn Sankey flow.
@@ -33,14 +35,18 @@ function center(x0: number, y0: number, x1: number, y1: number) {
   return `M ${x0} ${y0} C ${m} ${y0}, ${m} ${y1}, ${x1} ${y1}`;
 }
 
+// `strands` is the multiplicity made visible: each ribbon is drawn as a
+// bundle of that many hairline feeds (one per state, per title group, per
+// manual…), so "hundreds of official sites" is texture you can see, not
+// just a caption.
 const SOURCES = [
-  { label: "eCFR", sub: "federal regulations", c: 88, h: 40 },
-  { label: "US Code", sub: "54 titles", c: 158, h: 46 },
-  { label: "Agency guidance", sub: "IRS · policy manuals", c: 228, h: 40 },
-  { label: "State codes", sub: "50 states + DC", c: 312, h: 92 },
-  { label: "UK", sub: "legislation.gov.uk", c: 396, h: 36 },
-  { label: "Canada", sub: "laws-lois", c: 458, h: 36 },
-  { label: "Belgium", sub: "ELI · federal acts", c: 514, h: 30 },
+  { label: "eCFR", sub: "federal regulations", c: 88, h: 40, strands: 5 },
+  { label: "US Code", sub: "54 titles", c: 158, h: 46, strands: 7 },
+  { label: "Agency guidance", sub: "IRS · policy manuals", c: 228, h: 40, strands: 14 },
+  { label: "State codes", sub: "50 states + DC", c: 312, h: 92, strands: 51 },
+  { label: "UK", sub: "legislation.gov.uk", c: 396, h: 36, strands: 5 },
+  { label: "Canada", sub: "laws-lois", c: 458, h: 36, strands: 4 },
+  { label: "Belgium", sub: "ELI · federal acts", c: 514, h: 30, strands: 3 },
 ];
 
 // The application layer: where verified rules are used. `dock` is where
@@ -781,6 +787,7 @@ export function LaunchGraphic() {
     });
   }, [journeys]);
   const svgRef = useRef<SVGSVGElement | null>(null);
+  const [view, setView] = useState<"journey" | "strip" | "chart">("journey");
 
   // ── zoom into a pathway ─────────────────────────────────────────
   const [zoom, setZoom] = useState<Region | null>(null);
@@ -849,16 +856,52 @@ export function LaunchGraphic() {
           <h1 className="launch__headline">
             From published law to a rule you can <em>trust.</em>
           </h1>
-          <p className="launch__sub">
-            The whole process in one flow: what we capture, what we encode,
-            what survives the gates — and where it goes. Widths are
-            illustrative; the counts are real.{" "}
-            <strong className="launch__sub-hint">
-              Click any stage to look under the hood.
-            </strong>
-          </p>
+          {view === "journey" ? (
+            <p className="launch__sub">
+              The whole demo in one cycle: one volume comes off the shelf —
+              7 U.S.C. § 2017 — the section is encoded and gated, and joins
+              the graph. Then the camera backs out until the whole live
+              registry is in frame — and the cycle begins again.
+            </p>
+          ) : view === "strip" ? (
+            <p className="launch__sub">
+              What Axiom is, on one screen: scraping pipelines fill the
+              database, the database becomes the citable corpus, the encoder
+              walks every provision through the validator gauntlet, and the
+              rules graph compiles into what powers every surface. One amber
+              thread follows § 2017 the whole way.
+            </p>
+          ) : (
+            <p className="launch__sub">
+              The whole process in one flow: what we capture, what we encode,
+              what survives the gates — and where it goes. Widths are
+              illustrative; the counts are real.
+              {view === "chart" && (
+                <strong className="launch__sub-hint">
+                  {" "}Click any stage to look under the hood.
+                </strong>
+              )}
+            </p>
+          )}
+          <div className="launch__viewtoggle" role="group" aria-label="View">
+            {(["journey", "strip", "chart"] as const).map((v) => (
+              <button
+                key={v}
+                type="button"
+                className={`launch__viewtoggle-btn ${view === v ? "launch__viewtoggle-btn--active" : ""}`}
+                onClick={() => setView(v)}
+              >
+                {v}
+              </button>
+            ))}
+          </div>
         </header>
 
+        {view === "journey" ? (
+          <JourneyDemo />
+        ) : view === "strip" ? (
+          <FlatStrip />
+                ) : (
         <div className="lsk__wrap">
           <svg
             ref={svgRef}
@@ -866,7 +909,7 @@ export function LaunchGraphic() {
             onClick={() => zoom && setZoom(null)}
             viewBox="0 0 1420 620"
             role="img"
-            aria-label="Flow chart: hundreds of official legal sources — federal, state, agency guidance, UK, Canada, Belgium — merge into a corpus of 1.7M+ provisions. The whole corpus flows to the web, browsable today. A growing stream is additionally encoded into rules (the goal: every provision, executable), passes four verification gates (failures loop back for redrafting), and lands in the rulebook as 3,000+ verified signed rules — each broadcast to every surface at once: web, APIs, and AI agents."
+            aria-label="Flow chart: hundreds of official legal sources — federal, state, agency guidance, UK, Canada, Belgium — merge into a corpus of 1.7M+ provisions. Each source band is a bundle of hairline feeds (the State codes band alone is 51), and the sources reference one another before capture: regulations implement statutes, guidance interprets regulations, state codes cite the federal text. The whole corpus flows to the web, browsable today. A growing stream is additionally encoded into rules (the goal: every provision, executable) — a magnifying lens shows the unit of work up close: the words “30 per centum” in one provision become the value 0.30 in one rule, with the citation preserved. The stream passes four verification gates (failures loop back for redrafting), and lands in the rulebook as 3,000+ verified signed rules — each broadcast to every surface at once: web, APIs, and AI agents."
           >
             <defs>
               <filter id="lsk-doc-shadow" x="-40%" y="-40%" width="180%" height="180%">
@@ -929,6 +972,44 @@ export function LaunchGraphic() {
                 >
                   <Pulse w={WIN.sources} />
                 </path>
+              ))}
+            </g>
+
+            {/* the feeds inside each ribbon: one hairline per site/title/
+                 state — the State codes band is visibly a comb of 51 */}
+            <g className="lsk__stage lsk__stage--1">
+              {SOURCE_LINKS.map((s) => {
+                const pad = 5;
+                const span = s.h - pad * 2;
+                return Array.from({ length: s.strands }, (_, i) => {
+                  const off =
+                    s.strands === 1
+                      ? 0
+                      : -span / 2 + (i * span) / (s.strands - 1);
+                  return (
+                    <path
+                      key={`${s.label}${i}`}
+                      className="lsk-strand"
+                      d={center(SRC_X, s.c + off, CORPUS_X, s.segC + off)}
+                    />
+                  );
+                });
+              })}
+            </g>
+
+            {/* sources reference one another BEFORE we ever touch them:
+                 regulations implement statutes, guidance interprets
+                 regulations, state codes cite the federal text */}
+            <g className="lsk__stage lsk__stage--1">
+              {[
+                { d: "M 242 132 C 254 146, 254 158, 244 170", label: "implements", lx: 260, ly: 152 },
+                { d: "M 272 230 C 286 214, 286 202, 274 190", label: "interprets", lx: 290, ly: 212 },
+                { d: "M 300 306 C 318 282, 318 264, 302 248", label: "cites", lx: 322, ly: 280 },
+              ].map(({ d, label, lx, ly }) => (
+                <g key={label}>
+                  <path className="lsk-xref" d={d} markerEnd="url(#lsk-loop-arr)" />
+                  <text className="lsk-xref-label" x={lx} y={ly}>{label}</text>
+                </g>
               ))}
             </g>
 
@@ -997,6 +1078,37 @@ export function LaunchGraphic() {
               </text>
               <text className="lsk-eyebrow" x="656" y="264" textAnchor="middle">
                 tied to the source text
+              </text>
+            </g>
+
+            {/* ── the lens: the unit of work, up close ─────────────
+                 The bands say "how much"; the lens says "how faithfully".
+                 One provision magnified: its decisive words in amber, the
+                 rule they become, and the proof atom tying them together. */}
+            <g className="lsk__stage lsk__stage--3" pointerEvents="none">
+              <text className="lsk-eyebrow" x="738" y="16" textAnchor="middle">
+                one provision, up close
+              </text>
+              <path className="lsk-lens-tether" d="M 702 161 C 688 202, 670 240, 660 276" />
+              <circle cx="658" cy="278" r="2.4" fill="var(--color-accent)" />
+              <g filter="url(#lsk-doc-shadow)">
+                <circle className="lsk-lens-ring" cx="738" cy="88" r="64" strokeWidth="1.6" />
+              </g>
+              <circle cx="738" cy="88" r="58.5" fill="none" stroke="var(--color-ink)" strokeWidth="0.5" opacity="0.45" />
+              <text className="lsk-lens-text" x="738" y="64" textAnchor="middle">…reduced by an amount</text>
+              <text className="lsk-lens-text" x="738" y="79" textAnchor="middle">
+                {"equal to "}
+                <tspan fill="var(--color-accent)">30 per centum</tspan>
+                {" of"}
+              </text>
+              <text className="lsk-lens-text" x="738" y="94" textAnchor="middle">the household’s income…</text>
+              <text className="lsk-lens-arrow" x="738" y="110" textAnchor="middle">↓</text>
+              {/* the proof atom hangs off the ring like a specimen tag */}
+              <g filter="url(#lsk-doc-shadow)">
+                <rect className="lsk-lens-chip" x="680" y="144" width="116" height="17" rx="3" />
+              </g>
+              <text className="lsk-lens-code" x="738" y="155.5" textAnchor="middle">
+                {"0.30 ← “30 per centum”"}
               </text>
             </g>
 
@@ -1219,6 +1331,7 @@ export function LaunchGraphic() {
             </aside>
           )}
         </div>
+        )}
 
         <footer className="launch__footline">
           <span>

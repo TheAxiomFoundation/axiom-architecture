@@ -100,7 +100,17 @@ function toRfEdges(
 export const LAUNCH_TAB_ID = "launch";
 
 export function App() {
-  const [activeLayoutId, setActiveLayoutId] = useState(LAYOUTS[0].id);
+  // The launch graphic has no nav entry — it is reachable only by URL:
+  // /architecture/launch (or #launch as a rewrite-free fallback).
+  const [activeLayoutId, setActiveLayoutId] = useState(() => {
+    if (typeof window !== "undefined") {
+      const { pathname, hash } = window.location;
+      if (/\/launch\/?$/.test(pathname) || hash.replace(/^#\/?/, "") === "launch") {
+        return LAUNCH_TAB_ID;
+      }
+    }
+    return LAYOUTS[0].id;
+  });
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   // Mobile only: the sidebar collapses to an off-canvas drawer toggled here.
@@ -215,7 +225,6 @@ export function App() {
           setNavOpen(false);
         }}
         repos={REPOS}
-        launchTabId={LAUNCH_TAB_ID}
       />
       {showLaunch ? (
         <main className="canvas canvas--launch">

@@ -6,7 +6,6 @@ export function SceneSwitcher({
   activeId,
   onChange,
   repos,
-  launchTabId,
   open = false,
   onClose,
 }: {
@@ -14,11 +13,9 @@ export function SceneSwitcher({
   activeId: string;
   onChange: (id: string) => void;
   repos: RepoSpec[];
-  launchTabId: string;
   open?: boolean;
   onClose?: () => void;
 }) {
-  const launchActive = activeId === launchTabId;
   // repos prop is kept for future re-introduction of a per-repo view; we no
   // longer surface the full list in the sidebar because each card already
   // carries its repo on the eyebrow.
@@ -74,19 +71,6 @@ export function SceneSwitcher({
           </li>
         </ul>
 
-        <div className="scene-switcher__hidden-links">
-          <button
-            type="button"
-            className={`scene-switcher__notes-link ${
-              launchActive ? "scene-switcher__notes-link--active" : ""
-            }`}
-            onClick={() => onChange(launchTabId)}
-            title="External one-pager — the five-stage story for the launch"
-          >
-            <AxiomGlyph className="scene-switcher__notes-glyph" />
-            <span>Launch graphic</span>
-          </button>
-        </div>
       </div>
     </nav>
   );

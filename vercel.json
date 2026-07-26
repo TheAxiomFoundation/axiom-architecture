@@ -10,5 +10,11 @@
       "destination": "https://axiom.org/architecture",
       "permanent": true
     }
+  ],
+  "rewrites": [
+    {
+      "source": "/architecture/launch",
+      "destination": "/architecture/index.html"
+    }
   ]
 }

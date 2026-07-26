@@ -45,7 +45,6 @@ export function SceneSwitcher({
           </button>
         </div>
         <a className="scene-switcher__title-block" href={import.meta.env.BASE_URL}>
-          <span className="scene-switcher__title-eyebrow">Interactive</span>
           <span className="scene-switcher__title-name">Architecture</span>
         </a>
         <a className="scene-switcher__all-demos" href="https://axiom.org/demos">

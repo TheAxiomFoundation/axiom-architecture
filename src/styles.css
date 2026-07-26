@@ -173,16 +173,6 @@ body::before {
   text-decoration: none;
 }
 
-.scene-switcher__title-eyebrow {
-  display: block;
-  font-family: var(--f-mono);
-  font-size: 10px;
-  font-weight: 400;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--color-ink-muted);
-}
-
 .scene-switcher__title-name {
   display: block;
   font-family: var(--f-serif);

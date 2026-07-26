@@ -1,5 +1,4 @@
 import type { Layout, RepoSpec } from "../architecture";
-import { AxiomGlyph } from "./AxiomGlyph";
 
 export function SceneSwitcher({
   layouts,
@@ -23,17 +22,35 @@ export function SceneSwitcher({
 
   return (
     <nav className={`scene-switcher ${open ? "scene-switcher--open" : ""}`}>
-      <div className="scene-switcher__wordmark">
-        <AxiomGlyph className="glyph-axiom" />
-        <span className="scene-switcher__wordmark-text">Architecture</span>
-        <button
-          type="button"
-          className="scene-switcher__close"
-          aria-label="Close menu"
-          onClick={onClose}
-        >
-          ×
-        </button>
+      <div className="scene-switcher__brand">
+        <div className="scene-switcher__brand-row">
+          <a
+            className="scene-switcher__logo-link"
+            href="https://axiom-foundation.org"
+            aria-label="Axiom Foundation"
+          >
+            <img
+              className="scene-switcher__logo"
+              src={`${import.meta.env.BASE_URL}axiom-foundation.svg`}
+              alt="Axiom Foundation"
+            />
+          </a>
+          <button
+            type="button"
+            className="scene-switcher__close"
+            aria-label="Close menu"
+            onClick={onClose}
+          >
+            ×
+          </button>
+        </div>
+        <a className="scene-switcher__title-block" href={import.meta.env.BASE_URL}>
+          <span className="scene-switcher__title-eyebrow">Interactive</span>
+          <span className="scene-switcher__title-name">Architecture</span>
+        </a>
+        <a className="scene-switcher__all-demos" href="https://axiom.org/demos">
+          All demos
+        </a>
       </div>
 
       <ul className="scene-switcher__scenes">

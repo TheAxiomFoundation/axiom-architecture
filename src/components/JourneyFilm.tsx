@@ -44,11 +44,11 @@ const W = {
 // the sub is one verifiable fact about the system — never a note about
 // the film's own construction.
 const CAPTIONS = [
-  { w: W.s1, name: "The law, whole", sub: "1,742,391 provisions · green = encoded & verified" },
+  { w: W.s1, name: "The law, whole", sub: "1,742,391 provisions ingested — the whole law, word for word" },
   { w: W.s2, name: "One provision, encoded", sub: "split into sections — each checked four ways: run, checks, compare, review" },
   { w: [0.48, 0.583] as const, name: "The graph", sub: "every rule is a node — typed, cited, connected" },
   { w: [0.59, 0.648] as const, name: "One rule, many programs", sub: "state programs build on the federal core — shared rules, one graph" },
-  { w: [0.655, 0.87] as const, name: "The graph, whole", sub: "the live registry — 16 programs, 3,323 certified rules, and everything not yet encoded" },
+  { w: [0.655, 0.87] as const, name: "The graph, whole", sub: "the live registry — 16 compiled programs, 3,323 rules, and everything not yet encoded" },
 ];
 
 // ── SMIL helpers ──────────────────────────────────────────────────────
@@ -1278,7 +1278,7 @@ function Captions() {
           One provision, encoded
         </text>
         <text className="jw-sub" x="710" y="681" textAnchor="middle">
-          the whole law captured · segmented & encoded · graphed · certified · everywhere
+          the whole law captured · segmented & encoded · graphed · compiled · everywhere
         </text>
       </g>
     );
@@ -1362,7 +1362,7 @@ export function JourneyFilm({
         className="lsk"
         viewBox="0 0 1420 700"
         role="img"
-        aria-label="One continuous shot, five scenes. First, the whole law: a wall of 1,742,391 provision-cells across seven jurisdictions, almost all lit green — encoded and verified — with a few grey holdouts remaining. The camera dives into one cell: the statute is segmented into sections, each section encoded into a RuleSpec — id, citation, typed inputs and output, and the formula allotment equals tfp minus 0.30 times net income, every value citing its source words, and each encoding walked through the four gates — run, checks, compare, review; one cites the wrong section, is caught by compare, redrafted, and passes. The validated rules then join the axiom graph as nodes — typed, cited, connected to the concepts they draw on; on the graph's output layer, two composed nodes declare their types and compute live answers: snap/benefit, money per month, $478, and snap/eligible, boolean, yes. Then the camera backs out and the same cards keep coming: co-snap's own rules join around the hero graph — snap_maximum_allotment, the deductions, the eligibility tests, real names from its 168 outputs — then every compiled program in the live registry arrives as its own group of identical cards under a real label, from us-sc-snap at 1,327 rules to us-oasdi-wage-tax at 6. At full distance the encoded graph sits among the ghost cards of everything not yet encoded, stamped: the runtime registry, 16 programs compiled, 3,323 rules certified and signed."
+        aria-label="One continuous shot, five scenes. First, the whole law: a wall of 1,742,391 provision-cells across seven jurisdictions, green — ingested, the whole law word for word; encoding comes later. The camera dives into one cell: the statute is segmented into sections, each section encoded into a RuleSpec — id, citation, typed inputs and output, and the formula allotment equals tfp minus 0.30 times net income, every value citing its source words, and each encoding walked through the four gates — run, checks, compare, review; one cites the wrong section, is caught by compare, redrafted, and passes. The validated rules then join the axiom graph as nodes — typed, cited, connected to the concepts they draw on; on the graph's output layer, two composed nodes declare their types and compute live answers: snap/benefit, money per month, $478, and snap/eligible, boolean, yes. Then the camera backs out and the same cards keep coming: co-snap's own rules join around the hero graph — snap_maximum_allotment, the deductions, the eligibility tests, real names from its 168 outputs — then every compiled program in the live registry arrives as its own group of identical cards under a real label, from us-sc-snap at 1,327 rules to us-oasdi-wage-tax at 6. At full distance the encoded graph sits among the ghost cards of everything not yet encoded, stamped: the runtime registry, 16 compiled programs, 3,323 rules."
       >
         <Defs />
         <g clipPath="url(#jw-stage)">

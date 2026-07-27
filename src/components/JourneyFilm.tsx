@@ -796,11 +796,36 @@ function SceneGraph() {
   const cy = 300;
   // one continuous pull-back: hero graph → co-snap's rules → the whole
   // registry → the far field. Same cards at every distance.
-  const CAMT = [0, W.s3[0], 0.515, 0.558, 0.588, 0.632, 0.668, 0.79, 1];
-  // slightly wider stops from the registry reveal on — the richer
-  // constellations need the extra room
-  const CAMS = [1.06, 1.06, 1.0, 0.55, 0.55, 0.21, 0.16, 0.024, 0.024];
-  const CAMSPL = "0 0 1 1;0.3 0 0.4 1;0.5 0 0.3 1;0 0 1 1;0.45 0 0.7 0.85;0.3 0.15 0.7 0.85;0.3 0.15 0.12 1;0 0 1 1";
+  // ONE smooth zoom out: from the hero graph (1.0 at 0.515) to the far
+  // field (0.024 at 0.79) the scale rides a single exponential curve —
+  // constant perceived zoom rate — shaped by a global smoothstep
+  // ease-in/out, then holds the wide shot. Dense samples with linear
+  // splines render it: monotone all the way, no stops, no
+  // drift-and-settle stutter, and the ripple between samples is far
+  // below what the eye can catch. The story beats (card reveals) keep
+  // their framing because the curve passes near the old stop scales at
+  // the old stop times.
+  const PULL = (() => {
+    const t0 = 0.515;
+    const t1 = 0.79;
+    const END = 0.024;
+    const L = Math.log(END);
+    const ease = (p: number) => p * p * (3 - 2 * p);
+    const N = 26;
+    const t = [0, W.s3[0], t0];
+    const s = [1.06, 1.06, 1];
+    for (let i = 1; i <= N; i++) {
+      const p = i / N;
+      t.push(+(t0 + (t1 - t0) * p).toFixed(4));
+      s.push(+Math.exp(L * ease(p)).toFixed(5));
+    }
+    t.push(1);
+    s.push(END);
+    return { t, s };
+  })();
+  const CAMT = PULL.t;
+  const CAMS = PULL.s;
+  const CAMSPL = Array(CAMT.length - 1).fill("0 0 1 1").fill("0.3 0 0.4 1", 1, 2).join(";");
   return (
     <Scene w={W.s3}>
       <g>

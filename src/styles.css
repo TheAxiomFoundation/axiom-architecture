@@ -1058,7 +1058,9 @@ body::before {
 .jdemo__over {
   position: absolute;
   inset: 0;
-  background: var(--color-paper);
+  /* no background here: the film svg paints its own paper backdrop over
+     the 620-unit stage only, so the caption band below keeps the page
+     tint in both acts */
   animation: jdemo-in 1200ms var(--ease-out) both;
 }
 
@@ -1139,6 +1141,22 @@ body::before {
 @keyframes jdemo-in {
   from { opacity: 0; }
   to { opacity: 1; }
+}
+
+/* Mobile: the journey scales to fit the viewport instead of forcing
+   a 960px pan (viewBox SVGs scale cleanly). Captions get larger
+   viewBox-unit sizes to stay legible at phone scale. */
+@media (max-width: 900px) {
+  .jdemo__stage .lsk,
+  .clib-svg {
+    min-width: 0;
+  }
+  .jw-name {
+    font-size: 36px;
+  }
+  .jw-sub {
+    font-size: 19px;
+  }
 }
 
 /* ── the corpus map ─────────────────────────────────────────── */
@@ -1461,13 +1479,13 @@ body::before {
 
 .jw-name {
   font-family: var(--f-serif);
-  font-size: 20px;
+  font-size: 24px;
   fill: var(--color-ink);
 }
 
 .jw-sub {
   font-family: var(--f-mono);
-  font-size: 9.5px;
+  font-size: 13px;
   letter-spacing: 0.05em;
   fill: var(--color-ink-muted);
 }

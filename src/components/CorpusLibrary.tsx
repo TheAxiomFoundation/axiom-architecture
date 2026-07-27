@@ -16,10 +16,11 @@ import { useEffect, useRef } from "react";
 //
 // One ~14-second SMIL clock, fill=freeze — remounting restarts the act.
 
-const DUR = 14.2;
+export const DUR = 14.2;
 
 const REDUCED =
   typeof window !== "undefined" &&
+  typeof window.matchMedia === "function" &&
   window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 const INK = "var(--color-ink)";
@@ -636,6 +637,11 @@ function Defs() {
       <filter id="clib-softshadow" x="-30%" y="-30%" width="160%" height="160%">
         <feDropShadow dx="0" dy="4" stdDeviation="7" floodColor="#1c1917" floodOpacity="0.22" />
       </filter>
+      {/* the stage clip: the camera push and the pulled volume scale
+          past the 620-unit artwork area — keep the caption band clear */}
+      <clipPath id="clib-stage">
+        <rect x="0" y="0" width="1420" height="620" />
+      </clipPath>
     </defs>
   );
 }
@@ -653,11 +659,12 @@ function ActStacks({
     <svg
       ref={svgRef}
       className="clib-svg"
-      viewBox="0 0 1420 620"
+      viewBox="0 0 1420 700"
       role="img"
       aria-label="A law library: five bays of shelves — state codes, the United States Code, the United Kingdom, Canada, Belgium — holding 1,742,391 provisions. The camera pushes into the titles shelf; the amber volume, Title 7 · Agriculture, pulls off the shelf, opens to chapter 51, and settles on § 2017 — Value of allotment, the page the encoding begins from."
     >
       <Defs />
+      <g clipPath="url(#clib-stage)">
       <rect x="0" y="0" width="1420" height="620" fill={PAPER} />
       {/* the camera */}
       <g>
@@ -818,7 +825,22 @@ function ActStacks({
         // reduced motion: the settled spread, no travel
         <StillSpread />
       )}
+      </g>
 
+      {/* caption strip — same position and voice as the film's, so the
+          text layer runs continuously from the first frame; it hands off
+          to "One provision, encoded" as the film crossfades in */}
+      {auto && (
+        <g>
+          {!REDUCED && <FadeOut at={13.0} r={0.5} />}
+          <text className="jw-name" x="710" y="655" textAnchor="middle">
+            Title 7, off the shelf
+          </text>
+          <text className="jw-sub" x="710" y="681" textAnchor="middle">
+            it starts with the text itself — opened to § 2017
+          </text>
+        </g>
+      )}
     </svg>
   );
 }
@@ -844,7 +866,7 @@ function ActLanded() {
   return (
     <svg
       className="clib-svg"
-      viewBox="0 0 1420 620"
+      viewBox="0 0 1420 700"
       role="img"
       aria-label="The pulled volume — United States Code, Title 7, Agriculture — lies open: the title page on the left, and on the right § 2017, Value of allotment, the page the encoding begins from."
     >

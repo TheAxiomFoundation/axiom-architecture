@@ -23,7 +23,9 @@ import { JourneyFilm } from "./JourneyFilm";
 
 const CYCLE = 56;
 const FILM_START = 0.207 * CYCLE; // the statute page, settled
-const FILM_END = 0.862 * CYCLE; // the wide graph has settled, ledger stamped
+// the wide graph has settled, ledger stamped — end just before the
+// constellation's own fade-out ramp (~0.852) begins
+const FILM_END = 0.848 * CYCLE;
 
 type Step = { label: string; kind: "stacks" | "landed" | "film"; t?: number };
 const STEPS: Step[] = [

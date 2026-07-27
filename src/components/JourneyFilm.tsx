@@ -21,10 +21,11 @@
 import { useEffect, useRef } from "react";
 import { CLUSTERS } from "./registry-snapshot";
 
-const CYCLE = 56;
+export const CYCLE = 56;
 
 const REDUCED_MOTION =
   typeof window !== "undefined" &&
+  typeof window.matchMedia === "function" &&
   window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const STATIC = REDUCED_MOTION;
 
@@ -39,12 +40,15 @@ const W = {
   s3: [0.48, 0.87],
 } as const;
 
+// One voice throughout: the name is the story beat in plain language;
+// the sub is one verifiable fact about the system — never a note about
+// the film's own construction.
 const CAPTIONS = [
-  { w: W.s1, name: "The law, whole", sub: "1,742,391 provisions · green = encoded & verified — the grey ones are next" },
-  { w: W.s2, name: "One provision, encoded", sub: "segmented — each section encoded, each encoding through the four gates" },
-  { w: [0.48, 0.583] as const, name: "The graph", sub: "every rule is a node — typed, cited, connected to the concepts it draws on" },
-  { w: [0.59, 0.648] as const, name: "One rule, many programs", sub: "the state programs import the federal core — the dependencies are real" },
-  { w: [0.655, 0.87] as const, name: "The graph, whole", sub: "same cards, farther back — the live runtime registry, every count real" },
+  { w: W.s1, name: "The law, whole", sub: "1,742,391 provisions · green = encoded & verified" },
+  { w: W.s2, name: "One provision, encoded", sub: "split into sections — each checked four ways: run, checks, compare, review" },
+  { w: [0.48, 0.583] as const, name: "The graph", sub: "every rule is a node — typed, cited, connected" },
+  { w: [0.59, 0.648] as const, name: "One rule, many programs", sub: "state programs build on the federal core — shared rules, one graph" },
+  { w: [0.655, 0.87] as const, name: "The graph, whole", sub: "the live registry — 16 programs, 3,323 certified rules, and everything not yet encoded" },
 ];
 
 // ── SMIL helpers ──────────────────────────────────────────────────────
@@ -730,8 +734,11 @@ type GNode = {
   value?: string; // …and the value that computes once wired
   vAt?: number;
 };
-// the three fresh rules appear when their card ARRIVES from scene II
-const ARRIVE = [0.504, 0.514, 0.525];
+// the three fresh rules appear when their card ARRIVES from scene II.
+// The flights are deliberately long (~1.7× the original timing) — in
+// the scrolly the float across the stage was over in a flick and read
+// as a jump, not a journey.
+const ARRIVE = [0.525, 0.54, 0.555];
 const NODES: GNode[] = [
   { id: "tfp", x: 180, y: 130, glyph: "¶", repo: "rulespec-us", title: "tfp/amount", at: 0.485 },
   { id: "inc", x: 150, y: 270, glyph: "¶", repo: "rulespec-us", title: "income/net", at: 0.49 },
@@ -789,9 +796,36 @@ function SceneGraph() {
   const cy = 300;
   // one continuous pull-back: hero graph → co-snap's rules → the whole
   // registry → the far field. Same cards at every distance.
-  const CAMT = [0, W.s3[0], 0.515, 0.558, 0.588, 0.632, 0.668, 0.79, 1];
-  const CAMS = [1.06, 1.06, 1.0, 0.55, 0.55, 0.24, 0.185, 0.026, 0.026];
-  const CAMSPL = "0 0 1 1;0.3 0 0.4 1;0.5 0 0.3 1;0 0 1 1;0.45 0 0.7 0.85;0.3 0.15 0.7 0.85;0.3 0.15 0.12 1;0 0 1 1";
+  // ONE smooth zoom out: from the hero graph (1.0 at 0.515) to the far
+  // field (0.024 at 0.79) the scale rides a single exponential curve —
+  // constant perceived zoom rate — shaped by a global smoothstep
+  // ease-in/out, then holds the wide shot. Dense samples with linear
+  // splines render it: monotone all the way, no stops, no
+  // drift-and-settle stutter, and the ripple between samples is far
+  // below what the eye can catch. The story beats (card reveals) keep
+  // their framing because the curve passes near the old stop scales at
+  // the old stop times.
+  const PULL = (() => {
+    const t0 = 0.515;
+    const t1 = 0.79;
+    const END = 0.024;
+    const L = Math.log(END);
+    const ease = (p: number) => p * p * (3 - 2 * p);
+    const N = 26;
+    const t = [0, W.s3[0], t0];
+    const s = [1.06, 1.06, 1];
+    for (let i = 1; i <= N; i++) {
+      const p = i / N;
+      t.push(+(t0 + (t1 - t0) * p).toFixed(4));
+      s.push(+Math.exp(L * ease(p)).toFixed(5));
+    }
+    t.push(1);
+    s.push(END);
+    return { t, s };
+  })();
+  const CAMT = PULL.t;
+  const CAMS = PULL.s;
+  const CAMSPL = Array(CAMT.length - 1).fill("0 0 1 1").fill("0.3 0 0.4 1", 1, 2).join(";");
   return (
     <Scene w={W.s3}>
       <g>
@@ -866,7 +900,7 @@ function SceneGraph() {
           const m = (sx + tx) / 2;
           return (
             <g key={`hr${k}`} opacity={O2()}>
-              <Vis a={q.at} b={W.s3[1] - 0.004} r={0.014} max={0.75} />
+              <Vis a={q.at} b={W.s3[1] - 0.004} r={0.014} max={0.95} />
               <path className="jw-edge" d={`M ${sx} ${sy} C ${m} ${sy}, ${m} ${ty}, ${tx - 6} ${ty}`} markerEnd="url(#jw-earr)" />
               <GhostMotifCard x={q.x - NODE_W / 2} y={q.y - NODE_H / 2} />
             </g>
@@ -972,13 +1006,17 @@ type MotifSpec = {
 
 function makeMotif(seed: number): MotifSpec {
   const r = rng32(seed);
-  const nIn = 2 + Math.floor(r() * 3); // 2–4
-  const nMid = 1 + Math.floor(r() * 3); // 1–3
-  const nOut = 1 + (r() < 0.55 ? 1 : 0); // 1–2
+  // real programs vary a lot: a few are small utilities, most sprawl —
+  // more cards, denser wiring, and each cluster gets its own footprint
+  const big = r() < 0.6;
+  const nIn = 2 + Math.floor(r() * (big ? 5 : 2)); // 2–6 / 2–3
+  const nMid = (big ? 2 : 1) + Math.floor(r() * 3); // 2–4 / 1–3
+  const nOut = 1 + Math.floor(r() * (big ? 3 : 2)); // 1–3 / 1–2
+  const sp = 0.85 + r() * 0.4; // silhouette size varies per program
   const col = (n: number, x: number, jx: number, gap: number) =>
     Array.from({ length: n }, (_, i) => [
-      x + (r() - 0.5) * jx,
-      (i - (n - 1) / 2) * gap + (r() - 0.5) * 50,
+      (x + (r() - 0.5) * jx) * sp,
+      ((i - (n - 1) / 2) * gap + (r() - 0.5) * 50) * sp,
     ] as const);
   const ins = col(nIn, -500, 90, 170);
   const mids = col(nMid, -80, 130, 180);
@@ -987,9 +1025,22 @@ function makeMotif(seed: number): MotifSpec {
   const mi0 = nIn;
   const oi0 = nIn + nMid;
   const edges: Array<readonly [number, number]> = [];
-  ins.forEach((_, i) => edges.push([i, mi0 + Math.floor(r() * nMid)]));
-  for (let i = 0; i < nMid; i++) edges.push([mi0 + i, oi0 + Math.floor(r() * nOut)]);
-  if (nIn > 1 && nMid > 1 && r() < 0.5) edges.push([Math.floor(r() * nIn), mi0 + Math.floor(r() * nMid)]);
+  const seen = new Set<string>();
+  const push = (a: number, b: number) => {
+    const k = `${a}-${b}`;
+    if (!seen.has(k)) {
+      seen.add(k);
+      edges.push([a, b]);
+    }
+  };
+  ins.forEach((_, i) => push(i, mi0 + Math.floor(r() * nMid)));
+  for (let i = 0; i < nMid; i++) push(mi0 + i, oi0 + Math.floor(r() * nOut));
+  // the interconnects: real programs are webs, not trees
+  const extras = 1 + Math.floor(r() * (big ? 4 : 2));
+  for (let k = 0; k < extras; k++) {
+    if (r() < 0.7) push(Math.floor(r() * nIn), mi0 + Math.floor(r() * nMid));
+    else push(mi0 + Math.floor(r() * nMid), oi0 + Math.floor(r() * nOut));
+  }
   return { cards, edges };
 }
 
@@ -1001,17 +1052,19 @@ const specKey = (c: readonly [number, number]) => `${c[0]},${c[1]}`;
 function GhostMotifCard({ x, y }: { x: number; y: number }) {
   return (
     <g>
-      <rect x={x} y={y} width={NODE_W} height={NODE_H} rx="4" fill="var(--color-paper-elevated)" stroke="var(--color-rule)" strokeWidth="1" vectorEffect="non-scaling-stroke" />
-      <rect x={x} y={y} width={NODE_W} height="3" rx="1.5" fill="var(--color-rule-strong)" opacity="0.6" />
-      <line x1={x + 12} y1={y + 17} x2={x + 74} y2={y + 17} stroke="rgba(120,113,108,0.5)" strokeWidth="2" />
-      <line x1={x + 12} y1={y + 34} x2={x + 118} y2={y + 34} stroke="rgba(87,83,78,0.45)" strokeWidth="3" />
+      {/* strokeOpacity, not width: at full distance the card is ~4px wide
+          and a solid 1px outline would render it as a dark speck */}
+      <rect x={x} y={y} width={NODE_W} height={NODE_H} rx="4" fill="var(--color-paper-elevated)" stroke="var(--color-rule)" strokeOpacity="0.55" strokeWidth="1.25" vectorEffect="non-scaling-stroke" />
+      <rect x={x} y={y} width={NODE_W} height="3" rx="1.5" fill="var(--color-rule-strong)" opacity="0.62" />
+      <line x1={x + 12} y1={y + 17} x2={x + 74} y2={y + 17} stroke="rgba(120,113,108,0.55)" strokeWidth="2" />
+      <line x1={x + 12} y1={y + 34} x2={x + 118} y2={y + 34} stroke="rgba(87,83,78,0.5)" strokeWidth="3" />
     </g>
   );
 }
 
 // one constellation of the family: its own count and silhouette, the
 // same cards, the same curved arrowed edges
-function GraphMotif({ cx, cy, at, spec, max = 0.65 }: { cx: number; cy: number; at: number; spec: MotifSpec; max?: number }) {
+function GraphMotif({ cx, cy, at, spec, max = 0.9 }: { cx: number; cy: number; at: number; spec: MotifSpec; max?: number }) {
   return (
     <g opacity={O2()}>
       <Vis a={at} b={W.s3[1] - 0.004} r={0.018} max={max} />
@@ -1067,9 +1120,9 @@ function CrossEdge({ a, b, at }: { a: readonly [number, number]; b: readonly [nu
   return (
     <path
       d={`M ${p0[0]} ${p0[1]} C ${p0[0] + h} ${p0[1]}, ${p1[0] - h} ${p1[1]}, ${p1[0]} ${p1[1]}`}
-      fill="none" stroke="rgba(87,83,78,0.18)" strokeWidth="0.6" vectorEffect="non-scaling-stroke" opacity={O2()}
+      fill="none" stroke="rgba(87,83,78,0.34)" strokeWidth="0.9" vectorEffect="non-scaling-stroke" opacity={O2()}
     >
-      <Vis a={at} b={W.s3[1] - 0.004} r={0.018} max={0.35} />
+      <Vis a={at} b={W.s3[1] - 0.004} r={0.018} max={0.7} />
     </path>
   );
 }
@@ -1214,14 +1267,17 @@ const SEA: SeaGroup[] = (() => {
   return groups;
 })();
 
+/* The caption strip lives in the clear band below the 620-unit
+ * artwork — the scenes never draw past 620, so text and graph can't
+ * overlap. */
 function Captions() {
   if (STATIC) {
     return (
       <g>
-        <text className="jw-name" x="710" y="556" textAnchor="middle">
+        <text className="jw-name" x="710" y="655" textAnchor="middle">
           One provision, encoded
         </text>
-        <text className="jw-sub" x="710" y="580" textAnchor="middle">
+        <text className="jw-sub" x="710" y="681" textAnchor="middle">
           the whole law captured · segmented & encoded · graphed · certified · everywhere
         </text>
       </g>
@@ -1232,22 +1288,10 @@ function Captions() {
       {CAPTIONS.map(({ w, name, sub }) => (
         <g key={name} opacity="0">
           <Vis a={w[0]} b={w[1]} />
-          <text className="jw-name" x="710" y="556" textAnchor="middle">{name}</text>
-          <text className="jw-sub" x="710" y="580" textAnchor="middle">{sub}</text>
+          <text className="jw-name" x="710" y="655" textAnchor="middle">{name}</text>
+          <text className="jw-sub" x="710" y="681" textAnchor="middle">{sub}</text>
         </g>
       ))}
-      {/* progress dots */}
-      {CAPTIONS.map(({ w }, i) => {
-        const x = 710 - 48 + i * 24;
-        return (
-          <g key={i}>
-            <circle cx={x} cy={602} r="3" fill="none" stroke={INK} strokeWidth="0.9" opacity="0.4" />
-            <circle cx={x} cy={602} r="3" fill={WAX} opacity="0">
-              <Vis a={w[0]} b={w[1]} r={0.01} />
-            </circle>
-          </g>
-        );
-      })}
     </g>
   );
 }
@@ -1260,12 +1304,21 @@ function Defs() {
       <pattern id="jw-cell" width={PITCH} height={PITCH} patternUnits="userSpaceOnUse">
         <rect x="1.5" y="1.5" width={PITCH - 3} height={PITCH - 3} rx="1" fill="rgba(22,101,52,0.38)" />
       </pattern>
-      <marker id="jw-earr" viewBox="0 0 8 8" refX="6" refY="4" markerWidth="6" markerHeight="6" orient="auto">
-        <path d="M0,0 L8,4 L0,8 z" fill="rgba(87,83,78,0.8)" />
+      {/* userSpaceOnUse: with non-scaling-stroke edges, strokeWidth-unit
+          markers pin to SCREEN size and dwarf the cards at full distance —
+          user-space sizing lets the arrowheads shrink with the zoom */}
+      <marker id="jw-earr" viewBox="0 0 8 8" refX="6" refY="4" markerUnits="userSpaceOnUse" markerWidth="7.2" markerHeight="7.2" orient="auto">
+        <path d="M0,0 L8,4 L0,8 z" fill="rgba(87,83,78,0.65)" />
       </marker>
       <filter id="jw-shadow" x="-40%" y="-40%" width="180%" height="180%">
         <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#1c1917" floodOpacity="0.2" />
       </filter>
+      {/* the stage clip: zoom transitions scale scene content far past
+          the 620-unit artwork area — clip it so the caption band below
+          stays clear at every moment */}
+      <clipPath id="jw-stage">
+        <rect x="0" y="0" width="1420" height="620" />
+      </clipPath>
     </defs>
   );
 }
@@ -1284,8 +1337,9 @@ export function JourneyFilm({
   const svgRef = useRef<SVGSVGElement | null>(null);
   useEffect(() => {
     const svg = svgRef.current;
-    if (!svg) return;
-    if (startOffset) svg.setCurrentTime(startOffset);
+    // jsdom's SVGSVGElement has no SMIL clock — guard for tests.
+    if (!svg || typeof svg.pauseAnimations !== "function") return;
+    if (startOffset != null) svg.setCurrentTime(startOffset);
     if (paused) svg.pauseAnimations();
     if (!onCycleEnd || paused) return;
     let prev = svg.getCurrentTime() % CYCLE;
@@ -1306,16 +1360,21 @@ export function JourneyFilm({
       <svg
         ref={svgRef}
         className="lsk"
-        viewBox="0 0 1420 620"
+        viewBox="0 0 1420 700"
         role="img"
         aria-label="One continuous shot, five scenes. First, the whole law: a wall of 1,742,391 provision-cells across seven jurisdictions, almost all lit green — encoded and verified — with a few grey holdouts remaining. The camera dives into one cell: the statute is segmented into sections, each section encoded into a RuleSpec — id, citation, typed inputs and output, and the formula allotment equals tfp minus 0.30 times net income, every value citing its source words, and each encoding walked through the four gates — run, checks, compare, review; one cites the wrong section, is caught by compare, redrafted, and passes. The validated rules then join the axiom graph as nodes — typed, cited, connected to the concepts they draw on; on the graph's output layer, two composed nodes declare their types and compute live answers: snap/benefit, money per month, $478, and snap/eligible, boolean, yes. Then the camera backs out and the same cards keep coming: co-snap's own rules join around the hero graph — snap_maximum_allotment, the deductions, the eligibility tests, real names from its 168 outputs — then every compiled program in the live registry arrives as its own group of identical cards under a real label, from us-sc-snap at 1,327 rules to us-oasdi-wage-tax at 6. At full distance the encoded graph sits among the ghost cards of everything not yet encoded, stamped: the runtime registry, 16 programs compiled, 3,323 rules certified and signed."
       >
         <Defs />
-        <SceneWall />
-        <SceneProvision />
-        <CellToPage />
-        <SceneGraph />
-        <Travelers />
+        <g clipPath="url(#jw-stage)">
+          {/* the film's own backdrop — covers the library beneath during
+              the crossfade; the caption band stays transparent */}
+          <rect x="0" y="0" width="1420" height="620" fill="var(--color-paper)" />
+          <SceneWall />
+          <SceneProvision />
+          <CellToPage />
+          <SceneGraph />
+          <Travelers />
+        </g>
         <Captions />
       </svg>
     </div>

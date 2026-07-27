@@ -272,13 +272,7 @@ body::before {
   gap: 18px;
 }
 
-
-
 /* Pill-shaped External/Internal toggle */
-
-
-
-
 
 /* Compact edge legend (no title; three lines is self-explanatory) */
 .scene-switcher__edges {
@@ -574,11 +568,6 @@ body::before {
   white-space: pre-wrap;
 }
 
-
-
-
-
-
 .detail-panel__repo {
   padding: 10px 12px;
   background: var(--color-paper);
@@ -783,25 +772,6 @@ body::before {
 /* ────────────────────────────────────────────────────────────
    Notes panel (hidden "Open questions" tab)
    ──────────────────────────────────────────────────────────── */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 /* ────────────────────────────────────────────────────────────
    Mobile drawer controls — hidden on desktop, shown ≤ 768px
@@ -1072,33 +1042,6 @@ body::before {
   height: auto;
 }
 
-.lsk__stage {
-  animation: launch-fade 0.7s var(--ease-out) both;
-}
-
-.lsk__stage--1 { animation-delay: 0.05s; }
-.lsk__stage--2 { animation-delay: 0.3s; }
-.lsk__stage--3 { animation-delay: 0.55s; }
-.lsk__stage--4 { animation-delay: 0.8s; }
-.lsk__stage--5 { animation-delay: 1.05s; }
-
-/* ribbons — widths carry the story */
-
-.lsk-ribbon {
-  transition: opacity 180ms var(--ease-out);
-}
-
-.lsk-ribbon--raw0 { fill: rgba(120, 113, 108, 0.22); }
-.lsk-ribbon--raw1 { fill: rgba(120, 113, 108, 0.3); }
-
-.lsk-ribbon--draft { fill: rgba(146, 64, 14, 0.2); }
-.lsk-ribbon--encoded { fill: rgba(146, 64, 14, 0.38); }
-.lsk-ribbon--verified { fill: rgba(22, 101, 52, 0.32); }
-
-.lsk-ribbon:hover {
-  opacity: 0.75;
-}
-
 /* bars (stage nodes) */
 
 /* ── the journey demo (globe → film → lit world) ────────────── */
@@ -1115,7 +1058,9 @@ body::before {
 .jdemo__over {
   position: absolute;
   inset: 0;
-  background: var(--color-paper);
+  /* no background here: the film svg paints its own paper backdrop over
+     the 620-unit stage only, so the caption band below keeps the page
+     tint in both acts */
   animation: jdemo-in 1200ms var(--ease-out) both;
 }
 
@@ -1133,6 +1078,13 @@ body::before {
 @keyframes jdemo-out {
   from { opacity: 1; }
   to { opacity: 0; }
+}
+
+/* ⏸ freezes the whole demo in place: the svg clocks are paused from JS,
+   and any in-flight css fade holds its frame too */
+.jdemo--frozen .jdemo__layer,
+.jdemo--frozen .jdemo__over {
+  animation-play-state: paused;
 }
 
 /* step / pause / full-screen controls */
@@ -1189,6 +1141,22 @@ body::before {
 @keyframes jdemo-in {
   from { opacity: 0; }
   to { opacity: 1; }
+}
+
+/* Mobile: the journey scales to fit the viewport instead of forcing
+   a 960px pan (viewBox SVGs scale cleanly). Captions get larger
+   viewBox-unit sizes to stay legible at phone scale. */
+@media (max-width: 900px) {
+  .jdemo__stage .lsk,
+  .clib-svg {
+    min-width: 0;
+  }
+  .jw-name {
+    font-size: 36px;
+  }
+  .jw-sub {
+    font-size: 19px;
+  }
 }
 
 /* ── the corpus map ─────────────────────────────────────────── */
@@ -1511,13 +1479,13 @@ body::before {
 
 .jw-name {
   font-family: var(--f-serif);
-  font-size: 20px;
+  font-size: 24px;
   fill: var(--color-ink);
 }
 
 .jw-sub {
   font-family: var(--f-mono);
-  font-size: 9.5px;
+  font-size: 13px;
   letter-spacing: 0.05em;
   fill: var(--color-ink-muted);
 }
@@ -1756,136 +1724,6 @@ body::before {
   fill: var(--color-ink);
 }
 
-.lsk-strand {
-  fill: none;
-  stroke: rgba(28, 25, 23, 0.13);
-  stroke-width: 0.7;
-}
-
-.lsk-xref {
-  fill: none;
-  stroke: rgba(146, 64, 14, 0.55);
-  stroke-width: 1;
-  stroke-dasharray: 3 3;
-}
-
-.lsk-xref-label {
-  font-family: var(--f-mono);
-  font-size: 8.5px;
-  letter-spacing: 0.04em;
-  fill: var(--color-accent);
-}
-
-.lsk-lens-ring {
-  fill: var(--color-paper-elevated);
-  stroke: var(--color-ink);
-}
-
-.lsk-lens-text {
-  font-family: var(--f-serif);
-  font-size: 9.5px;
-  fill: var(--color-ink);
-}
-
-.lsk-lens-arrow {
-  font-family: var(--f-mono);
-  font-size: 10px;
-  fill: var(--color-ink-muted);
-}
-
-.lsk-lens-chip {
-  fill: var(--color-paper);
-  stroke: var(--color-accent);
-  stroke-width: 0.9;
-}
-
-.lsk-lens-code {
-  font-family: var(--f-mono);
-  font-size: 8px;
-  fill: var(--color-ink);
-}
-
-.lsk-lens-tether {
-  fill: none;
-  stroke: var(--color-ink-muted);
-  stroke-width: 0.8;
-  stroke-dasharray: 2 3;
-}
-
-.lsk-stub {
-  fill: var(--color-rule-strong);
-}
-
-.lsk-bar--corpus { fill: #78716c; }
-.lsk-bar--encode { fill: var(--color-accent); }
-.lsk-bar--gates { fill: var(--color-ink); }
-.lsk-bar--rules { fill: var(--color-success); }
-
-/* the redraft loop */
-
-.lsk-loop {
-  fill: none;
-  stroke: rgba(146, 64, 14, 0.55);
-  stroke-width: 1.5;
-  stroke-dasharray: 4 4;
-}
-
-.lsk-loop-label {
-  font-family: var(--f-mono);
-  font-size: 9.5px;
-  letter-spacing: 0.08em;
-  fill: var(--color-accent);
-}
-
-/* labels */
-
-.lsk-eyebrow {
-  font-family: var(--f-mono);
-  font-size: 9px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  fill: var(--color-ink-muted);
-}
-
-.lsk-name {
-  font-family: var(--f-serif);
-  font-size: 16.5px;
-  fill: var(--color-ink);
-}
-
-.lsk-srclabel {
-  font-family: var(--f-body);
-  font-size: 11.5px;
-  font-weight: 600;
-  fill: var(--color-ink);
-}
-
-.lsk-srcsub {
-  font-family: var(--f-mono);
-  font-size: 8px;
-  fill: var(--color-ink-muted);
-}
-
-.lsk-agree {
-  font-family: var(--f-mono);
-  font-size: 9.5px;
-  letter-spacing: 0.05em;
-  fill: var(--color-success);
-}
-
-.lsk-retest {
-  font-family: var(--f-mono);
-  font-size: 8.5px;
-  letter-spacing: 0.06em;
-  fill: var(--color-ink-muted);
-}
-
-/* particles */
-
-.lsk-dot--raw { fill: #78716c; }
-.lsk-dot--amber { fill: var(--color-accent); }
-.lsk-dot--green { fill: var(--color-success); }
-
 /* ── foot line ─────────────────────────────────────────────── */
 
 .launch__footline {
@@ -1923,55 +1761,11 @@ body::before {
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .lsk__stage {
-    animation: none;
-  }
-}
-
 @media (max-width: 1020px) {
   .launch {
     align-items: flex-start;
     padding: 72px 14px 42px 14px;
   }
-}
-
-/* stage 6: the application layer */
-.lsk__stage--6 { animation-delay: 1.3s; }
-
-.lsk-ribbon--surface { fill: rgba(22, 101, 52, 0.18); }
-
-/* the document that breaks apart at the mouth of its source stream */
-.lsk-docbreak rect {
-  fill: var(--color-paper-elevated);
-  stroke: var(--color-ink);
-  stroke-width: 1.4;
-}
-
-.lsk-docbreak__line {
-  stroke: var(--color-ink-secondary);
-  stroke-width: 2;
-}
-
-.lsk-docbreak__line--seed {
-  stroke: var(--color-accent);
-}
-
-/* the four gates' sequential checks */
-.lsk-gate-check {
-  font-family: var(--f-mono);
-  font-size: 10px;
-  fill: var(--color-success);
-  stroke: var(--color-paper);
-  stroke-width: 3px;
-  stroke-linejoin: round;
-  paint-order: stroke;
-}
-
-/* a line of the document, highlighted before it detaches as a dot */
-.lsk-docbreak__line--hot {
-  stroke: var(--color-accent);
-  stroke-width: 3;
 }
 
 /* ── under the hood: clickable pathways + zoom panel ─────────── */
@@ -1983,259 +1777,6 @@ body::before {
 
 .lsk__wrap {
   position: relative;
-}
-
-.lsk--zoomed {
-  cursor: zoom-out;
-}
-
-.lsk-hit {
-  cursor: zoom-in;
-}
-
-.lsk-hit rect {
-  fill: transparent;
-  stroke: transparent;
-  stroke-width: 1.5;
-  stroke-dasharray: 5 5;
-  transition: stroke 160ms var(--ease-out);
-}
-
-.lsk-hit text {
-  font-family: var(--f-mono);
-  font-size: 9.5px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  fill: var(--color-accent);
-  /* paper halo: masks the chart underneath instead of colliding with it */
-  stroke: var(--color-paper);
-  stroke-width: 4px;
-  stroke-linejoin: round;
-  paint-order: stroke;
-  opacity: 0;
-  transition: opacity 160ms var(--ease-out);
-  pointer-events: none;
-}
-
-.lsk-hit:hover rect {
-  stroke: rgba(146, 64, 14, 0.45);
-}
-
-.lsk-hit:hover text {
-  opacity: 1;
-}
-
-/* the panel */
-
-.lgx {
-  position: absolute;
-  top: 12px;
-  bottom: 12px;
-  width: min(400px, 44%);
-  overflow-y: auto;
-  background: var(--color-paper-elevated);
-  border: 1px solid var(--color-rule);
-  border-radius: 12px;
-  box-shadow: 0 24px 60px -30px rgba(28, 25, 23, 0.5);
-  padding: 22px 24px;
-  animation: lgx-in 0.45s var(--ease-out) both;
-  animation-delay: 0.25s;
-}
-
-.lgx--right {
-  right: 8px;
-}
-
-.lgx--left {
-  left: 8px;
-}
-
-@keyframes lgx-in {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.lgx__kicker {
-  font-family: var(--f-mono);
-  font-size: 9.5px;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--color-accent);
-  margin-bottom: 8px;
-}
-
-.lgx__title {
-  margin: 0 0 14px 0;
-  font-family: var(--f-serif);
-  font-weight: 400;
-  font-size: 22px;
-  line-height: 1.15;
-  color: var(--color-ink);
-}
-
-.lgx__steps {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.lgx__step {
-  display: flex;
-  gap: 10px;
-  align-items: baseline;
-}
-
-.lgx__step-n {
-  flex-shrink: 0;
-  font-family: var(--f-mono);
-  font-size: 9px;
-  color: var(--color-accent);
-  border: 1px solid rgba(146, 64, 14, 0.4);
-  border-radius: 999px;
-  padding: 1px 7px;
-}
-
-.lgx__step-name {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--color-ink);
-}
-
-.lgx__step-detail {
-  margin-top: 2px;
-  font-size: 12px;
-  line-height: 1.5;
-  color: var(--color-ink-secondary);
-}
-
-.lgx__foot {
-  margin: 16px 0 0 0;
-  padding-top: 12px;
-  border-top: 1px solid var(--color-rule);
-  font-family: var(--f-mono);
-  font-size: 10px;
-  line-height: 1.6;
-  letter-spacing: 0.03em;
-  color: var(--color-ink-muted);
-}
-
-.lgx__back {
-  margin-top: 14px;
-  border: 1px solid var(--color-rule);
-  background: var(--color-paper);
-  border-radius: 999px;
-  padding: 6px 14px;
-  font-family: var(--f-mono);
-  font-size: 10px;
-  letter-spacing: 0.06em;
-  color: var(--color-ink-secondary);
-  cursor: pointer;
-  transition: border-color 160ms var(--ease-out), color 160ms var(--ease-out);
-}
-
-.lgx__back:hover {
-  border-color: var(--color-accent);
-  color: var(--color-accent);
-}
-
-@media (max-width: 1020px) {
-  .lgx,
-  .lgx--left,
-  .lgx--right {
-    left: 8px;
-    right: 8px;
-    top: auto;
-    bottom: 8px;
-    width: auto;
-    max-height: 55%;
-  }
-}
-
-/* focus scrim: dims everything outside the zoomed region */
-.lsk-scrim {
-  fill: var(--color-paper);
-  opacity: 0.78;
-  pointer-events: none;
-  animation: launch-fade 0.5s var(--ease-out) 0.2s both;
-}
-
-/* the browsable-corpus band + honest-flow labels */
-.lsk-ribbon--browse {
-  fill: rgba(120, 113, 108, 0.13);
-}
-
-.lsk-band-label {
-  font-family: var(--f-mono);
-  font-size: 9px;
-  letter-spacing: 0.08em;
-  fill: var(--color-ink-muted);
-  /* paper halo: dashed envelope edges, ribbons, and passing dots are
-     masked behind the text instead of crossing it */
-  stroke: var(--color-paper);
-  stroke-width: 3.5px;
-  stroke-linejoin: round;
-  paint-order: stroke;
-}
-
-.lsk-band-label--frontier {
-  fill: var(--color-accent);
-}
-
-.lsk-dot--branch {
-  fill: #166534;
-}
-
-/* the goal envelope: the whole corpus, executable — actual vs target */
-.lsk-goal {
-  fill: none;
-  stroke: rgba(146, 64, 14, 0.32);
-  stroke-width: 1.4;
-  stroke-dasharray: 5 5;
-}
-
-.lsk-band-label--goal {
-  fill: rgba(146, 64, 14, 0.65);
-  font-style: italic;
-}
-
-/* ────────────────────────────────────────────────────────────
-   Illustrated flow (launch tab, "illustrated" view)
-   ──────────────────────────────────────────────────────────── */
-
-.launch__viewtoggle {
-  margin-top: 14px;
-  display: inline-flex;
-  border: 1px solid var(--color-rule);
-  border-radius: 999px;
-  overflow: hidden;
-  background: var(--color-paper-elevated);
-}
-
-.launch__viewtoggle-btn {
-  background: transparent;
-  border: none;
-  padding: 5px 16px;
-  font-family: var(--f-mono);
-  font-size: 10px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--color-ink-muted);
-  cursor: pointer;
-  transition: background 180ms var(--ease-out), color 180ms var(--ease-out);
-}
-
-.launch__viewtoggle-btn--active {
-  background: var(--color-accent);
-  color: var(--color-paper-elevated);
 }
 
 .ill__wrap {
@@ -2337,7 +1878,6 @@ polygon.ill-line {
 .ill-caption--loop {
   fill: var(--color-accent);
 }
-
 
 /* ── night preview, poster view only ───────────────────────────────
    Explicitly toggled from the header — never OS-driven. The poster is
@@ -2481,191 +2021,4 @@ polygon.ill-line {
   font-family: var(--f-mono);
   font-size: 8px;
   fill: #948b7e;
-}
-
-/* ── the flat pipeline (one screen, one dimension) ───────────── */
-
-.fp-eyebrow {
-  font-family: var(--f-mono);
-  font-size: 10.5px;
-  font-weight: 600;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-  fill: var(--color-ink);
-}
-
-.fp-level {
-  font-family: var(--f-mono);
-  font-size: 8.5px;
-  letter-spacing: 0.42em;
-  text-transform: uppercase;
-  fill: var(--color-ink-muted);
-}
-
-.fp-chip {
-  fill: var(--color-paper-elevated);
-  stroke: rgba(28, 25, 23, 0.4);
-  stroke-width: 0.8;
-}
-
-.fp-card {
-  fill: var(--color-paper-elevated);
-  stroke: rgba(28, 25, 23, 0.55);
-  stroke-width: 0.9;
-}
-
-.fp-mono {
-  font-family: var(--f-mono);
-  font-size: 11px;
-  fill: var(--color-ink);
-}
-
-.fp-mono--muted { fill: var(--color-ink-muted); }
-.fp-mono--sm { font-size: 9.5px; }
-.fp-mono--tiny { font-size: 8.5px; }
-.fp-mono--node { font-size: 8px; }
-.fp-mono--wax { fill: var(--color-accent); font-size: 9.5px; }
-
-.fp-key { fill: var(--color-ink-muted); }
-
-.fp-serif {
-  font-family: var(--f-serif);
-  font-size: 13.5px;
-  fill: var(--color-ink);
-}
-
-.fp-serifsm {
-  font-family: var(--f-serif);
-  font-size: 12px;
-  fill: var(--color-ink);
-}
-
-.fp-serifq {
-  font-family: var(--f-serif);
-  font-style: italic;
-  font-size: 11px;
-  fill: var(--color-ink);
-}
-
-.fp-station {
-  font-family: var(--f-mono);
-  font-size: 14px;
-  font-weight: 600;
-  fill: var(--color-ink);
-}
-
-.fp-specname {
-  font-family: var(--f-mono);
-  font-size: 13px;
-  font-weight: 600;
-  fill: var(--color-ink);
-}
-
-.fp-gatechip {
-  fill: var(--color-paper-elevated);
-  stroke: var(--color-success);
-  stroke-width: 1.1;
-}
-
-.fp-gatetext {
-  font-family: var(--f-mono);
-  font-size: 11px;
-  font-weight: 600;
-  fill: var(--color-success);
-}
-
-.fp-gatename {
-  fill: var(--color-ink);
-  font-size: 8.5px;
-}
-
-.fp-sealtick {
-  font-family: var(--f-mono);
-  font-size: 13px;
-  font-weight: 600;
-  fill: var(--color-accent);
-}
-
-.fp-cap {
-  font-family: var(--f-serif);
-  font-style: italic;
-  font-size: 11px;
-  fill: var(--color-ink-muted);
-}
-
-.fp-threadcap {
-  font-family: var(--f-mono);
-  font-size: 8.5px;
-  letter-spacing: 0.04em;
-  fill: var(--color-accent);
-}
-
-.fp-threadlabel {
-  font-family: var(--f-serif);
-  font-style: italic;
-  font-size: 11.5px;
-  fill: var(--color-ink-muted);
-}
-
-.fp-grouphead {
-  font-family: var(--f-mono);
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  fill: var(--color-ink);
-}
-
-.fp-shelflabel {
-  font-family: var(--f-mono);
-  font-size: 9.5px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  fill: var(--color-ink-muted);
-}
-
-.fp-capq {
-  font-family: var(--f-serif);
-  font-style: italic;
-  font-size: 11.5px;
-  fill: var(--color-ink-muted);
-}
-
-.fpwrap {
-  position: relative;
-}
-
-.fpwrap__fs {
-  position: absolute;
-  right: 10px;
-  top: 10px;
-  z-index: 2;
-  font-family: var(--f-mono);
-  font-size: 13px;
-  line-height: 1;
-  color: var(--color-ink);
-  background: var(--color-paper-elevated);
-  border: 1px solid rgba(28, 25, 23, 0.35);
-  border-radius: 999px;
-  width: 30px;
-  height: 26px;
-  cursor: pointer;
-}
-
-.fpwrap__fs:hover {
-  border-color: var(--color-accent);
-  color: var(--color-accent);
-}
-
-.fpwrap:fullscreen {
-  background: var(--color-paper);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 3vh 3vw;
-}
-
-.fpwrap:fullscreen .lsk {
-  max-height: 94vh;
 }

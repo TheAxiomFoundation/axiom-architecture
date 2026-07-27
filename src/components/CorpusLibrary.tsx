@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 // THE READING ROOM — the corpus as a law library.
 //
@@ -642,9 +642,16 @@ function Defs() {
 
 // ── the acts ─────────────────────────────────────────────────────────
 
-function ActStacks({ auto }: { auto: boolean }) {
+function ActStacks({
+  auto,
+  svgRef,
+}: {
+  auto: boolean;
+  svgRef?: React.Ref<SVGSVGElement>;
+}) {
   return (
     <svg
+      ref={svgRef}
       className="clib-svg"
       viewBox="0 0 1420 620"
       role="img"
@@ -864,15 +871,24 @@ export function CorpusLibrary({
   pose?: "stacks" | "landed";
   onArrived?: () => void;
 }) {
+  const svgRef = useRef<SVGSVGElement | null>(null);
+  // Arrival keys off the svg's OWN clock, not wall time — if the demo is
+  // frozen (pauseAnimations), the clock stops and the film handoff waits
+  // with it instead of firing over a paused pull.
   useEffect(() => {
-    if (!onArrived) return;
-    const ms = autopilot ? (REDUCED ? 2600 : 13750) : 0;
-    if (!ms) return;
-    const t = window.setTimeout(() => onArrived(), ms);
-    return () => window.clearTimeout(t);
+    if (!onArrived || !autopilot) return;
+    const target = REDUCED ? 2.6 : 13.75;
+    const iv = window.setInterval(() => {
+      const svg = svgRef.current;
+      if (svg && svg.getCurrentTime() >= target) {
+        window.clearInterval(iv);
+        onArrived();
+      }
+    }, 200);
+    return () => window.clearInterval(iv);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (pose === "landed") return <ActLanded />;
-  return <ActStacks auto={autopilot} />;
+  return <ActStacks auto={autopilot} svgRef={svgRef} />;
 }

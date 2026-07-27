@@ -15,9 +15,11 @@ import { JourneyFilm } from "./JourneyFilm";
 //                 upon card. The cycle ends on that wide shot, then
 //                 the film fades out over the stacks starting again.
 //
-// Pause (or the arrow keys) drops into manual mode: step through the
-// tableaux one at a time; play resumes the automation from wherever
-// you are. ⛶ runs the whole thing full screen.
+// ⏸ freezes the demo exactly where it is — every svg clock pauses in
+// place — and ▶ resumes from that same frame. The arrow keys drop into
+// manual mode instead: step through the tableaux one at a time; play
+// from there rejoins the automation at that step. ⛶ runs the whole
+// thing full screen.
 
 const CYCLE = 56;
 const FILM_START = 0.207 * CYCLE; // the statute page, settled
@@ -48,23 +50,45 @@ export function JourneyDemo() {
   // exact film time to freeze/resume at (null → the step's canonical time)
   const [offset, setOffset] = useState<number | null>(null);
   const [cycle, setCycle] = useState(0);
+  // frozen = auto mode with every svg clock paused in place (⏸)
+  const [frozen, setFrozen] = useState(false);
+  const frozenRef = useRef(false);
+  const phaseRef = useRef(phase);
+  phaseRef.current = phase;
   // keeps the film overlay mounted (and fading) while the stacks restart
   const filmKey = useRef(0);
+
+  const setClocksPaused = useCallback((p: boolean) => {
+    rootRef.current?.querySelectorAll("svg").forEach((s) => {
+      if (p) s.pauseAnimations();
+      else s.unpauseAnimations();
+    });
+  }, []);
 
   const toFilm = useCallback(() => {
     filmKey.current += 1;
     setOffset(null);
     setPhase("film");
   }, []);
+  // the library only hands off to the film when the film isn't already
+  // running — after ▶ resumes at a film step, the restarted pull beneath
+  // must not yank the playing film back to its start
+  const arrived = useCallback(() => {
+    if (phaseRef.current === "map") toFilm();
+  }, [toFilm]);
   // the wide shot has settled: the next cycle's stacks start beneath the
   // film while it fades out
-  const toOutro = useCallback(() => {
-    setCycle((c) => c + 1);
-    setPhase("outro");
+  const endOutro = useCallback(() => {
     window.setTimeout(() => {
+      if (frozenRef.current) return; // ▶ re-arms this on resume
       setPhase((p) => (p === "outro" ? "map" : p));
     }, 1450);
   }, []);
+  const toOutro = useCallback(() => {
+    setCycle((c) => c + 1);
+    setPhase("outro");
+    endOutro();
+  }, [endOutro]);
   const toMap = useCallback(() => {
     setOffset(null);
     setPhase("map");
@@ -88,18 +112,26 @@ export function JourneyDemo() {
     return best;
   }, [mode, phase, step, filmTime]);
 
+  // ⏸ freezes the running demo exactly where it is: every svg clock
+  // pauses in place, nothing remounts. (The library's arrival poll and
+  // the film's end-watcher both read those clocks, so no handoff can
+  // fire while frozen.)
   const pause = useCallback(() => {
-    const i = currentStep();
-    if (phase === "film" && mode === "auto") {
-      setOffset(filmTime()); // freeze this exact frame
-    } else {
-      setOffset(null);
-    }
-    setStep(i);
-    setMode("manual");
-  }, [currentStep, phase, mode, filmTime]);
+    frozenRef.current = true;
+    setFrozen(true);
+    setClocksPaused(true);
+  }, [setClocksPaused]);
 
   const play = useCallback(() => {
+    if (mode === "auto") {
+      // ▶ after ⏸: resume the same frame
+      frozenRef.current = false;
+      setFrozen(false);
+      setClocksPaused(false);
+      if (phaseRef.current === "outro") endOutro(); // finish the deferred fade
+      return;
+    }
+    // ▶ after stepping with the arrows: rejoin the automation here
     const s = STEPS[step];
     setMode("auto");
     if (s.kind === "film") {
@@ -109,11 +141,13 @@ export function JourneyDemo() {
     } else {
       toMap(); // stacks / landed: restart the cycle from the top
     }
-  }, [step, offset, toMap]);
+  }, [mode, step, offset, toMap, setClocksPaused, endOutro]);
 
   const jump = useCallback(
     (dir: 1 | -1) => {
       const i = Math.min(STEPS.length - 1, Math.max(0, currentStep() + dir));
+      frozenRef.current = false;
+      setFrozen(false); // manual mode unmounts the frozen layers
       setOffset(null);
       setStep(i);
       setMode("manual");
@@ -126,9 +160,11 @@ export function JourneyDemo() {
     else void rootRef.current?.requestFullscreen();
   }, []);
 
+  const paused = frozen || mode === "manual";
+
   // keyboard: ← → step · space pauses/plays · f full screen
-  const keys = useRef({ pause, play, jump, fullscreen, mode });
-  keys.current = { pause, play, jump, fullscreen, mode };
+  const keys = useRef({ pause, play, jump, fullscreen, paused });
+  keys.current = { pause, play, jump, fullscreen, paused };
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
@@ -137,7 +173,7 @@ export function JourneyDemo() {
       const k = keys.current;
       if (e.key === "ArrowRight") k.jump(1);
       else if (e.key === "ArrowLeft") k.jump(-1);
-      else if (e.key === " ") (k.mode === "auto" ? k.pause : k.play)();
+      else if (e.key === " ") (k.paused ? k.play : k.pause)();
       else if (e.key === "f") k.fullscreen();
       else return;
       e.preventDefault();
@@ -150,11 +186,11 @@ export function JourneyDemo() {
   const s = STEPS[step];
 
   return (
-    <div className="jdemo" ref={rootRef}>
+    <div className={`jdemo${frozen ? " jdemo--frozen" : ""}`} ref={rootRef}>
       {!manual && (
         <div className="jdemo__stage">
           <div key={`lib-${cycle}`} className="jdemo__layer">
-            <CorpusLibrary autopilot onArrived={toFilm} />
+            <CorpusLibrary autopilot onArrived={arrived} />
           </div>
           {(phase === "film" || phase === "outro") && (
             <div
@@ -177,14 +213,18 @@ export function JourneyDemo() {
         <button type="button" onClick={() => jump(-1)} aria-label="previous step">‹</button>
         <button
           type="button"
-          onClick={manual ? play : pause}
-          aria-label={manual ? "play" : "pause"}
+          onClick={paused ? play : pause}
+          aria-label={paused ? "play" : "pause"}
         >
-          {manual ? "▶" : "⏸"}
+          {paused ? "▶" : "⏸"}
         </button>
         <button type="button" onClick={() => jump(1)} aria-label="next step">›</button>
         <span className="jdemo__ctrl-label">
-          {manual ? `step · ${s.label}` : `auto · ${AUTO_LABEL[phase]}`}
+          {manual
+            ? `step · ${s.label}`
+            : frozen
+              ? `paused · ${AUTO_LABEL[phase]}`
+              : `auto · ${AUTO_LABEL[phase]}`}
         </span>
         <button type="button" className="jdemo__ctrl-fs" onClick={fullscreen} aria-label="full screen">
           ⛶

@@ -1135,6 +1135,13 @@ body::before {
   to { opacity: 0; }
 }
 
+/* ⏸ freezes the whole demo in place: the svg clocks are paused from JS,
+   and any in-flight css fade holds its frame too */
+.jdemo--frozen .jdemo__layer,
+.jdemo--frozen .jdemo__over {
+  animation-play-state: paused;
+}
+
 /* step / pause / full-screen controls */
 .jdemo__ctrl {
   position: relative;

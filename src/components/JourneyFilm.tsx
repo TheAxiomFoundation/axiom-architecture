@@ -1285,7 +1285,7 @@ export function JourneyFilm({
   useEffect(() => {
     const svg = svgRef.current;
     if (!svg) return;
-    if (startOffset) svg.setCurrentTime(startOffset);
+    if (startOffset != null) svg.setCurrentTime(startOffset);
     if (paused) svg.pauseAnimations();
     if (!onCycleEnd || paused) return;
     let prev = svg.getCurrentTime() % CYCLE;

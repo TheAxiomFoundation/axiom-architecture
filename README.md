@@ -30,7 +30,7 @@ previous one and adds a new column to the right:
 | § 02 · Ingest | Fetchers, parsers, source-first adapters, the JSONL artifact tree, axiom-scrapers |
 | § 03 · Storage | R2 (cold) and Supabase (live) tables — provisions + derived — plus axiom-bills |
 | § 04 · Encoding | axiom-encode, the country monorepos (rulespec-us with federal + 32 states + programs/, rulespec-uk, rulespec-ca), axiom-rules-engine (Rust runtime), axiom-programs + axiom-compose (program assembly), axiom-oracles (validation + coverage dashboard) |
-| § 05 · Pipeline | axiom-foundation.org (incl. the /ops dashboard), finbot, dashboard-builder, axiom-microsim, axiom-demo-shell |
+| § 05 · Pipeline | axiom.org (incl. the /ops dashboard), finbot, dashboard-builder, axiom-microsim, axiom-demo-shell |
 | § 06 · Platform | axiom-api (HTTP API + SDKs on Vercel/Modal), axiom-mcp (MCP server for agents), the GA4 → Axiom CRM analytics loop |
 
 Four extra tabs live below the scenes in the sidebar:

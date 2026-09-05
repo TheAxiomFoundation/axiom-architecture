@@ -1,5 +1,7 @@
 import { JourneyDemo } from "./JourneyDemo";
 import { AxiomGlyph } from "./AxiomGlyph";
+import { CoreCheckpoint } from "./CoreCheckpoint";
+import { registrySummary, SNAPSHOT_DATE } from "./registry-snapshot";
 
 // The launch poster: the journey demo under the launch header. The
 // earlier flat-strip and sankey-chart views of this page are retired —
@@ -17,20 +19,20 @@ export function LaunchGraphic() {
           <p className="launch__sub">
             The whole demo in one cycle: one volume comes off the shelf —
             7 U.S.C. § 2017 — the section is encoded and gated, and joins
-            the graph. Then the camera backs out until the whole live
+            the graph. Then the camera backs out until the recorded
             registry is in frame — and the cycle begins again.
           </p>
+          <CoreCheckpoint />
         </header>
 
         <JourneyDemo />
 
         <footer className="launch__footline">
           <span>
-            4 countries · 50 states + DC · 1.7M+ provisions · 3,000+ encoded
-            rules
+            {SNAPSHOT_DATE} registry snapshot · {registrySummary()}
           </span>
           <span className="launch__footbrand">
-            <AxiomGlyph className="glyph-axiom" /> axiom-foundation.org
+            <AxiomGlyph className="glyph-axiom" /> axiom.org
           </span>
         </footer>
       </div>

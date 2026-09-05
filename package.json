@@ -5,6 +5,7 @@
   "description": "Interactive architecture viewer for the Axiom Foundation ecosystem.",
   "type": "module",
   "scripts": {
+    "test": "node --test tests/*.test.mjs",
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview"

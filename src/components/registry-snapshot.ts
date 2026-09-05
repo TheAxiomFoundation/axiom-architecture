@@ -36,6 +36,13 @@ export const CLUSTERS: Cluster[] = [
 
 export const PROGRAM_COUNT = CLUSTERS.length;
 
+// Counts are package output entries; a rule shared by several packages can
+// appear more than once. This is not a census of unique or certified rules.
+export function registrySummary(clusters: readonly Pick<Cluster, "count">[] = CLUSTERS) {
+  const outputs = clusters.reduce((total, cluster) => total + cluster.count, 0);
+  return `${clusters.length} compiled programs, ${outputs.toLocaleString("en-US")} package outputs`;
+}
+
 // each package's default outputs — real rule names, straight from the
 // registry listing
 export const OUTPUTS: Record<string, string[]> = {

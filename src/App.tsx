@@ -14,6 +14,7 @@ import { LabeledEdge } from "./components/LabeledEdge";
 import { DetailPanel } from "./components/DetailPanel";
 import { LaunchGraphic } from "./components/LaunchGraphic";
 import { SceneSwitcher } from "./components/SceneSwitcher";
+import { CoreCheckpoint } from "./components/CoreCheckpoint";
 import {
   LAYOUTS,
   NODES,
@@ -236,6 +237,7 @@ export function App() {
             <div className="eyebrow">{layout.eyebrow}</div>
             <h1 className="heading-section">{layout.title}</h1>
             <p>{layout.description}</p>
+            <CoreCheckpoint />
           </header>
           <div className="canvas__flow">
             <ReactFlow

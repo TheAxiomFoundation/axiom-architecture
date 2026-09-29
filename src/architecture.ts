@@ -316,10 +316,11 @@ export const NODES: NodeSpec[] = [
     label: "finbot",
     layer: "consumer",
     repo: "demos",
-    summary: "Financial-advice demo",
+    summary: "Benefits and tax Q&A demo",
     detail:
-      "Chat demo that computes eligibility on the rules engine and cites " +
-      "the exact provisions behind every number.",
+      "Chat demo: an OpenAI model with tool access to the rules engine, " +
+      "for US benefit and tax estimates. Replies link the legal source " +
+      "for outputs that carry one.",
   },
   {
     id: "dashboard-builder",

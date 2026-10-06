@@ -64,7 +64,7 @@ export const REPOS: RepoSpec[] = [
     id: "axiom-compose",
     label: "axiom-compose",
     description:
-      "Deterministic program assembler: spec + atomic rulespec corpus → runnable program, no per-program code anywhere. Consumes specs from axiom-programs; replaces composition YAMLs in rulespec-* and precompiled artifacts in consumers.",
+      "Deterministic program assembler: spec + atomic rulespec corpus -> runnable program, no per-program code anywhere. Consumes specs from country monorepo programs/ directories; replaces checked-in composition modules and precompiled artifacts in consumers.",
   },
   {
     id: "axiom-programs",
@@ -675,7 +675,7 @@ export const NODES: NodeSpec[] = [
         "parent_path, sort_key), partial (parent_path, sort_key) WHERE " +
         "encoded_descendant_count > 0 OR has_rulespec — the encoded-only browser query, " +
         "and partial (provision_id) WHERE provision_id IS NOT NULL.",
-      "has_rulespec is set at rebuild time by walking local rules-* checkouts. " +
+      "has_rulespec is set at rebuild time by walking local rulespec country monorepo checkouts. " +
         "encoded_descendant_count rolls up bottom-up.",
       "Status field is editorial metadata (e.g. 'deprecated', 'in-review'). Preserved " +
         "across rebuilds via fetch_navigation_statuses + _apply_navigation_status_" +
@@ -684,7 +684,7 @@ export const NODES: NodeSpec[] = [
       "Cycle handling: _break_parent_cycles is deterministic — picks the lexicographic " +
         "min of the cycle as the new root every time, so two runs with the same input " +
         "produce the same broken-edge.",
-      "Sharp edge: if you run load-supabase in CI without local rules-* checkouts, the " +
+      "Sharp edge: if you run load-supabase in CI without local rulespec checkouts, the " +
         "rebuild silently demotes has_rulespec=false for paths whose encoding the " +
         "checkout-less worker can't see. Mitigate via --rulespec-repo flag or by " +
         "running outside CI.",
@@ -767,7 +767,7 @@ export const NODES: NodeSpec[] = [
       "arithmetic, count_where(), table indexing) but not actual Python — they're " +
       "parsed by the axiom-rules-engine Rust engine at compile time.",
     rationale:
-      "Encoding lives in separate repos so the corpus stays purely about source text. " +
+      "Encoding lives in country monorepos so the corpus stays purely about source text. " +
       "Encoding cadence and corpus cadence are independent — you can add a new rule " +
       "without touching the corpus, and re-ingest the corpus without breaking rules. " +
       "Per-section YAML keeps rules bundled with their source for fine-grained Git " +
@@ -787,8 +787,8 @@ export const NODES: NodeSpec[] = [
       "Tests reference rules by durable id ('us:statutes/7/2017/a#snap_regular_" +
         "month_allotment'), not by local name. Tests run against the compiled module " +
         "(after imports are merged), not individual rules.",
-      "Imports use canonical paths ('us:statutes/7/2017/a') and resolve cross-repo " +
-        "(rulespec-us-co imports rulespec-us).",
+      "Imports use canonical paths ('us:statutes/7/2017/a') and resolve across " +
+        "jurisdiction directories and country monorepos (us-co imports us inside rulespec-us).",
     ],
     files: [
       "rulespec-us/statutes/",
@@ -858,7 +858,7 @@ export const NODES: NodeSpec[] = [
       "telemetry, plus the public auth client). Tree navigation queries " +
       "corpus.navigation_nodes by parent_path (the indexed btree query). Body text " +
       "comes from corpus.current_provisions — the release-filtered view of " +
-      "corpus.provisions. When an encoded rule exists in a rules-* repo but " +
+      "corpus.provisions. When an encoded rule exists in a rulespec country monorepo but " +
       "encoding_runs hasn't been backfilled, the app falls back to GitHub raw fetch " +
       "with a 1-hour cache. Path-mapping conventions (REPO_BUCKET_RENAMES, -cfr suffix " +
       "handling) mirror axiom-corpus/rulespec_paths.py.",
@@ -867,18 +867,19 @@ export const NODES: NodeSpec[] = [
       "the API surface is the source of truth. Multi-schema client isolation prevents " +
       "heavy telemetry queries from competing with corpus reads.",
     important: [
-      "src/lib/axiom/repo-map.ts is authoritative for jurisdiction → rules-* repo " +
-        "mapping. axiom-corpus mirrors it in rulespec_paths.py; keep in sync when new " +
+      "src/lib/axiom/repo-map.ts is authoritative for jurisdiction -> rulespec repo " +
+        "and jurisdiction directory mapping. axiom-corpus mirrors it in " +
+        "rulespec_paths.py; keep in sync when new " +
         "jurisdictions land.",
       "src/lib/axiom/rulespec/repo-listing.ts handles repo path ↔ citation path " +
         "conversion in both directions. Singular bucket names on the corpus side " +
-        "(statute, regulation, policy); plural on the rules-* side.",
+        "(statute, regulation, policy); plural on the rulespec side.",
       "Parent-path candidate matching: when resolving an encoding for a citation the " +
         "app walks up the path hierarchy and returns the most specific match.",
       "Deep links use ?mark=term URL param to highlight search terms in the rendered " +
         "body.",
       "Encoded-rule listings can come from corpus.encoding_runs OR from a live " +
-        "GitHub fetch of rules-* repo trees — useful during rolling backfills.",
+        "GitHub fetch of rulespec repo trees — useful during rolling backfills.",
       "Never writes to Supabase. Read-only RLS policies suffice.",
     ],
     files: [
@@ -962,7 +963,7 @@ export const NODES: NodeSpec[] = [
         "name-drift between producer rules and the canonical-concept registry " +
         "(src/axiom_encode/concepts/), which gates `encode --apply`: any generated " +
         "RuleSpec using a blocked synonym or claiming a canonical at the wrong " +
-        "anchor is rejected before it lands in a rulespec-* repo.",
+        "anchor is rejected before it lands in a RuleSpec tree.",
       "Apply requires versioned encoder provenance (≥ 0.2.87) — dirty/unversioned " +
         "checkouts are rejected so every applied manifest is reproducible.",
       "Telemetry lands in encodings.encoding_runs (run id, iterations, scores, " +
@@ -997,7 +998,7 @@ export const NODES: NodeSpec[] = [
       "orders-of-magnitude speedups when the rule set is dense-compatible.",
     rationale:
       "RuleSpec is the sole authoring surface; production rules live in jurisdiction " +
-      "repos (rulespec-us, rulespec-us-co…). Engine stays focused on runtime + schema. " +
+      "country monorepos (rulespec-us, rulespec-uk, rulespec-ca). Engine stays focused on runtime + schema. " +
       "Filepath-as-id eliminates drift between repo and engine identity. Compiled " +
       "artifacts are JSON-serialisable so callers can run on ephemeral compute (Workers, " +
       "Lambda) without re-parsing the source YAML.",
@@ -1089,7 +1090,7 @@ export const NODES: NodeSpec[] = [
         "needed because tax-ecps-compare is surface-aggregated while the existing " +
         "dashboard report is per-case).",
       "Does NOT integrate with axiom-corpus (no imports, no direct data flow); reads " +
-        "rules-* / rulespec-* repos only as engine inputs.",
+        "rulespec country monorepos only as engine inputs.",
     ],
     files: [
       "axiom-oracles/comparisons/fiit-ecps.yaml",
@@ -1124,11 +1125,11 @@ export const NODES: NodeSpec[] = [
       "Planned, in design. Pure-function utility: (spec, atomic rulespec corpus) → " +
       "runnable program. Single, standard entry point every Axiom tool will use to " +
       "assemble programs (FIIT, SNAP, EITC, etc.) for execution. Replaces today's two " +
-      "patterns — checked-in composition YAMLs in rulespec-* and precompiled artifacts " +
+      "patterns — checked-in composition modules under policies/ and precompiled artifacts " +
       "in consumers — with one declarative spec + live composition.",
     mechanics:
       "Hard architectural rule: no program-specific code anywhere. Every synthesis " +
-      "decision reduces to (a) an atomic encoded rule in rulespec-*, (b) a generic " +
+      "decision reduces to (a) an atomic encoded rule in a country monorepo, (b) a generic " +
       "transformation pattern that applies to ≥2 program families, or (c) a " +
       "declarative parameter in the spec. The composer's core does dependency " +
       "closure from declared outputs, applies generic patterns (concept-registry " +
@@ -1136,11 +1137,11 @@ export const NODES: NodeSpec[] = [
       "for the engine to compile. Each program is described by a tiny YAML spec " +
       "(program, outputs, period, scope anchors) — data, not code.",
     rationale:
-      "Today's composition files (e.g. rulespec-us-co/policies/cdhs/snap/fy-2026-benefit-" +
+      "Today's composition files (e.g. rulespec-us/us-co/policies/cdhs/snap/fy-2026-benefit-" +
       "calculation.yaml) mix encoded law with software glue and drift silently across " +
       "consumers. Five separate apps reference CO SNAP today; each could go stale. " +
       "Centralising assembly into a single deterministic utility removes the " +
-      "duplication, lets rulespec-* return to atomic-only, and makes drift loudly " +
+      "duplication, lets jurisdiction RuleSpec trees return to atomic-only, and makes drift loudly " +
       "detectable via golden tests.",
     important: [
       "Draft (axiom-compose#1). Spec loader, corpus indexer, and pure composition " +
@@ -1164,42 +1165,42 @@ export const NODES: NodeSpec[] = [
   },
   {
     id: "axiom-programs",
-    label: "axiom-programs",
+    label: "programs/",
     layer: "rules",
     repo: "axiom-programs",
     summary: "Declarative compose specs (one YAML per program × jurisdiction × period)",
     detail:
-      "Home for the program compose specs that axiom-compose consumes. A program — " +
-      "us-co/snap for FY 2026, us-ca/snap, us/fiit — is an assembly of atomic rules " +
-      "drawn from one or more rulespec-* corpora. The assembly itself is NOT law: the " +
-      "law is the source statute/regulation encoded into atomic RuleSpec files. This " +
-      "repo holds the declarative spec describing how those atomic rules combine for " +
-      "a given (jurisdiction, program, period).",
+      "Country-monorepo directory for the program compose specs that axiom-compose consumes. " +
+      "A program — us-co/snap for FY 2026, us-ca/snap, us/fiit — is an assembly of atomic " +
+      "rules drawn from one or more jurisdiction trees. The assembly itself is NOT law: " +
+      "the law is the source statute/regulation encoded into atomic RuleSpec files. The " +
+      "programs/ directory holds the declarative spec describing how those atomic rules " +
+      "combine for a given (jurisdiction, program, period).",
     mechanics:
-      "Layout: <jurisdiction>/<program>/<period>.yaml — e.g. us-ca/snap/fy-2026.yaml. " +
+      "Layout inside each country monorepo: programs/<jurisdiction>/<program>/<period>.yaml — " +
+      "e.g. rulespec-us/programs/us-ca/snap/fy-2026.yaml. " +
       "Spec shape: program identifier, period, declared outputs (the rules the engine " +
       "must produce), and scope arrays (federal + state) listing the atomic rule " +
       "paths to import. axiom-compose resolves the scope against the relevant " +
-      "rulespec-* repos, links the imports via declared outputs, and emits a runnable " +
+      "jurisdiction trees, links the imports via declared outputs, and emits a runnable " +
       "program for the engine. No per-program code anywhere.",
     rationale:
-      "Specs are not law (so they don't belong in rulespec-* corpora — that's the " +
-      "bucket-E violation we're eliminating from rulespec-us-co). Specs are not the " +
-      "composer (so they don't belong inside axiom-compose, which is the tool). And " +
-      "specs need their own release cycle independent of either. A separate repo with " +
-      "country-agnostic layout (us/, us-co/, uk/, …) is the right home: a new fiscal " +
-      "year spec or a new jurisdiction is one PR here, not a coordinated release " +
-      "across multiple repos.",
+      "Specs are not law, so they should stay separate from atomic statute/regulation " +
+      "encodings even when they live beside them in the same country monorepo. Keeping " +
+      "them in programs/ means a country's law, its program assembly specs, and its CI " +
+      "ratchets version together in one SHA, without turning axiom-compose itself into " +
+      "a source-of-truth data repo.",
     important: [
       "Bootstrapped today. First concrete spec: us-ca/snap/fy-2026.yaml — compiles " +
         "via axiom-compose#1 (2,339 atomic sources resolved across federal + CA).",
-      "Migration backlog tracked in README: rulespec-us-co/policies/cdhs/snap/" +
+      "Migration backlog tracked in README: rulespec-us/us-co/policies/cdhs/snap/" +
         "fy-2026-benefit-calculation.yaml (bucket-E composition) and " +
         "axiom-microsim/axiom_microsim/project/{co_snap,federal_ctc,federal_income_" +
         "tax}.py (per-program Python adapters) both need to move here as declarative " +
         "specs once axiom-compose graduates.",
-      "Not US-specific. Layout accommodates uk/, ca/, etc. as those rulespec corpora " +
-        "mature; no -us suffix on the repo name.",
+      "Not US-specific. rulespec-uk/programs/ and rulespec-ca/programs/ follow the same " +
+        "shape as those corpora mature. The standalone axiom-programs repo is only an " +
+        "archived pointer to this layout.",
     ],
     files: [
       "rulespec-us/programs/us-ca/snap/fy-2026.yaml",
@@ -1212,18 +1213,18 @@ export const NODES: NodeSpec[] = [
     label: "axiom-demo-shell",
     layer: "consumer",
     repo: "axiom-demo-shell",
-    summary: "Landing page embedding the demos",
+    summary: "Guided shell for the demo ecosystem",
     detail:
-      "Lightweight static landing page that unifies the three demo surfaces — Axiom " +
-      "App, FinBot, Dashboard Builder — under a single narrative. Embeds each demo " +
-      "in an iframe with a fallback link.",
+      "Lightweight static landing page that organizes the demo ecosystem into three " +
+      "layers: Infrastructure (architecture, Axiom App, graph viewer), Validation " +
+      "(oracles, guidance impact, bills), and Application (FinBot, form builder, CO " +
+      "SNAP cliffs, microsim). Embeds each demo in an iframe preview with a fallback link.",
     mechanics:
-      "Four static files: index.html, app.js (13 lines), styles.css (160 lines), and " +
-      "logos/. The JS populates CTA href attributes from a hardcoded `destinations` map: " +
-      "law → https://app.axiom-foundation.org/, finbot → finbot-snap-demo.vercel.app, " +
-      "builder → dashboard-builder-flax.vercel.app. No dependencies, no build step. " +
-      "`npm start` serves via Python's http.server on port 4173; production deploys " +
-      "to Vercel.",
+      "Static HTML/CSS/JS with no build step. app.js owns a deployedDestinations map " +
+      "and a localDestinations map; deployed apps are the default everywhere, while " +
+      "?local opts into local dev servers. It populates all [data-demo-link] anchors " +
+      "and [data-demo-preview] iframes from that map. `npm start` serves via Python's " +
+      "http.server on port 4173; production deploys to Vercel.",
     rationale:
       "Pure static + zero deps is maximally auditable. The shell is explicitly " +
       "temporary — meant to frame the ecosystem while shared APIs and product " +
@@ -1232,8 +1233,8 @@ export const NODES: NodeSpec[] = [
     important: [
       "Iframe embeds can fail silently if a target sets X-Frame-Options: DENY. The " +
         "shell provides no error handling; the fallback link still works.",
-      "URLs are hardcoded in both index.html and app.js — if a demo moves, both files " +
-        "need updating. No env-var system.",
+      "Demo URLs are hardcoded in app.js — if a demo moves, update the map and redeploy. " +
+        "No env-var system.",
       "No shared auth — each embedded demo has its own session.",
       "No tests, no analytics. `npm check` is JS syntax validation only.",
       "Non-goals are real constraints (per README): no duplicate law, no second " +
@@ -1321,7 +1322,7 @@ export const EDGES: EdgeSpec[] = [
   { from: "provisions", to: "counts", kind: "derived", label: "RPC refresh" },
   { from: "provisions", to: "references", kind: "derived", label: "extract-references" },
 
-  // Three rules-* edges into navigation share the has_rulespec verb;
+  // Three RuleSpec-tree edges into navigation share the has_rulespec verb;
   // label only one to keep the canvas readable.
   { from: "rulespec-us", to: "navigation", kind: "derived", label: "has_rulespec" },
   { from: "rules-state", to: "navigation", kind: "derived" },
@@ -1353,10 +1354,10 @@ export const EDGES: EdgeSpec[] = [
   { from: "rulespec-us", to: "axiom-oracles", kind: "read", label: "compares" },
   { from: "rules-state", to: "axiom-oracles", kind: "read" },
   { from: "axiom-rules-engine", to: "axiom-oracles", kind: "read" },
-  // axiom-programs holds declarative compose specs; axiom-compose resolves
-  // their `scope` arrays against the atomic rulespec corpora, then emits
+  // programs/ holds declarative compose specs; axiom-compose resolves
+  // their `scope` arrays against the atomic RuleSpec trees, then emits
   // runnable programs for the engine.
-  { from: "rulespec-us", to: "axiom-programs", kind: "read", label: "atomic only" },
+  { from: "rulespec-us", to: "axiom-programs", kind: "read", label: "scope refs" },
   { from: "rules-state", to: "axiom-programs", kind: "read" },
   { from: "rulespec-us", to: "axiom-compose", kind: "read" },
   { from: "rules-state", to: "axiom-compose", kind: "read" },
@@ -1402,7 +1403,7 @@ const edgesAmong = (ids: Set<string>) =>
 //   x=460   Col 2 — Ingest layer (fetchers, parsers, adapters)
 //   x=880   Col 3 — Local JSONL artifact tree
 //   x=1300  Col 4 — Storage tier (R2 + Supabase tables)
-//   x=1720  Col 5 — Encoder + rules-* repos
+//   x=1720  Col 5 — Encoder + RuleSpec monorepos
 //   x=2140  Col 6 — Execution + validation
 //   x=2560  Col 7 — Consumer apps
 //   x=2980  Col 8 — Demo shell
@@ -1537,8 +1538,8 @@ export const LAYOUTS: Layout[] = [
     title: "Add encoding + execution",
     eyebrow: "§ 04 · Encoding",
     description:
-      "axiom-encode reads the corpus and writes RuleSpec YAML into the rules-* " +
-      "repos. axiom-rules-engine (Rust) compiles + executes that YAML. axiom-compose " +
+      "axiom-encode reads the corpus and writes RuleSpec YAML into country monorepos. " +
+      "axiom-rules-engine (Rust) compiles + executes that YAML. axiom-compose " +
       "(planned) assembles programs from atomic encoded law on demand. " +
       "axiom-oracles validates outputs against external oracles (PolicyEngine, " +
       "TAXSIM, ACCESS NYC) via a reusable comparisons registry. The next nav " +
@@ -1555,9 +1556,9 @@ export const LAYOUTS: Layout[] = [
     title: "Add the consumers",
     eyebrow: "§ 05 · Pipeline",
     description:
-      "axiom-foundation.org, finbot, and dashboard-builder all read from Supabase " +
-      "and call into axiom-rules-engine for execution. axiom-demo-shell unifies the three " +
-      "demo surfaces in a static landing page. Every block carries its repo on the " +
+      "axiom-foundation.org, finbot, dashboard-builder, and microsim read from Supabase " +
+      "or compiled RuleSpec artifacts and call into axiom-rules-engine for execution. " +
+      "axiom-demo-shell unifies the demo ecosystem in a static landing page. Every block carries its repo on the " +
       "eyebrow so you can see who owns what at a glance.",
     nodes: placeAll(PIPELINE_VISIBLE),
     edges: edgesAmong(new Set(PIPELINE_VISIBLE)),

@@ -43,7 +43,7 @@ corpus.provisions  (Supabase + JSONL artifacts)
    ↓  (axiom-encode encode "CITATION")
 candidate RuleSpec YAML  (in /tmp staging)
    ↓  (axiom-encode encode --apply)
-rulespec-us-{state}/  (signed apply manifest under .axiom/encoding-manifests/)
+rulespec-us/us-{state}/  (signed apply manifest under .axiom/encoding-manifests/)
    ↓  (axiom-rules-engine cargo run -- compile)
 compiled ProgramSpec JSON
    ↓  (cargo run -- run-compiled < request.json)
@@ -178,7 +178,7 @@ uv run axiom-corpus-ingest load-supabase \\
         kind: "ul",
         items: [
           "src/axiom_corpus/corpus/nycrr.py — NY Codes, Rules and Regulations. Handles 18 NYCRR 387 (NY SNAP). Same structural role as MPP §63: state operational rules implementing federal SNAP. NY already runs this through to an encoded RuleSpec + PolicyEngine oracle. Highest-fidelity precedent.",
-          "src/axiom_corpus/corpus/colorado.py — Colorado regulations including 10 CCR 2506-1 (CO SNAP). Mature, end-to-end-encoded jurisdiction (see rulespec-us-co/policies/cdhs/snap/). Second-closest precedent.",
+          "src/axiom_corpus/corpus/colorado.py — Colorado regulations including 10 CCR 2506-1 (CO SNAP). Mature, end-to-end-encoded jurisdiction (see rulespec-us/us-co/policies/cdhs/snap/). Second-closest precedent.",
           "manifests/us-tx-texas-works-manual.yaml — Texas Works Manual. Direct structural twin of MPP: state agency operational manual covering SNAP/TANF administration. Closest precedent in *manifest* form. Worth reading before authoring us-ca-cdss-mpp-calfresh.yaml.",
           "manifests/us-dc-child-care-subsidy-manual.yaml — DC operational manual. Different program but same source pattern (PDF-published state agency manual).",
         ],
@@ -239,7 +239,7 @@ axiom-encode encode "CA W&I Code 18901.1" --apply`,
       },
       {
         kind: "code",
-        text: "rulespec-us-ca/policies/cdss/calfresh/fy-2026-benefit-calculation.yaml",
+        text: "rulespec-us/us-ca/policies/cdss/calfresh/fy-2026-benefit-calculation.yaml",
       },
       {
         kind: "p",
@@ -370,11 +370,11 @@ rules:
       },
       {
         kind: "code",
-        text: `# Compile (resolves all imports across rulespec-us and rulespec-us-ca)
-export AXIOM_RULESPEC_REPO_ROOTS=~/rulespec-us:~/rulespec-us-ca
+        text: `# Compile (resolves imports across rulespec-us/us and rulespec-us/us-ca)
+export AXIOM_RULESPEC_REPO_ROOTS=~/rulespec-us
 cd ~/axiom-rules-engine
 cargo run -- compile \\
-  --program ~/rulespec-us-ca/policies/cdss/calfresh/fy-2026-benefit-calculation.yaml \\
+  --program ~/rulespec-us/us-ca/policies/cdss/calfresh/fy-2026-benefit-calculation.yaml \\
   --output /tmp/calfresh.compiled.json
 
 # Run
@@ -437,7 +437,7 @@ cargo run -- run-compiled --artifact /tmp/calfresh.compiled.json < request.json`
       },
       {
         kind: "p",
-        text: "For CA: identical workflow, swap --jurisdiction us-ca. Workflow file goes in rulespec-us-ca/.github/workflows/policyengine-oracle.yml — copy from rulespec-us-ny verbatim, replace jurisdiction code.",
+        text: "For CA: identical comparison command, swap --jurisdiction us-ca. The CI wiring now belongs in the rulespec-us country monorepo and should scope the job to the us-ca jurisdiction tree, following the NY SNAP job pattern.",
       },
       {
         kind: "callout",
@@ -452,18 +452,18 @@ cargo run -- run-compiled --artifact /tmp/calfresh.compiled.json < request.json`
     blocks: [
       {
         kind: "p",
-        text: "Two workflows live in every rulespec-us-* repo:",
+        text: "The rulespec-us country monorepo carries the validation workflows for federal and state jurisdiction trees:",
       },
       {
         kind: "ul",
         items: [
-          ".github/workflows/repository-checks.yml — invokes a shared validate-rulespec workflow from TheAxiomFoundation/.github. Runs on every push/PR.",
-          ".github/workflows/policyengine-oracle.yml — program-specific oracle comparison. NY has this for SNAP. CA does not have it yet (only the generic checks).",
+          ".github/workflows/repository-checks.yml — invokes a shared validate-rulespec workflow from TheAxiomFoundation/.github. Runs on every push/PR and discovers jurisdiction directories.",
+          ".github/workflows/policyengine-oracle.yml — program-specific oracle comparison. NY has this for SNAP. CA needs an equivalent scoped job.",
         ],
       },
       {
         kind: "p",
-        text: "After CA SNAP encoding lands, the missing addition is the policyengine-oracle.yml file. One file, copied from rulespec-us-ny with two find-replaces.",
+        text: "After CA SNAP composition lands, the missing addition is a scoped us-ca oracle job in rulespec-us, following the NY SNAP workflow shape.",
       },
     ],
   },
@@ -476,7 +476,7 @@ cargo run -- run-compiled --artifact /tmp/calfresh.compiled.json < request.json`
         items: [
           "Source coverage in corpus is local-only — the WIC JSONL is on disk but data/ is gitignored. To make it live: sync-r2 (needs R2 credentials) and load-supabase (needs Supabase write credentials).",
           "No CDSS MPP scraper exists. WIC statutes alone don't cover everything operators apply (deduction tables, ABAWD waiver geographies, county-level options). MPP §63 ingestion is a real-work item.",
-          "rulespec-us-ca has no oracle workflow. Trivial copy from rulespec-us-ny once encoding lands.",
+          "us-ca has no oracle workflow in rulespec-us yet. Follow the NY SNAP workflow shape once the CA composition lands.",
           "AXIOM_ENCODE_APPLY_SIGNING_KEY is required for any --apply. Operator infra question, not a code change.",
           "Dependency lockfile is wedged on Python 3.14 + macOS. uv.lock pins pyroaring 1.0.3 (no 3.14 wheels and source build fails on Apple clang 17). Working installs use Python 3.14 + pip install --prefer-binary, which floats pyroaring to 1.1.0 (3.14 wheels exist). Worth fixing the lockfile.",
         ],
@@ -494,7 +494,7 @@ cargo run -- run-compiled --artifact /tmp/calfresh.compiled.json < request.json`
           "2. Author a manifest us-ca-wic-calfresh.yaml in axiom-corpus. Run extract-official-documents → sync-r2 → load-supabase.",
           "3. Run axiom-encode encode \"CA W&I Code 18901.1\" --apply for each WIC section. Review and approve candidates.",
           "4. Run axiom-encode encode \"CA CalFresh FY 2026 benefit calculation composition\" --apply to produce the policies/cdss/calfresh/fy-2026-benefit-calculation.yaml composition module.",
-          "5. Copy rulespec-us-ny/.github/workflows/policyengine-oracle.yml into rulespec-us-ca, change us-ny → us-ca.",
+          "5. Add a scoped us-ca PolicyEngine oracle job in rulespec-us, following the NY SNAP workflow shape.",
           "6. Watch the first oracle smoke run. Triage mismatches. Expect a 5–20% miss rate on first pass; iterate.",
           "7. Once smoke is green, expand to MPP §63 (the real CalFresh manual). This is the long tail — work requirements, deductions, special households, ABAWD waivers.",
         ],
@@ -781,7 +781,7 @@ $ unzip -p pubinfo_2025.zip LAW_SECTION_TBL.dat \\
           "The encoder is hardened. Signed apply manifests, refusal to install without a signing key, hard-stop on missing source — production-grade. Not the casual model-call I assumed.",
           "Validation lives in axiom-encode, not in axiom-oracles. The split is per-program: SNAP has snap-ecps-compare. The architectural model in the viewer (\"axiom-oracles does validation\") is partially wrong. Other programs would need a per-program comparator before they get the same treatment.",
           "State repo size is small by design — composition modules import federal rules wholesale and only encode divergences. The NY SNAP module is ~30 imports and ~6 derived rules. CA should be similar.",
-          "Repo naming is inconsistent: GitHub canonical names are rulespec-us-* but local checkouts and several docs use rules-us-* (and axiom-rules-engine vs axiom-rules). Worth reconciling before more state repos populate. (Same drift the architecture critique flagged — but now with concrete evidence.)",
+          "Repo naming drift was real during the pre-consolidation state-repo era. The current rule is simpler: use country monorepos (rulespec-us, rulespec-uk, rulespec-ca) with jurisdiction directories such as rulespec-us/us-ca/, and keep axiom-rules-engine as the engine name.",
           "Source-first is enforced. No corpus row → no encoding. This is the architectural commitment that makes coverage talk honest. Honor it.",
           "Coverage gap was \"adapter exists, never run for this scope.\" The california-codes-bulk adapter has been in axiom-corpus the whole time — I just hadn't run it. Worth surveying which jurisdiction × document_class slots have adapters-but-not-runs and triaging the cheapest ones first.",
           "Don't write the encoding playbook from memory. Run the extract, then read the bodies. v1 of this doc had wrong section numbers for the two flagship CA divergences (§18901.1, §18901.10). § 12 is the corrected map. Source-first applies to documentation too.",
@@ -869,7 +869,7 @@ $ unzip -p pubinfo_2025.zip LAW_SECTION_TBL.dat \\
     blocks: [
       {
         kind: "p",
-        text: "We ran the CalFresh encoding end-to-end against the production stack. This section logs what actually shipped, what broke, and the exact CI validator stages each fix had to clear. Source-of-truth for what's now live in rulespec-us-ca main.",
+        text: "We ran the CalFresh encoding end-to-end against the production stack before the country-monorepo consolidation. This section logs what shipped, what broke, and the exact CI validator stages each fix had to clear. The historical PR landed in rulespec-us-ca; the current home is rulespec-us/us-ca/.",
       },
       {
         kind: "h",
@@ -878,7 +878,7 @@ $ unzip -p pubinfo_2025.zip LAW_SECTION_TBL.dat \\
       {
         kind: "ul",
         items: [
-          "358 CalFresh MPP §63 subsections encoded as signed RuleSpec YAML in rulespec-us-ca main (PR #4 merged).",
+          "358 CalFresh MPP §63 subsections encoded as signed RuleSpec YAML in the historical rulespec-us-ca repo (PR #4 merged), now represented under rulespec-us/us-ca/ after consolidation.",
           "823 individual rules (661 derived + 162 parameter) with proof atoms tying every value back to a corpus excerpt.",
           "Each encoding has a per-subsection .axiom/encoding-manifests/ HMAC-signed manifest.",
           "Oracle registry in axiom-encode extended with 823 not_comparable entries (PR #40) + 2 follow-ups (PR #42) for renamed sibling rules.",
@@ -996,7 +996,7 @@ $ unzip -p pubinfo_2025.zip LAW_SECTION_TBL.dat \\
     blocks: [
       {
         kind: "p",
-        text: "Each push to rulespec-us-ca#4 surfaced a different validator stage. Listed in the order they fired, with the fix for each:",
+        text: "Each push to the historical rulespec-us-ca#4 surfaced a different validator stage. Listed in the order they fired, with the fix for each:",
       },
       {
         kind: "ul",
@@ -1115,7 +1115,7 @@ $ unzip -p pubinfo_2025.zip LAW_SECTION_TBL.dat \\
           "axiom-encode env set: AXIOM_ENCODE_APPLY_SIGNING_KEY sourced from ~/.config/axiom-foundation/axiom-encode.env.",
           "axiom-encode version ≥ 0.2.87 (required for versioned-provenance apply guard).",
           "axiom-rules-engine: `cargo build --release` once.",
-          "Sibling checkouts: axiom-corpus, axiom-encode, axiom-rules-engine, rulespec-us, rulespec-us-{state}. All clean (`git status --porcelain` empty).",
+          "Sibling checkouts: axiom-corpus, axiom-encode, axiom-rules-engine, and the relevant country monorepo (rulespec-us for US federal/state work). All clean (`git status --porcelain` empty).",
           "Codex CLI logged in: `codex login status` reports \"Logged in using ChatGPT.\"",
           "Canonical-concept registry covers the program: `axiom-encode concepts-audit` against the corpus reports zero drift, or new entries have been added to src/axiom_encode/concepts/data/ before the batch.",
         ],
